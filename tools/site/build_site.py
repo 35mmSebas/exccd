@@ -17,12 +17,13 @@ Die Looks kommen aus CHDK/FILMS/BEISPIEL.TXT (gleich der eingebauten Tabelle),
 Art/Beschreibung/Akzentfarbe aus tools/filmsim/make_label_art.py.
 """
 
-import argparse, glob, json, os, re, shutil, sys, zipfile
+import argparse, glob, json, os, re, shutil, struct, sys, zipfile
 from PIL import Image
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, os.path.join(ROOT, "tools", "filmsim"))
 import make_label_art  # noqa: E402
+import make_curves  # noqa: E402
 
 # Bisher nur eine Kamera. Weitere Modelle bekommen hier einen Eintrag und ein
 # eigenes Firmware-ZIP (siehe TODO Phase 5).
@@ -72,6 +73,23 @@ def copy_entries(src, names, dst_path):
             dst.writestr(out, src.read(name))
 
 
+def curve_preview(cv, steps=32):
+    """Kurve fuer die Webseite: R/G/B im Anzeige-Raum (0..1, Gamma wie make_curves.py),
+    damit sie wie eine normale Gradationskurve aussieht. cv = Inhalt der .CV-Datei."""
+    vals = struct.unpack("<4096H", cv)
+    black, white, gamma, wb = make_curves.BLACK, make_curves.WHITE, make_curves.GAMMA, make_curves.WB
+    out = {}
+    for key, ch in (("r", 0), ("g", 1), ("b", 3)):
+        curve, pts = vals[ch * 1024:(ch + 1) * 1024], []
+        for i in range(steps + 1):
+            x = i / steps
+            raw = min(white, int(round(black + x ** gamma * (white - black) / wb[ch])))
+            lin = min(1.0, max(0.0, (curve[raw] - black) * wb[ch] / (white - black)))
+            pts.append(round(lin ** (1 / gamma), 3))
+        out[key] = pts
+    return out
+
+
 def label_meta():
     meta = {}
     for key, _name, iso, kind, desc, _icon, accent in make_label_art.LOOKS:
@@ -113,12 +131,16 @@ def main():
             if missing:
                 sys.exit("%s: fehlt im Firmware-ZIP: %s" % (look["name"], ", ".join(missing)))
             look_owned.update(files)
-            copy_entries(fw, files, os.path.join(cam_dir, "looks", look["id"] + ".zip"))
+            zpath = os.path.join(cam_dir, "looks", look["id"] + ".zip")
+            copy_entries(fw, files, zpath)
+            look["size"] = os.path.getsize(zpath)
+            look["tone"] = curve_preview(fw.read(CURVES_DIR + look["curve"])) if look["curve"] else None
 
         # BEISPIEL.TXT nennt alle Looks; die Download-ZIP bekommt stattdessen
         # eine FILMS.TXT mit genau den gewaehlten Looks.
         base = [n for n in names if n not in look_owned and n != FILMS_DIR + "BEISPIEL.TXT"]
         copy_entries(fw, base, os.path.join(cam_dir, "base.zip"))
+        base_size = os.path.getsize(os.path.join(cam_dir, "base.zip"))
 
         # Einzeln ladbar, um vorab die Firmware-Version der Kamera zu pruefen
         with open(os.path.join(args.out, "data", "vers.req"), "wb") as f:
@@ -139,7 +161,7 @@ def main():
             shutil.copy(path, samples_out)
             look["samples"].append("data/samples/" + os.path.basename(path))
 
-    site = {"version": version, "cameras": [dict(CAMERA, looks=looks)]}
+    site = {"version": version, "cameras": [dict(CAMERA, base_size=base_size, looks=looks)]}
     with open(os.path.join(args.out, "data", "site.json"), "w", encoding="utf-8") as f:
         json.dump(site, f, indent=1)
 

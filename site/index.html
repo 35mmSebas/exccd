@@ -5,93 +5,201 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EXCCD – film looks for old CCD cameras</title>
 <meta name="description" content="Pick film looks for your Canon IXUS 60 / PowerShot SD600 and get a ready-to-use ZIP for the SD card. Free, pay what you want.">
+<meta name="theme-color" content="#050608">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="app.js"></script>
 </head>
 <body>
 <header class="top">
   <div class="wrap">
-    <div class="brand">EXCCD</div>
-    <div class="ver" id="version"></div>
+    <a class="brand" href="#">EXCCD</a>
+    <nav class="nav">
+      <a href="#looks-step">Looks</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a href="#support">Support</a>
+    </nav>
+    <span class="ver" id="version"></span>
   </div>
 </header>
 
-<main class="wrap">
-  <section class="hero">
-    <h1>Film looks for old CCD cameras.</h1>
-    <p>Pick the looks you want, download one ZIP, unpack it to the SD card. Press <b>Print</b> on the
-      camera, choose a film, shoot. The pictures come out of the camera finished.</p>
-    <p class="muted">Runs from the SD card only, nothing is written to the camera. Free – pay what you want.</p>
-  </section>
-
-  <section class="step" id="step-camera">
-    <h2><span class="num">1</span>Camera</h2>
-    <div class="camera">
-      <div class="camera-name" id="camera-name"></div>
-      <fieldset class="fw" id="fw">
-        <legend>Firmware version</legend>
-      </fieldset>
-      <p class="fw-note" id="fw-note" role="status"></p>
-      <details class="help">
-        <summary>How do I find my firmware version?</summary>
-        <ol>
-          <li>Download <a href="data/vers.req" download>vers.req</a> and copy it to the root of the SD card.</li>
-          <li>Put the card in the camera and switch it on in <b>playback</b> mode.</li>
-          <li>Hold <b>FUNC/SET</b> and press <b>DISP</b>. The camera shows a line like
-            <code>Firmware Ver GM1.00D</code> – the letter at the end is the one that counts.</li>
-          <li>Delete <code>vers.req</code> from the card again if you like.</li>
-        </ol>
-      </details>
+<main>
+  <section class="hero wrap">
+    <div class="hero-text">
+      <p class="eyebrow">Firmware add-on · Canon IXUS 60 / PowerShot SD600</p>
+      <h1>Film looks for old&nbsp;CCD&nbsp;cameras.</h1>
+      <p class="lead">Press <b>Print</b>, flip through the film labels, pick a look, shoot.
+        Every photo comes out of the camera finished – no editing, no app.</p>
+      <div class="cta">
+        <a class="button primary" href="#looks-step">Choose your looks</a>
+        <a class="button ghost" href="#how">How it works</a>
+      </div>
+      <ul class="facts" id="facts"></ul>
     </div>
+
+    <figure class="cam" aria-label="Film selection on the camera display">
+      <div class="cam-body">
+        <div class="cam-screen" id="cam-screen">
+          <div class="cam-osd"><span id="cam-count"></span><span class="cam-batt" aria-hidden="true"></span></div>
+          <div class="cam-labels" id="cam-labels"></div>
+          <div class="cam-name" id="cam-name"></div>
+        </div>
+        <div class="cam-controls">
+          <button type="button" class="cam-print" id="cam-print" aria-label="Next look">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>
+          </button>
+          <div class="cam-dial" aria-hidden="true"><span></span></div>
+        </div>
+      </div>
+      <figcaption>The film selection, as it looks on the camera. Tap <b>Print</b> to flip.</figcaption>
+    </figure>
   </section>
 
-  <section class="step" id="step-looks">
-    <h2><span class="num">2</span>Looks</h2>
-    <div class="looks-bar">
-      <span id="look-count"></span>
-      <button type="button" class="link" id="all">Select all</button>
-      <button type="button" class="link" id="none">Clear</button>
-    </div>
-    <div class="looks" id="looks"></div>
-    <p class="muted small">Every look also has two Dynamic+ variants (DR+1, DR+2) that expose shorter to protect
-      highlights and lift the shadows with the curve. They are always included.</p>
-  </section>
-
-  <section class="step" id="step-download">
-    <h2><span class="num">3</span>Download</h2>
-    <div class="pwyw" id="pwyw"></div>
-    <div class="dl-row">
-      <button type="button" class="primary" id="download">Download ZIP</button>
-      <span class="dl-status" id="dl-status" role="status"></span>
-    </div>
-  </section>
-
-  <section class="step" id="install">
-    <h2><span class="num">4</span>Install</h2>
-    <ol class="install">
-      <li><b>Delete an old <code>CHDK</code> folder</b> from the SD card, if there is one. An old
-        <code>FILMS.TXT</code> can point to labels or curves that no longer exist.</li>
-      <li><b>Unpack the ZIP</b> to the root of the SD card, so that <code>DISKBOOT.BIN</code> and the
-        <code>CHDK</code> folder sit at the top level.</li>
-      <li><b>Start EXCCD</b>, either
-        <ul>
-          <li><b>once per power-on:</b> switch on in playback mode, open <i>MENU → Firm Update</i> and confirm, or</li>
-          <li><b>automatically:</b> make the card bootable (for example with
-            <a href="https://chdk.fandom.com/wiki/STICK">STICK</a> or CHDK's <i>Make Card Bootable</i>) and lock
-            the card's write-protect switch. The camera still saves photos.</li>
-        </ul>
+  <section class="how wrap" id="how">
+    <ol class="how-steps">
+      <li>
+        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="12" width="32" height="24" rx="2"/><path d="M14 30l7-8 5 6 4-4 6 6"/><circle cx="31" cy="19" r="2.5"/></svg>
+        <h3>Pick looks</h3>
+        <p>Choose the films you want on the card. The page builds one ZIP for you – right here in the browser.</p>
       </li>
-      <li><b>Pick a look:</b> in shooting mode press <b>Print</b>, flip through the labels, press
-        <b>FUNC/SET</b>. The active look is shown at the bottom of the screen.</li>
+      <li>
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 6h16l8 8v28H14z"/><path d="M20 6v7M25 6v7M30 6v7"/><path d="M21 30h10"/></svg>
+        <h3>Unpack to the SD card</h3>
+        <p>EXCCD runs from the card. Nothing is written to the camera – take the card out and it is stock again.</p>
+      </li>
+      <li>
+        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="36" height="24" rx="3"/><circle cx="24" cy="26" r="7"/><path d="M16 14l3-5h10l3 5"/></svg>
+        <h3>Press Print, shoot</h3>
+        <p>Each look sets Canon's colour engine and a tone curve on the raw data, so the JPEG is the finished picture.</p>
+      </li>
     </ol>
-    <p class="muted small">Updating later works the same way: delete the <code>CHDK</code> folder, unpack the new ZIP.
-      The camera menus are currently in German.</p>
   </section>
+
+  <div class="wrap">
+    <section class="step" id="camera-step">
+      <header class="step-head"><span class="num">01</span><h2>Camera</h2></header>
+      <div class="camera">
+        <div class="camera-name" id="camera-name"></div>
+        <fieldset class="seg" id="fw">
+          <legend>Firmware version</legend>
+        </fieldset>
+        <p class="fw-note" id="fw-note" role="status"></p>
+        <details class="help">
+          <summary>How do I find my firmware version?</summary>
+          <ol>
+            <li>Download <a href="data/vers.req" download>vers.req</a> and copy it to the root of the SD card.</li>
+            <li>Put the card in the camera and switch it on in <b>playback</b> mode.</li>
+            <li>Hold <b>FUNC/SET</b> and press <b>DISP</b>. The camera shows a line like
+              <code>Firmware Ver GM1.00D</code> – the letter at the end is the one that counts.</li>
+            <li>Delete <code>vers.req</code> from the card again if you like.</li>
+          </ol>
+        </details>
+      </div>
+    </section>
+
+    <section class="step" id="looks-step">
+      <header class="step-head"><span class="num">02</span><h2>Looks</h2></header>
+      <div class="looks-bar">
+        <div class="filters" id="filters" role="group" aria-label="Filter looks"></div>
+        <span class="looks-tools">
+          <button type="button" class="link" id="all">Select all</button>
+          <button type="button" class="link" id="none">Clear</button>
+        </span>
+      </div>
+      <div class="looks" id="looks"></div>
+      <p class="muted small">Every look comes with two <b>Dynamic+</b> variants (DR+1, DR+2): the camera exposes shorter
+        to protect the highlights and the curve lifts the shadows. They are always included.
+        The curve shows how each look maps tones; the line in the middle is neutral.</p>
+    </section>
+
+    <section class="step" id="download-step">
+      <header class="step-head"><span class="num">03</span><h2>Download</h2></header>
+      <div class="download">
+        <div class="summary" id="summary"></div>
+        <div class="pwyw" id="pwyw"></div>
+        <div class="dl-row">
+          <button type="button" class="button primary big" id="download">Download ZIP</button>
+          <span class="dl-status" id="dl-status" role="status"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="install">
+      <header class="step-head"><span class="num">04</span><h2>Install</h2></header>
+      <ol class="install">
+        <li><h3>Remove the old version</h3>
+          <p>Delete an old <code>CHDK</code> folder from the SD card, if there is one. An old
+            <code>FILMS.TXT</code> can point to labels or curves that no longer exist.</p></li>
+        <li><h3>Unpack</h3>
+          <p>Unpack the ZIP to the root of the SD card, so that <code>DISKBOOT.BIN</code> and the
+            <code>CHDK</code> folder sit at the top level.</p></li>
+        <li><h3>Start EXCCD</h3>
+          <p><b>Once per power-on:</b> switch on in playback mode, open <i>MENU → Firm Update</i> and confirm.</p>
+          <p><b>Automatically:</b> make the card bootable (for example with
+            <a href="https://chdk.fandom.com/wiki/STICK">STICK</a> or CHDK's <i>Make Card Bootable</i>) and lock
+            the card's write-protect switch. The camera still saves photos.</p></li>
+        <li><h3>Pick a look</h3>
+          <p>In shooting mode press <b>Print</b>, flip with the arrow keys, confirm with <b>FUNC/SET</b>.
+            The active look is shown at the bottom of the screen.</p></li>
+      </ol>
+    </section>
+
+    <section class="step" id="faq">
+      <header class="step-head"><span class="num">05</span><h2>Questions</h2></header>
+      <div class="faq">
+        <details><summary>Can this damage my camera?</summary>
+          <p>EXCCD is based on CHDK, which has been used on Canon compacts since 2007. It runs from the SD card
+            and does not change the camera's firmware. Without the card, the camera behaves exactly as before.
+            As with any third-party software: use at your own risk.</p></details>
+        <details><summary>Do I lose anything compared to the normal camera?</summary>
+          <p>No. Choose <b>Off</b> in the film selection and the camera takes pictures with Canon's own colours.
+            Canon's menus and modes stay as they are.</p></details>
+        <details><summary>How is this different from a filter app?</summary>
+          <p>The tone curve works on the sensor's raw data before the camera makes the JPEG, together with Canon's
+            own colour settings. The look is part of the picture the camera saves – there is nothing to apply
+            afterwards.</p></details>
+        <details><summary>Can I keep a raw file?</summary>
+          <p>Yes. CHDK can save a raw file (DNG) next to each JPEG. Turn it on in the options
+            (<b>MENU</b>).</p></details>
+        <details><summary>Which look did I use for a photo?</summary>
+          <p>EXCCD writes every shot with its look to <code>A/CHDK/FILMLOG.CSV</code> on the card.</p></details>
+        <details><summary>Can I add looks later?</summary>
+          <p>Come back, pick a new set and replace the <code>CHDK</code> folder on the card with the new download.</p></details>
+        <details><summary>Why are the menus in German?</summary>
+          <p>EXCCD started as a personal project in Germany. The film labels are in English; only the option
+            menus are German for now.</p></details>
+        <details><summary>What about other cameras?</summary>
+          <p>More CCD compacts are planned. Every new camera has to be bought, ported and tested – that is what
+            your support pays for.</p></details>
+      </div>
+    </section>
+
+    <section class="support" id="support">
+      <div>
+        <p class="eyebrow">Pay what you want</p>
+        <h2>Free for everyone. Funded by the people who like it.</h2>
+      </div>
+      <div>
+        <p>EXCCD is free to download. If it brought an old camera back into your pocket, consider
+          paying what it is worth to you. The money goes into the next cameras: buying them second-hand,
+          porting EXCCD and building looks for their sensors.</p>
+        <p class="muted">The download never waits for a payment.</p>
+      </div>
+    </section>
+  </div>
 </main>
+
+<div class="dock" id="dock" hidden>
+  <div class="wrap dock-in">
+    <span id="dock-text"></span>
+    <a class="button primary" href="#download-step">Continue</a>
+  </div>
+</div>
 
 <footer class="foot">
   <div class="wrap">
-    <p><a id="repo-link" href="https://github.com/35mmSebas/exccd">Source code</a> ·
+    <div class="brand">EXCCD</div>
+    <p><a id="repo-link" href="https://github.com/35mmSebas/exccd">Source code on GitHub</a> ·
       Code: GPL v2, built on <a href="https://chdk.fandom.com/">CHDK</a> ·
       Looks: CC BY-SA 4.0</p>
     <p>EXCCD is an independent project, not affiliated with, endorsed by or sponsored by Canon Inc.
