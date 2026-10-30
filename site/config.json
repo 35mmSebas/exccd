@@ -1,0 +1,9 @@
+{
+ "repo": "https://github.com/35mmSebas/exccd",
+ "support": {
+  "url": "",
+  "suggested": 5,
+  "amounts": [0, 3, 5, 10],
+  "currency": "€"
+ }
+}

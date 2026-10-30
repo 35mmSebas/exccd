@@ -1,0 +1,86 @@
+/* EXCCD – Swiss-Design wie die Laschen: Obsidian, Weiss, Schiefer-Linien, eine Akzentfarbe je Look */
+:root {
+  color-scheme: dark;
+  --bg: #050608;
+  --panel: #0d1016;
+  --line: #2b3954;
+  --text: #f4f5f7;
+  --muted: #8f9bb0;
+  --accent: #00cff3;
+  --ok: #8fd1ff;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+a { color: var(--ok); }
+code { font-family: ui-monospace, Consolas, monospace; font-size: .9em; color: var(--ok); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+
+.top { border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; justify-content: space-between; align-items: baseline; padding-top: 18px; padding-bottom: 14px; }
+.brand { font-weight: 700; letter-spacing: .45em; font-size: 1.05rem; }
+.ver { color: var(--muted); letter-spacing: .15em; font-size: .85rem; }
+
+.hero { padding: 56px 0 24px; max-width: 720px; }
+.hero h1 { font-size: clamp(2rem, 6vw, 3.4rem); line-height: 1.05; margin: 0 0 20px; letter-spacing: -.01em; }
+.hero p { margin: 0 0 10px; }
+
+.step { border-top: 1px solid var(--line); padding: 28px 0 36px; }
+.step h2 { font-size: .85rem; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); margin: 0 0 20px; font-weight: 600; }
+.num { display: inline-block; width: 1.9em; color: var(--accent); }
+
+.camera-name { font-size: 1.35rem; font-weight: 700; margin-bottom: 14px; }
+.fw { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.fw legend { color: var(--muted); font-size: .85rem; margin-bottom: 8px; padding: 0; }
+.fw-opt, .amount { position: relative; cursor: pointer; }
+.fw-opt input, .amount input { position: absolute; opacity: 0; }
+.fw-opt span, .amount span { display: inline-block; border: 1px solid var(--line); padding: 6px 14px; border-radius: 4px; }
+.fw-opt input:checked + span, .amount input:checked + span { border-color: var(--text); background: var(--text); color: var(--bg); }
+.fw-opt input:focus-visible + span, .amount input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fw-note { color: #ffb36b; min-height: 1.5em; margin: 10px 0 4px; }
+.help summary { cursor: pointer; color: var(--ok); }
+.help ol { color: var(--muted); padding-left: 1.3em; }
+.help b { color: var(--text); }
+
+.looks-bar { display: flex; gap: 18px; align-items: baseline; margin-bottom: 14px; color: var(--muted); }
+.looks-bar span { margin-right: auto; }
+button.link { background: none; border: 0; color: var(--ok); font: inherit; cursor: pointer; padding: 0; }
+
+.looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.look { position: relative; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+        overflow: hidden; cursor: pointer; transition: border-color .15s, opacity .15s; opacity: .45; }
+.look:has(input:checked) { opacity: 1; border-color: var(--accent); }
+.look:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.look input { position: absolute; top: 0; left: 0; margin: 0; opacity: 0; }
+.look-media { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; }
+.look-media img { width: 100%; flex: 0 0 100%; height: auto; aspect-ratio: 600 / 440; object-fit: cover; display: block; scroll-snap-align: start; }
+.look-text { padding: 10px 46px 12px 12px; display: flex; flex-direction: column; }
+.look-name { font-weight: 700; }
+.look-kind { color: var(--muted); font-size: .85rem; }
+.look .tick { position: absolute; bottom: 14px; right: 12px; width: 24px; height: 24px; border-radius: 50%;
+              border: 2px solid var(--text); background: var(--bg); }
+.look:has(input:checked) .tick { background: var(--accent); border-color: var(--accent); }
+.look:has(input:checked) .tick::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px;
+              border: solid var(--bg); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+.pwyw { max-width: 640px; }
+.pwyw p { margin: 0 0 12px; }
+.amounts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.dl-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+button.primary { background: var(--text); color: var(--bg); border: 0; border-radius: 4px; padding: 12px 26px;
+                 font: inherit; font-weight: 700; letter-spacing: .05em; cursor: pointer; }
+button.primary:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+button.primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dl-status { color: var(--muted); }
+
+.install { padding-left: 1.3em; max-width: 760px; }
+.install li { margin-bottom: 12px; }
+.install ul { padding-left: 1.2em; margin: 6px 0 0; }
+
+.foot { border-top: 1px solid var(--line); margin-top: 24px; color: var(--muted); font-size: .8rem; }
+.foot .wrap { padding-top: 20px; padding-bottom: 32px; }

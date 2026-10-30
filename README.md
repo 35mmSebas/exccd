@@ -85,7 +85,16 @@ gcc -Wall -Wextra -I core -o test_films_txt tools/filmsim/test_films_txt.c core/
 ```
 
 GitHub Actions builds every push. A tag `vX.Y.Z` that matches `FILMSIM_VERSION` in
-`core/filmsim.h` creates a release with the ZIP.
+`core/filmsim.h` creates a release with the ZIP and publishes the download page on GitHub Pages.
+
+The download page is static. `tools/site/build_site.py` splits the firmware ZIP into a base
+ZIP and one small ZIP per look; the browser copies the chosen entries into a new ZIP and adds
+a matching `FILMS.TXT`, without a build per download. To try it locally:
+
+```sh
+python tools/site/build_site.py bin/ixus60_sd600-100d-1.6.1-0-full.zip _site
+python -m http.server -d _site
+```
 
 ### Where things are
 
@@ -95,6 +104,7 @@ GitHub Actions builds every push. A tag `vX.Y.Z` that matches `FILMSIM_VERSION` 
 | `core/filmsim_txt.c` | Parser for `A/CHDK/FILMS/FILMS.TXT` |
 | `CHDK/CURVES/`, `CHDK/FILMS/` | Curves, labels and film table of the looks |
 | `tools/filmsim/` | Generators for curves (`make_curves.py`) and labels (`make_label_art.py`, `make_labels.py`) |
+| `site/`, `tools/site/` | Download page: pick looks, the browser assembles the ZIP for the SD card |
 
 The first commit of this repository is unchanged CHDK 1.6.1 (GitHub mirror
 [petabyt/chdk](https://github.com/petabyt/chdk), commit `ad402e1`, path

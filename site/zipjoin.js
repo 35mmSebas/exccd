@@ -1,0 +1,155 @@
+// Setzt die SD-Karten-ZIP im Browser zusammen: Eintraege aus base.zip und den
+// Look-ZIPs werden komprimiert uebernommen (kein Entpacken, keine Bibliothek),
+// FILMS.TXT kommt unkomprimiert dazu. Laeuft auch unter Node (CI-Test).
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+export function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+// Zentralverzeichnis lesen. Kein ZIP64, keine verschluesselten Eintraege.
+export function readZip(buf) {
+  const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 22 - 0xffff); i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("not a ZIP file");
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const entries = [];
+  for (let i = 0; i < count; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("broken ZIP directory");
+    const nlen = dv.getUint16(p + 28, true);
+    const xlen = dv.getUint16(p + 30, true);
+    const clen = dv.getUint16(p + 32, true);
+    const csize = dv.getUint32(p + 20, true);
+    const lho = dv.getUint32(p + 42, true);
+    const data = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+    const nameBytes = u8.subarray(p + 46, p + 46 + nlen);
+    entries.push({
+      name: new TextDecoder().decode(nameBytes),
+      nameBytes,
+      madeBy: dv.getUint16(p + 4, true),
+      method: dv.getUint16(p + 10, true),
+      time: dv.getUint16(p + 12, true),
+      date: dv.getUint16(p + 14, true),
+      crc: dv.getUint32(p + 16, true),
+      csize,
+      usize: dv.getUint32(p + 24, true),
+      extAttr: dv.getUint32(p + 38, true),
+      data: u8.subarray(data, data + csize),
+    });
+    p += 46 + nlen + xlen + clen;
+  }
+  return entries;
+}
+
+// Neuer, unkomprimierter Eintrag (z. B. FILMS.TXT).
+export function fileEntry(name, bytes, when = new Date()) {
+  return {
+    name,
+    nameBytes: new TextEncoder().encode(name),
+    madeBy: 20,
+    method: 0,
+    time: (when.getHours() << 11) | (when.getMinutes() << 5) | (when.getSeconds() >> 1),
+    date: ((when.getFullYear() - 1980) << 9) | ((when.getMonth() + 1) << 5) | when.getDate(),
+    crc: crc32(bytes),
+    csize: bytes.length,
+    usize: bytes.length,
+    extAttr: 0,
+    data: bytes,
+  };
+}
+
+export function writeZip(entries) {
+  let size = 22;
+  for (const e of entries) size += 30 + 46 + 2 * e.nameBytes.length + e.csize;
+  const out = new Uint8Array(size);
+  const dv = new DataView(out.buffer);
+  const offsets = [];
+  let p = 0;
+  for (const e of entries) {
+    offsets.push(p);
+    dv.setUint32(p, 0x04034b50, true);
+    dv.setUint16(p + 4, 20, true);
+    dv.setUint16(p + 6, 0, true);
+    dv.setUint16(p + 8, e.method, true);
+    dv.setUint16(p + 10, e.time, true);
+    dv.setUint16(p + 12, e.date, true);
+    dv.setUint32(p + 14, e.crc, true);
+    dv.setUint32(p + 18, e.csize, true);
+    dv.setUint32(p + 22, e.usize, true);
+    dv.setUint16(p + 26, e.nameBytes.length, true);
+    dv.setUint16(p + 28, 0, true);
+    out.set(e.nameBytes, p + 30);
+    out.set(e.data, p + 30 + e.nameBytes.length);
+    p += 30 + e.nameBytes.length + e.csize;
+  }
+  const cd = p;
+  entries.forEach((e, i) => {
+    dv.setUint32(p, 0x02014b50, true);
+    dv.setUint16(p + 4, e.madeBy, true);
+    dv.setUint16(p + 6, 20, true);
+    dv.setUint16(p + 8, 0, true);
+    dv.setUint16(p + 10, e.method, true);
+    dv.setUint16(p + 12, e.time, true);
+    dv.setUint16(p + 14, e.date, true);
+    dv.setUint32(p + 16, e.crc, true);
+    dv.setUint32(p + 20, e.csize, true);
+    dv.setUint32(p + 24, e.usize, true);
+    dv.setUint16(p + 28, e.nameBytes.length, true);
+    // Extra, Kommentar, Disk, interne Attribute bleiben 0
+    dv.setUint32(p + 38, e.extAttr, true);
+    dv.setUint32(p + 42, offsets[i], true);
+    out.set(e.nameBytes, p + 46);
+    p += 46 + e.nameBytes.length;
+  });
+  dv.setUint32(p, 0x06054b50, true);
+  dv.setUint16(p + 8, entries.length, true);
+  dv.setUint16(p + 10, entries.length, true);
+  dv.setUint32(p + 12, p - cd, true);
+  dv.setUint32(p + 16, cd, true);
+  return out;
+}
+
+// FILMS.TXT im Format von CHDK/FILMS/BEISPIEL.TXT, nur mit den gewaehlten Looks.
+export function filmsTxt(looks, version) {
+  const widths = [18, 5, 3, 3, 3, 2, 2, 2, 4, 11, 8, 3];
+  const row = (cols, w0 = widths[0]) =>
+    cols.map((c, i) => String(c).padEnd(i ? widths[i] : w0)).join(" | ").trimEnd();
+  const lines = [
+    `# EXCCD ${version} - film table`,
+    "# Generated by the EXCCD download page. The camera reads it at power-on.",
+    "# Only these looks are on this card; the curves and labels they need are",
+    "# in A/CHDK/CURVES and A/CHDK/FILMS.",
+    "#",
+    "# " + row(["Name", "Modus", "Kon", "Sch", "Sat", "R", "G", "B", "Haut", "Kurve", "Lasche", "Mix"], widths[0] - 2),
+    ...looks.map((l) => row(l.cols)),
+    "",
+  ];
+  return lines.join("\n");
+}
+
+// Basis + gewaehlte Looks + FILMS.TXT, Eintraege nach Pfad sortiert.
+export function assemble(baseZip, lookZips, looks, version, when = new Date()) {
+  const byName = new Map();
+  for (const e of readZip(baseZip)) byName.set(e.name, e);
+  for (const z of lookZips) for (const e of readZip(z)) byName.set(e.name, e);
+  const txt = new TextEncoder().encode(filmsTxt(looks, version));
+  byName.set("CHDK/FILMS/FILMS.TXT", fileEntry("CHDK/FILMS/FILMS.TXT", txt, when));
+  const entries = [...byName.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  return writeZip(entries);
+}

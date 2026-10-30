@@ -136,3 +136,6 @@ tools/sig_ref_vxworks_1.bin
 tools/sig_ref_vxworks_2.bin
 tools/sig_ref_vxworks_3.bin
 tools/stubs_load.o
+
+# EXCCD-Webseite, gebaut mit tools/site/build_site.py
+/_site/
