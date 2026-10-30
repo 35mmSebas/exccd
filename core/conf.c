@@ -142,6 +142,9 @@ void clear_values()
 }
 
 //-------------------------------------------------------------------
+// Menueschrift im Stil der Laschen (liegt in der CHDK-ZIP)
+#define EXCCD_MENU_FONT "A/CHDK/FONTS/Menu-A16b.rbf"
+
 static ConfInfo user_menu_conf_info[] = {
     CONF_INFO(  1, conf.user_menu_vars,         CONF_STRUCT_PTR,i:0),
     CONF_INFO(  2, conf.user_menu_as_root,      CONF_DEF_VALUE, i:0),
@@ -202,10 +205,10 @@ static ConfInfo osd_conf_info[] = {
     CONF_INFOC( 52, conf.osd_color,                             CONF_DEF_VALUE, IDX_COLOR_GREY_DK_TRANS,IDX_COLOR_WHITE,1,1),
     CONF_INFOC( 53, conf.osd_color_warn,                        CONF_DEF_VALUE, IDX_COLOR_GREY_DK_TRANS,IDX_COLOR_RED,1,1),
     CONF_INFOC( 54, conf.osd_color_override,                    CONF_DEF_VALUE, IDX_COLOR_GREY_DK_TRANS,IDX_COLOR_RED,1,1),
-    CONF_INFOC( 55, conf.menu_color,                            CONF_DEF_VALUE, IDX_COLOR_GREY_DK,IDX_COLOR_WHITE,1,1),
-    CONF_INFOC( 56, conf.menu_title_color,                      CONF_DEF_VALUE, IDX_COLOR_WHITE,IDX_COLOR_BLACK,1,1),
+    CONF_INFOC( 55, conf.menu_color,                            CONF_DEF_VALUE, IDX_COLOR_BLACK,IDX_COLOR_WHITE,1,1),     // EXCCD: Schwarz wie die Laschen
+    CONF_INFOC( 56, conf.menu_title_color,                      CONF_DEF_VALUE, IDX_COLOR_GREY_DK,IDX_COLOR_WHITE,1,1),   // EXCCD: Titel in Schiefer
     CONF_INFOC( 57, conf.menu_cursor_color,                     CONF_DEF_VALUE, CAM_DEFAULT_MENU_CURSOR_BG,CAM_DEFAULT_MENU_CURSOR_FG,1,1),
-    CONF_INFOC( 58, conf.menu_symbol_color,                     CONF_DEF_VALUE, IDX_COLOR_GREY_DK,IDX_COLOR_WHITE,1,1),
+    CONF_INFOC( 58, conf.menu_symbol_color,                     CONF_DEF_VALUE, IDX_COLOR_BLACK,IDX_COLOR_WHITE,1,1),
     CONF_INFOC( 59, conf.reader_color,                          CONF_DEF_VALUE, IDX_COLOR_GREY,IDX_COLOR_WHITE,1,1),
     CONF_INFOC( 60, conf.grid_color,                            CONF_DEF_VALUE, IDX_COLOR_GREY_DK,IDX_COLOR_WHITE,1,1),
     CONF_INFOC( 61, conf.space_color,                           CONF_DEF_VALUE, IDX_COLOR_GREY_DK_TRANS,IDX_COLOR_WHITE,1,1),
@@ -237,7 +240,7 @@ static ConfInfo osd_conf_info[] = {
    	CONF_INFO(121, conf.start_sound,                            CONF_DEF_VALUE, i:0),
 
     CONF_INFO(130, conf.menu_symbol_enable,                     CONF_DEF_VALUE, i:1),
-    CONF_INFO(131, conf.menu_rbf_file,                          CONF_CHAR_PTR,  ptr:""),
+    CONF_INFO(131, conf.menu_rbf_file,                          CONF_CHAR_PTR,  ptr:EXCCD_MENU_FONT),
     CONF_INFO(132, conf.menu_symbol_rbf_file,                   CONF_CHAR_PTR,  ptr:DEFAULT_SYMBOL_FILE),
     CONF_INFO(133, conf.menu_select_first_entry,                CONF_DEF_VALUE, i:1),
     CONF_INFO(134, conf.menu_center,                            CONF_DEF_VALUE, i:1),
@@ -310,9 +313,9 @@ static ConfInfo osd_conf_info[] = {
 
     CONF_INFO(250, conf.usb_info_enable,                        CONF_DEF_VALUE, i:0),
 
-    CONF_INFO(260, conf.show_alt_helper,                        CONF_DEF_VALUE, i:1),
+    CONF_INFO(260, conf.show_alt_helper,                        CONF_DEF_VALUE, i:0),
     CONF_INFO(261, conf.show_alt_helper_delay,                  CONF_DEF_VALUE, i:3),
-    CONF_INFO(262, conf.enable_shortcuts,                       CONF_DEF_VALUE, i:1),
+    CONF_INFO(262, conf.enable_shortcuts,                       CONF_DEF_VALUE, i:0),
     CONF_INFO(263, conf.extra_button,                           CONF_DEF_VALUE, i:0),
 
     // Console settings
@@ -534,6 +537,20 @@ static ConfInfo conf_info[] = {
     CONF_INFO(251, conf.save_raw_in_canon_raw,                  CONF_DEF_VALUE, i:1),
 
     CONF_INFO(252, conf.check_firmware_crc,                     CONF_DEF_VALUE, i:1),
+
+    CONF_INFO(253, conf.film_sim,                               CONF_DEF_VALUE, i:0),
+    CONF_INFO(254, conf.film_grain,                             CONF_DEF_VALUE, i:0),
+    CONF_INFO(255, conf.film_iso_prev,                          CONF_DEF_VALUE, i:-1),
+    CONF_INFO(256, conf.film_double,                            CONF_DEF_VALUE, i:0),
+    CONF_INFO(257, conf.film_bwfilter,                          CONF_DEF_VALUE, i:0),
+    CONF_INFO(258, conf.film_mist,                              CONF_DEF_VALUE, i:0),
+    CONF_INFO(259, conf.film_halation,                          CONF_DEF_VALUE, i:0),
+    CONF_INFO(260, conf.film_vignette,                          CONF_DEF_VALUE, i:0),
+    CONF_INFO(261, conf.film_leak,                              CONF_DEF_VALUE, i:0),
+    CONF_INFO(262, conf.film_datestamp,                         CONF_DEF_VALUE, i:0),
+    CONF_INFO(263, conf.film_dr,                                CONF_DEF_VALUE, i:0),
+    CONF_INFO(264, conf.film_cnr,                               CONF_DEF_VALUE, i:0),
+    CONF_INFO(265, conf.exccd_ui,                               CONF_DEF_VALUE, i:0),
 
     CONF_INFO(999, conf.script_allow_lua_native_calls,          CONF_DEF_VALUE, i:0),
 
@@ -930,6 +947,15 @@ void config_restore(ConfInfo *ci, const char *filename, void (*info_func)(unsign
     }
 }
 
+// Farbe nur ersetzen, wenn sie noch dem alten Standard (CHDK-Indizes) entspricht
+static void conf_color_migrate(confColor *c, int old_bg, int old_fg, int new_bg, int new_fg)
+{
+    if (c->bg.type && c->fg.type && c->bg.col == old_bg && c->fg.col == old_fg) {
+        c->bg.col = new_bg;
+        c->fg.col = new_fg;
+    }
+}
+
 void conf_restore()
 {
     int i;
@@ -955,6 +981,21 @@ void conf_restore()
 
     // clear any "clear on restart" values
     clear_values();
+
+    // EXCCD-Optik einmalig uebernehmen: alte Standardfarben und die
+    // eingebaute Schrift ersetzen, eigene Einstellungen bleiben
+    if (conf.exccd_ui < 2) {
+        conf_color_migrate(&conf.menu_color, IDX_COLOR_GREY_DK, IDX_COLOR_WHITE, IDX_COLOR_BLACK, IDX_COLOR_WHITE);
+        conf_color_migrate(&conf.menu_symbol_color, IDX_COLOR_GREY_DK, IDX_COLOR_WHITE, IDX_COLOR_BLACK, IDX_COLOR_WHITE);
+        conf_color_migrate(&conf.menu_title_color, IDX_COLOR_WHITE, IDX_COLOR_BLACK, IDX_COLOR_GREY_DK, IDX_COLOR_WHITE);
+        conf_color_migrate(&conf.menu_title_color, IDX_COLOR_BLACK, IDX_COLOR_WHITE, IDX_COLOR_GREY_DK, IDX_COLOR_WHITE);  // v1.9.18/19
+        conf_color_migrate(&conf.menu_cursor_color, IDX_COLOR_RED, IDX_COLOR_WHITE, CAM_DEFAULT_MENU_CURSOR_BG, CAM_DEFAULT_MENU_CURSOR_FG);
+        if (conf.exccd_ui < 1 && conf.menu_rbf_file[0] == 0) {
+            strcpy(conf.menu_rbf_file, EXCCD_MENU_FONT);
+            rbf_load_from_file(conf.menu_rbf_file, FONT_CP_WIN);
+        }
+        conf.exccd_ui = 2;
+    }
 
 // Enable Lua native calls if builder wants them forced on
 #if defined(OPT_FORCE_LUA_CALL_NATIVE)

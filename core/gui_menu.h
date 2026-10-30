@@ -74,6 +74,7 @@ typedef struct {
 
 //-------------------------------------------------------------------
 extern void gui_menu_init(CMenu *menu_ptr);
+extern void gui_menu_init_at(CMenu *menu_ptr, int curr_item);
 extern void gui_menu_erase_and_redraw();
 extern void gui_menu_cancel_redraw();
 extern int gui_menu_kbd_process();

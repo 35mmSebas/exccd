@@ -1,0 +1,3 @@
+# Test 5: keine gueltige Zeile -> eingebaute Tabelle
+Nur Text ohne Spalten
+Modus kaputt | 99 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | - | - | 0

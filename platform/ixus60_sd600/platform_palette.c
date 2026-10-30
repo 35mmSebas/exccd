@@ -45,12 +45,12 @@ unsigned char rec_colors[] =
         0xDF,                       // Dark Blue
         0xDD,                       // Light Blue / Cyan
         0x3F,                       // Grey
-        0x44,                       // Dark Grey
+        0xFA,                       // Dark Grey -> EXCCD Schiefer (deckend; 0x44/0xF4 sind halbtransparent)
         0x1F,                       // Light Grey
-        0xEE,                       // Yellow
+        0x66,                       // Yellow (0xEE erscheint pink-rot)
         0x6F,                       // Dark Yellow
         0x66,                       // Light Yellow
-        0x44,                       // Transparent Dark Grey
+        0xF4,                       // Transparent Dark Grey -> EXCCD, bewusst halbtransparent (Sucher-Anzeigen)
         0x66,                       // Magenta
 };
 

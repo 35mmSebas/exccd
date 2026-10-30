@@ -1,0 +1,80 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  XPACK_VERSION: 10.3.1-2.3
+  PLATFORM: ixus60_sd600
+  PLATFORMSUB: 100d
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain aus dem Cache
+        id: toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/xpack-arm-none-eabi-gcc
+          key: xpack-arm-none-eabi-gcc-${{ env.XPACK_VERSION }}-linux-x64
+
+      - name: Toolchain laden (xPack GCC)
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        run: |
+          base=https://github.com/xpack-dev-tools/arm-none-eabi-gcc-xpack/releases/download/v$XPACK_VERSION
+          file=xpack-arm-none-eabi-gcc-$XPACK_VERSION-linux-x64.tar.gz
+          cd "$RUNNER_TEMP"
+          curl -fsSLO "$base/$file"
+          curl -fsSLO "$base/$file.sha"
+          sha256sum -c "$file.sha"
+          mkdir -p ~/xpack-arm-none-eabi-gcc
+          tar -xzf "$file" -C ~/xpack-arm-none-eabi-gcc --strip-components=1
+
+      - name: Toolchain in PATH
+        run: |
+          echo "$HOME/xpack-arm-none-eabi-gcc/bin" >> "$GITHUB_PATH"
+          command -v zip >/dev/null || sudo apt-get install -y zip
+
+      - name: Version pruefen
+        run: |
+          version=$(sed -n 's/^#define FILMSIM_VERSION "\(.*\)"/\1/p' core/filmsim.h)
+          test -n "$version"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zu FILMSIM_VERSION $version in core/filmsim.h"
+            exit 1
+          fi
+
+      - name: PC-Test FILMS.TXT-Parser
+        run: |
+          gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
+          "$RUNNER_TEMP/test_films_txt" CHDK/FILMS/BEISPIEL.TXT
+
+      - name: Firmware bauen
+        run: |
+          arm-none-eabi-gcc --version | head -1
+          mkdir -p bin dist
+          make PLATFORM=$PLATFORM PLATFORMSUB=$PLATFORMSUB firzipsubcomplete
+          cp bin/$PLATFORM-$PLATFORMSUB-*-full.zip dist/exccd-$VERSION-$PLATFORM-$PLATFORMSUB-full.zip
+          unzip -l dist/*.zip | grep -E 'DISKBOOT.BIN|PS.FIR'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exccd-${{ env.VERSION }}-${{ env.PLATFORM }}-${{ env.PLATFORMSUB }}
+          path: dist/*.zip
+
+      - name: Release anlegen
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "EXCCD $GITHUB_REF_NAME" --generate-notes

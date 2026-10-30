@@ -24,13 +24,14 @@
 #include "module_load.h"
 #include "clock.h"
 #include "dirent.h"
+#include "filmsim.h"
 
 // splash screen time
 #if defined(OPT_EXPIRE_TEST)
 #warning OPT_EXPIRE_TEST enabled
 #define SPLASH_TIME 40  // Displays for 3.2 seconds
 #else
-#define SPLASH_TIME 20  // Displays for 1.6 seconds
+#define SPLASH_TIME 30  // Displays for 2.4 seconds
                         // gui_redraw called every 4th loop of core_spytask which has 20ms delay per loop = (4*20) * 20 = 1600ms
 #endif
 
@@ -928,6 +929,7 @@ static void gui_show_build_info(__attribute__ ((unused))int arg)
     int comp_text_index = TEXT_COUNT - 1;
     const char *comp = text[comp_text_index];
     sprintf(buf, lang_str(LANG_MSG_BUILD_INFO_TEXT), camera_info.chdk_ver, camera_info.build_number, camera_info.build_svnrev, camera_info.build_date, camera_info.build_time, camera_info.platform, camera_info.platformsub, comp);
+    strcat(buf, "\nFilmsim: " FILMSIM_VERSION);
     gui_mbox_init(LANG_MSG_BUILD_INFO_TITLE, (int)buf, MBOX_FUNC_RESTORE|MBOX_TEXT_LEFT, NULL);
 }
 
@@ -2216,21 +2218,200 @@ CMenu chdk_settings_menu = {0x20,LANG_MENU_CHDK_SETTINGS, chdk_settings_menu_ite
 
 extern CMenu script_submenu;
 
+//-------------------------------------------------------------------
+// Schlankes Filmsimulations-Menue
+//-------------------------------------------------------------------
+#include "filmsim.h"
+
+// RAW zusaetzlich als DNG speichern (ein Schalter statt RAW-Untermenue)
+static const char* gui_filmsim_raw_enum(int change, __attribute__ ((unused))int arg)
+{
+    static const char* modes[] = { "Aus", "DNG" };
+    if (change) {
+        conf.save_raw = !conf.save_raw;
+        if (conf.save_raw) {
+            conf.dng_raw = 1;       // DNG statt Canon-CRW-Rohformat
+            conf.raw_dng_ext = 1;   // Dateiendung .DNG
+        }
+        cb_change_dng();
+    }
+    return modes[conf.save_raw ? 1 : 0];
+}
+
+// Canon-Bildschirmpalette auf die Karte schreiben (fuer die Laschen-Farben)
+static void gui_filmsim_dump_palette(__attribute__ ((unused))int arg)
+{
+    char *pal = (char*)vid_get_bitmap_active_palette();
+    int sz = vid_get_palette_size();
+    int fd = open(camera_info.state.mode_rec ? "A/CHDK/PALREC.BIN" : "A/CHDK/PALPLAY.BIN", O_WRONLY|O_CREAT|O_TRUNC, 0777);
+    if (fd >= 0 && pal && sz > 0) {
+        write(fd, pal, sz);
+        close(fd);
+        gui_mbox_init((int)"Palette", (int)"Gespeichert", MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
+    } else {
+        if (fd >= 0) close(fd);
+        gui_mbox_init((int)"Palette", (int)"Fehler beim Speichern", MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
+    }
+}
+
+// Feste Belichtungszeit (nutzt den CHDK-Tv-Override)
+static const char* filmsim_tv_names[] = {
+    "Auto", "16\"", "8\"", "4\"", "2\"", "1\"", "1/2", "1/4", "1/8", "1/15",
+    "1/30", "1/60", "1/125", "1/250", "1/500", "1/1000"
+};
+// passende Eintraege in tv_override[] (0 = Auto)
+static const char* filmsim_tv_keys[] = {
+    0, "16", "8", "4", "2", "1", "0.5", "1/4", "1/8", "1/15",
+    "1/30", "1/60", "1/125", "1/250", "1/500", "1/1000"
+};
+#define FILMSIM_TV_N ((int)(sizeof(filmsim_tv_names)/sizeof(filmsim_tv_names[0])))
+
+static int filmsim_tv_current(void)
+{
+    if (!conf.tv_override_enabled || conf.tv_enum_type != TV_OVERRIDE_EV_STEP) return 0;
+    int i;
+    for (i = 1; i < FILMSIM_TV_N; i++)
+        if (strcmp(tv_override[conf.tv_override_value], filmsim_tv_keys[i]) == 0) return i;
+    return 0;
+}
+
+// fuer die Anzeige oben im Bild: 0 = Automatik
+const char* filmsim_tv_str(void)
+{
+    int i = filmsim_tv_current();
+    return i ? filmsim_tv_names[i] : 0;
+}
+
+static const char* gui_filmsim_tv_enum(int change, __attribute__ ((unused))int arg)
+{
+    int i = filmsim_tv_current();
+    if (change) {
+        i += change;
+        if (i < 0) i = FILMSIM_TV_N - 1;
+        if (i >= FILMSIM_TV_N) i = 0;
+        if (i == 0) {
+            conf.tv_override_enabled = 0;
+        } else {
+            int k;
+            for (k = 0; k < (int)(sizeof(tv_override)/sizeof(tv_override[0])); k++)
+                if (strcmp(tv_override[k], filmsim_tv_keys[i]) == 0) break;
+            conf.tv_enum_type = TV_OVERRIDE_EV_STEP;
+            conf.tv_override_value = k;
+            conf.tv_override_enabled = 1;
+            conf.override_disable = 0;
+        }
+    }
+    return filmsim_tv_names[i];
+}
+
+// Zonenfokus: feste Entfernung statt Autofokus
+static const char* filmsim_focus_names[] = { "Auto (AF)", "0,5 m", "1 m", "2 m", "3 m", "5 m", "Unendlich" };
+static const int   filmsim_focus_mm[]    = { 0, 500, 1000, 2000, 3000, 5000, -1 };
+#define FILMSIM_FOCUS_N ((int)(sizeof(filmsim_focus_mm)/sizeof(filmsim_focus_mm[0])))
+
+static int filmsim_focus_current(void)
+{
+    if (!conf.subj_dist_override_koef || !conf.subj_dist_override_value) return 0;
+    if (conf.subj_dist_override_koef == SD_OVERRIDE_INFINITY) return FILMSIM_FOCUS_N - 1;
+    int i;
+    for (i = 1; i < FILMSIM_FOCUS_N - 1; i++)
+        if (conf.subj_dist_override_value == filmsim_focus_mm[i]) return i;
+    return 0;
+}
+
+const char* filmsim_focus_str(void)
+{
+    static const char* osd[] = { 0, "0,5m", "1m", "2m", "3m", "5m", "inf" };
+    return osd[filmsim_focus_current()];
+}
+
+static const char* gui_filmsim_focus_enum(int change, __attribute__ ((unused))int arg)
+{
+    int i = filmsim_focus_current();
+    if (change) {
+        i += change;
+        if (i < 0) i = FILMSIM_FOCUS_N - 1;
+        if (i >= FILMSIM_FOCUS_N) i = 0;
+        if (i == 0) {
+            conf.subj_dist_override_koef = SD_OVERRIDE_OFF;
+        } else if (filmsim_focus_mm[i] < 0) {
+            conf.subj_dist_override_value = 1;
+            conf.subj_dist_override_koef = SD_OVERRIDE_INFINITY;
+        } else {
+            conf.subj_dist_override_value = filmsim_focus_mm[i];
+            conf.subj_dist_override_koef = SD_OVERRIDE_ON;
+        }
+        conf.override_disable = 0;
+    }
+    return filmsim_focus_names[i];
+}
+
+// Graufilter (ND) erzwingen
+static const char* gui_filmsim_nd_enum(int change, __attribute__ ((unused))int arg)
+{
+    static const char* modes[] = { "Auto", "Rein", "Raus" };
+    if (change) {
+        conf.nd_filter_state = (conf.nd_filter_state + change + 3) % 3;
+        conf.override_disable = 0;
+    }
+    return modes[conf.nd_filter_state % 3];
+}
+
+// Blitzstaerke fest
+static const char* gui_filmsim_flash_enum(int change, __attribute__ ((unused))int arg)
+{
+    static const char* modes[] = { "Auto", "Schwach", "Mittel", "Stark" };
+    int i = conf.flash_manual_override ? conf.flash_video_override_power + 1 : 0;
+    if (change) {
+        i = (i + change + 4) % 4;
+        conf.flash_video_override = 0;
+        conf.flash_enable_exp_comp = 0;
+        if (i == 0) conf.flash_manual_override = 0;
+        else { conf.flash_manual_override = 1; conf.flash_video_override_power = i - 1; }
+    }
+    return modes[i];
+}
+
+static CMenuItem effects_submenu_items[] = {
+    MENU_ITEM   (0x5f,(int)"Black Mist",                    MENUITEM_ENUM,      filmsim_mist_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Halation",                      MENUITEM_ENUM,      filmsim_halation_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Vignette",                      MENUITEM_ENUM,      filmsim_vignette_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Light Leak",                    MENUITEM_ENUM,      filmsim_leak_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Datumsstempel",                 MENUITEM_ENUM,      filmsim_datestamp_enum, 0 ),
+    MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
+    {0}
+};
+static CMenu effects_submenu = {0x5f,(int)"Effekte", effects_submenu_items };
+
+static CMenuItem system_submenu_items[] = {
+    MENU_ITEM   (0x65,(int)"Farbpalette anzeigen",          MENUITEM_PROC,      gui_menu_run_palette, 0 ),
+    MENU_ITEM   (0x33,(int)"Farbpalette speichern",         MENUITEM_PROC,      gui_filmsim_dump_palette, 0 ),
+    MENU_ITEM   (0x35,LANG_MENU_VIS_LANG,                   MENUITEM_PROC,      gui_draw_load_lang, 0 ),
+    MENU_ITEM   (0x80,LANG_MENU_MISC_BUILD_INFO,            MENUITEM_PROC,      gui_show_build_info, 0 ),
+    MENU_ITEM   (0x33,LANG_MENU_DEBUG_MAKE_BOOTABLE,        MENUITEM_PROC,      gui_menuproc_mkbootdisk, 0 ),
+    MENU_ITEM   (0x2b,LANG_MENU_MAIN_RESET_OPTIONS,         MENUITEM_PROC,      gui_menuproc_reset, 0 ),
+    MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
+    {0}
+};
+static CMenu system_submenu = {0x29,(int)"System", system_submenu_items };
+
 static CMenuItem root_menu_items[] = {
-    MENU_ITEM   (0x21,LANG_MENU_OPERATION_PARAM,            MENUITEM_SUBMENU,   &operation_submenu, 0 ),
-    MENU_ITEM   (0x23,LANG_MENU_VIDEO_PARAM,                MENUITEM_SUBMENU,   &video_submenu,     0 ),
-    MENU_ITEM   (0x24,LANG_MENU_MAIN_RAW_PARAM,             MENUITEM_SUBMENU,   &raw_submenu,       0 ),
-    MENU_ITEM   (0x7f,LANG_MENU_EDGE_OVERLAY,               MENUITEM_SUBMENU,   &edge_overlay_submenu, 0 ),
-    MENU_ITEM   (0x25,LANG_MENU_MAIN_HISTO_PARAM,           MENUITEM_SUBMENU,   &histo_submenu, 0 ),
-    MENU_ITEM   (0x26,LANG_MENU_MAIN_ZEBRA_PARAM,           MENUITEM_SUBMENU,   &zebra_submenu,     0 ),
-    MENU_ITEM   (0x27,LANG_MENU_MAIN_SCRIPT_PARAM,          MENUITEM_SUBMENU,   &script_submenu,    0 ),
-    MENU_ITEM   (0x22,LANG_MENU_CHDK_SETTINGS,              MENUITEM_SUBMENU,   &chdk_settings_menu, 0 ),
-    MENU_ITEM   (0x29,LANG_MENU_MAIN_MISC,                  MENUITEM_SUBMENU,   &misc_submenu,      0 ),
-    MENU_ITEM   (0x2e,LANG_MENU_USER_MENU,  	    	    MENUITEM_SUBMENU,   &user_submenu, 0 ),
+    MENU_ITEM   (0x61,(int)"Belichtungszeit",               MENUITEM_ENUM,      gui_filmsim_tv_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Dynamik+",                      MENUITEM_ENUM,      filmsim_dr_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Farbrauschen",                  MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Fokus",                         MENUITEM_ENUM,      gui_filmsim_focus_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Graufilter",                    MENUITEM_ENUM,      gui_filmsim_nd_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Blitz",                         MENUITEM_ENUM,      gui_filmsim_flash_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Farbfilter (S/W)",              MENUITEM_ENUM,      filmsim_bwfilter_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Doppelbelichtung",              MENUITEM_ENUM,      filmsim_double_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Effekte",                       MENUITEM_SUBMENU,   &effects_submenu, 0 ),
+    MENU_ITEM   (0x5c,(int)"RAW speichern",                 MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
+    MENU_ITEM   (0x29,(int)"System",                        MENUITEM_SUBMENU,   &system_submenu, 0 ),
+    MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
     {0}
 };
 
-CMenu root_menu = {0x20,LANG_MENU_MAIN_TITLE, root_menu_items };
+CMenu root_menu = {0x20,(int)"Optionen", root_menu_items };
 
 // Set visibility of User Menu in root menu based on user menu state
 // Note this hack requires the User Menu entry to be the last one in the root_menu_items array above. 
@@ -2302,16 +2483,14 @@ static void init_splash()
         while (text_raw[index++]) ;
     }
 
-    gui_splash = (conf.splash_show) ? SPLASH_TIME : 0;
+    gui_splash = 0;     // Filmsim-Firmware: kein Startbild (schnellerer, ruhiger Start)
 
     if (gui_splash)
     {
-#if defined(VER_CHDK)
-        const char *logo_name="A/CHDK/DATA/logo.dat";
-#else   // CHDK-DE
-        const char *logo_name="A/CHDK/DATA/logo_de.dat";
-#endif
-        logo = load_file(logo_name, &logo_size, 0);
+        // Filmsim-Firmware: eigenes Startbild statt CHDK-Logo
+        extern void filmsim_splash_init(void);
+        filmsim_splash_init();
+        logo = NULL;
 
         logo_text_height = TEXT_COUNT - 1;
         logo_text_width = 0;
@@ -2332,6 +2511,10 @@ static void gui_draw_splash()
 {
     coord x, y;
     int i;
+
+    // Filmsim-Firmware: eigener Startbildschirm, falls vorhanden
+    extern int filmsim_draw_splash(void);
+    if (filmsim_draw_splash()) return;
     twoColors cl = MAKE_COLOR(COLOR_RED, COLOR_WHITE);
 
     const color logo_colors[8] =
@@ -2413,6 +2596,8 @@ static void gui_handle_splash(int force_redraw)
             if (logo)
                 free(logo);
             logo = NULL;
+            extern void filmsim_splash_free(void);
+            filmsim_splash_free();
         }
     }
 }
@@ -3021,6 +3206,12 @@ void gui_redraw()
     // Call redraw handler
     if (gui_mode->redraw)
         gui_mode->redraw(flag_gui_enforce_redraw);
+
+    // Filmsim: Statuszeile unten (Film, Zeit, Effekte) - unabhaengig von der
+    // CHDK-OSD-Logik; blendet sich bei Halbdruck, MENU und FUNC.SET selbst aus
+    extern void filmsim_draw_osd(void);
+    if (camera_info.state.gui_mode_none)
+        filmsim_draw_osd();
 }
 
 //-------------------------------------------------------------------
@@ -3085,11 +3276,10 @@ void gui_activate_alt_mode()
         // then enter user menu mode, unless a script was paused by exiting 
         // <ALT> mode when the script was running.
 	    gui_user_menu_flag = 0;
-	    if ((conf.user_menu_enable == 2) && !camera_info.state.state_kbd_script_run) {
-		    gui_menu_init(&user_submenu);
-		    gui_set_mode(&menuGuiHandler);
-		    gui_user_menu_flag = 1;
-	    }
+        // Filmsim-Firmware: Print-Taste oeffnet direkt die Filmliste
+        if ((gui_current_alt_state == ALT_MODE_ENTER) && !camera_info.state.state_kbd_script_run) {
+            filmsim_open_menu();
+        }
         break;
 
     case ALT_MODE_LEAVE:
@@ -3099,6 +3289,11 @@ void gui_activate_alt_mode()
         module_exit_alt();
 
         rbf_set_codepage(FONT_CP_WIN);
+        // Filmsim-Firmware: alles, was CHDK gezeichnet hat (Laschen, Menue),
+        // explizit transparent loeschen - RefreshPhysicalScreen allein raeumt
+        // auf der IXUS 60 nicht zuverlaessig auf
+        draw_rectangle(0, 0, camera_screen.width - 1, camera_screen.height - 1,
+                       MAKE_COLOR(COLOR_TRANSPARENT, COLOR_TRANSPARENT), RECT_BORDER0|DRAW_FILLED);
         vid_turn_on_updates();
         gui_set_mode(&defaultGuiHandler);
 

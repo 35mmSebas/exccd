@@ -1,0 +1,8 @@
+# Test 4: kaputte Zeilen werden uebersprungen
+# Erwartet: Aus, Gut A, Gut B
+#
+Gut A          | 11 |  1 | 1 | 2 | 1 | 1 | 1 | 0 | POSTCRD.CV     | POSTCRD | 0
+Regler kaputt  | 11 |  5 | 0 | 0 | 0 | 0 | 0 | 0 | POSTCRD.CV     | POSTCRD | 0
+Spalten kaputt |  0 |  0 | 0
+Gut B          |  3 |  0 | 0 | 0 | 0 | 0 | 0 | 0 | SILVER.CV      | SILVER | 0
+Kurve kaputt   | 11 |  0 | 0 | 0 | 0 | 0 | 0 | 0 | VIELZULANG.CV  | -      | 0

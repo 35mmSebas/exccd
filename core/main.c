@@ -363,6 +363,9 @@ void core_spytask()
             draw_txt_string(1, i++, osd_buf, user_color(conf.osd_color));
         }
 
+        extern void filmsim_tick(void);
+        filmsim_tick();
+
         // Process async module unload requests
         module_tick_unloader();
 

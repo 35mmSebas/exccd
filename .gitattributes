@@ -1,0 +1,2 @@
+# CHDK baut nur mit LF-Zeilenenden. Nichts umwandeln, auch nicht bei core.autocrlf=true.
+* -text

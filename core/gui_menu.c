@@ -209,6 +209,14 @@ CMenu* get_curr_menu()
 }
 
 //-------------------------------------------------------------------
+void gui_menu_init(CMenu *menu_ptr);
+// Menue oeffnen und Cursor auf Eintrag curr_item setzen
+void gui_menu_init_at(CMenu *menu_ptr, int curr_item) {
+    gui_menu_init(menu_ptr);
+    gui_menu_set_curr_menu(menu_ptr, 0, curr_item);
+}
+
+//-------------------------------------------------------------------
 void gui_menu_init(CMenu *menu_ptr) {
 
     if (menu_ptr) {
@@ -298,8 +306,8 @@ void gui_menu_back()
     {
         // 'Back' selected; but no menu to go back to
         // Occurs when script menu opened using 'Func/Set' button
-        // Return to normal <ALT> mode.
-        gui_set_mode(&altGuiHandler);
+        // Filmsim-Firmware: kein ALT-Bildschirm, direkt zurueck zur Kamera
+        exit_alt_on_release();
     }
 }
 
@@ -1123,14 +1131,9 @@ void gui_menu_kbd_process_menu_btn()
 
     conf_save();
 
-    if ( gui_user_menu_flag )
-    {
-        gui_set_mode(&menuGuiHandler);
-        gui_user_menu_flag = 0;
-        gui_menu_init(&root_menu);
-    }
-    else
-        gui_set_mode(&altGuiHandler);
+    // Filmsim-Firmware: MENU schliesst die Liste / Optionen
+    gui_user_menu_flag = 0;
+    exit_alt_on_release();
 }
 
 //-------------------------------------------------------------------

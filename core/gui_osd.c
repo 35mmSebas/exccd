@@ -14,6 +14,7 @@
 #include "histogram.h"
 #include "usb_remote.h"
 #include "modules.h"
+#include "filmsim.h"
 
 //-------------------------------------------------------------------
 
@@ -1306,12 +1307,9 @@ void gui_draw_osd_elements(int is_osd_edit, int is_zebra)
 
     if (is_osd_edit || is_zebra || osd_visible())
     {
-        gui_osd_draw_state(is_osd_edit);
-        gui_osd_draw_raw_info(is_osd_edit);
+        // Filmsim: Status (CURVES:...), RAW, Speicherplatz, Temperatur und Uhr
+        // entfernt, nur die Batterie bleibt (feste Position, gui_batt.c)
         gui_batt_draw_osd(is_osd_edit);
-        gui_space_draw_osd(is_osd_edit);
-        gui_osd_draw_temp(is_osd_edit);
-        gui_osd_draw_clock(0,0,MAKE_COLOR(0,0),is_osd_edit);
         if (!is_zebra)
         {
             gui_usb_draw_osd(is_osd_edit);
@@ -1334,6 +1332,7 @@ void gui_draw_osd()
     gui_draw_osd_elements(0,0);
 
     gui_osd_draw_movie_time_left();
+
 
     gui_draw_debug_vals_osd();
 }
@@ -1359,6 +1358,10 @@ static void gui_default_draw(int force_redraw)
 #endif
 
     if (half_disp_press) 
+        return;
+
+    // Filmsim: bei Halbdruck, Canon-MENU und FUNC.SET-Menue gar nichts zeichnen
+    if (filmsim_osd_hidden())
         return;
 
     if (conf.zebra_draw && (canon_menu_active==(int)&canon_menu_active-4))

@@ -8,6 +8,12 @@
 
 static char osd_buf[32];
 
+// Filmsim: Batterieanzeige fest oben rechts, Konfig-Positionen werden ignoriert
+#define BATT_ICON_X     327     // Symbol ca. 31 x 13 px
+#define BATT_ICON_Y     2
+#define BATT_TXT_X      328     // " 45%" = 4 Zeichen x 8 px
+#define BATT_TXT_Y      17
+
 //-------------------------------------------------------------------
 static long get_batt_average() {
     #define VOLTS_N         100
@@ -63,7 +69,7 @@ static void gui_batt_draw_icon ()
     batt_icon[7].cb = batt_icon[7].cf = cl3;
 
     // Draw icon
-    draw_icon_cmds(conf.batt_icon_pos.x, conf.batt_icon_pos.y, batt_icon);
+    draw_icon_cmds(BATT_ICON_X, BATT_ICON_Y, batt_icon);
 }
 
 //-------------------------------------------------------------------
@@ -72,7 +78,7 @@ static void gui_batt_draw_charge(){
     twoColors cl = user_color((perc<=20) ? conf.osd_color_warn : conf.osd_color);
     sprintf(osd_buf, "%3d%%", perc);
     osd_buf[5]=0;
-    draw_osd_string(conf.batt_txt_pos, 0, 0, osd_buf, cl, conf.batt_txt_scale);
+    draw_string(BATT_TXT_X, BATT_TXT_Y, osd_buf, cl);
 }
 
 //-------------------------------------------------------------------
@@ -82,7 +88,7 @@ static void gui_batt_draw_volts() {
     v = get_batt_average();
     sprintf(osd_buf, "%ld.%03ld", v/1000, v%1000);
     osd_buf[5]=0;
-    draw_osd_string(conf.batt_txt_pos, 0, 0, osd_buf, user_color(conf.osd_color), conf.batt_txt_scale);
+    draw_string(BATT_TXT_X, BATT_TXT_Y, osd_buf, user_color(conf.osd_color));
 }
 
 //-------------------------------------------------------------------

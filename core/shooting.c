@@ -1920,6 +1920,14 @@ void shooting_expo_param_override_thumb(void)
     {
         shooting_set_tv96_direct(shooting_get_tv96_override_value(),SET_NOW);
     }
+    else
+    {
+        // Filmsim Dynamik+: kuerzer belichten als gemessen (nur bei automatischer Zeit)
+        extern int filmsim_dr_tv96_shift(void);
+        int shift = filmsim_dr_tv96_shift();
+        if (shift)
+            shooting_set_tv96_direct(shooting_get_tv96() + shift, SET_NOW);
+    }
 
     if (((camera_info.state.state_kbd_script_run) || (usb_remote_active)) && (photo_param_put_off.sv96))
     {

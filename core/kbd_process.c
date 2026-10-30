@@ -75,6 +75,14 @@ void exit_alt()
     gui_set_alt_mode_state(ALT_MODE_LEAVE);
 }
 
+// Filmsim: ALT-Modus erst verlassen, wenn alle Tasten losgelassen sind,
+// damit z.B. FUNC/SET nicht anschliessend das Canon-Menue oeffnet
+static volatile int exit_alt_pending = 0;
+void exit_alt_on_release()
+{
+    exit_alt_pending = 1;
+}
+
 //-------------------------------------------------------------------
 // Core keyboard handler
 
@@ -107,6 +115,17 @@ long kbd_process()
 
     // check for & process non-keyboard script terminate
     script_check_terminate();
+
+    // Filmsim: verzoegertes Verlassen des ALT-Modus
+    if (exit_alt_pending)
+    {
+        if (kbd_get_pressed_key() == 0)
+        {
+            exit_alt_pending = 0;
+            exit_alt();
+        }
+        return 1;   // bis dahin alle Tasten vor Canon verbergen
+    }
 
     // Reset keyboard auto repeat if no buttons pressed
     if (kbd_get_pressed_key() == 0)
@@ -151,9 +170,14 @@ long kbd_process()
             {
                 if (!kbd_blocked)
                 {
-                    // if start script on alt set, flag to run it
-                    if(conf.script_startup==SCRIPT_AUTOSTART_ALT) script_run_on_alt_flag = 1;
-                    enter_alt(camera_info.state.state_kbd_script_run);
+                    // Filmsim: Auswahl nur im Foto-Aufnahmemodus ohne offenes Canon-Menue
+                    extern int filmsim_alt_allowed(void);
+                    if (filmsim_alt_allowed())
+                    {
+                        // if start script on alt set, flag to run it
+                        if(conf.script_startup==SCRIPT_AUTOSTART_ALT) script_run_on_alt_flag = 1;
+                        enter_alt(camera_info.state.state_kbd_script_run);
+                    }
                 }
                 else
                     exit_alt();

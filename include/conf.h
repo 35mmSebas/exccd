@@ -465,7 +465,21 @@ typedef struct
 
     int unlock_av_out_in_rec;  // Force video out when in Rec if AV bit is set. Bool
 
-    int check_firmware_crc;  // Check firmware CRC on startup. 0 = no. 1 = Check and set to 0. 2 = always
+    int check_firmware_crc;
+
+    int film_sim;               // Filmsimulation (Index in core/filmsim.c)
+    int film_grain;             // Koernung: 0 aus, 1 an (ISO 800)
+    int film_iso_prev;          // ISO-Einstellung vor der Koernung, -1 = keine
+    int film_double;            // Doppelbelichtung: 0 aus, 1 Bild 1 erwartet, 2 Bild 2 erwartet
+    int film_bwfilter;          // Farbfilter fuer S/W: 0 aus, 1 gelb, 2 orange, 3 rot
+    int film_mist;              // Black Mist: 0 aus, 1 = 1/8, 2 = 1/4
+    int film_halation;          // Halation: 0/1
+    int film_vignette;          // Vignette: 0 aus, 1 leicht, 2 stark
+    int film_leak;              // Light Leak: 0/1
+    int film_datestamp;         // Datumsstempel: 0/1
+    int film_dr;                // Dynamik+: 0 aus, 1 = -1 EV + Kurve, 2 = -2 EV + Kurve
+    int film_cnr;               // Farbrauschen-Filter: 0 aus, 1 normal, 2 stark  // Check firmware CRC on startup. 0 = no. 1 = Check and set to 0. 2 = always
+    int exccd_ui;               // Stufe der uebernommenen EXCCD-Optik (2 = v1.9.20), kleiner -> einmalige Umstellung beim Start
 
 } Conf;
 

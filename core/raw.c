@@ -276,10 +276,30 @@ void raw_process(void)
         }
     }
 
+    // Filmsim: Doppelbelichtung (vor Kurven, damit der Look nur einmal wirkt)
+    extern void filmsim_double_hook(char *raw);
+    filmsim_double_hook(rawadr);
+
+    // Filmsim: Farbrauschen glaetten (vor Kurven, im linearen Rohbild)
+    extern void filmsim_cnr_hook(char *raw);
+    filmsim_cnr_hook(rawadr);
+
 #ifdef OPT_CURVES
     if (conf.curve_enable)
         libcurves->curve_apply();
 #endif
+
+    // Filmsim: Kanalmischung fuer Spezialfilme (nach den Kurven, vor dem JPEG)
+    extern void filmsim_raw_apply(char *raw);
+    filmsim_raw_apply(rawadr);
+
+    // Filmsim: Kreativeffekte (Mist, Halation, Vignette, Light Leak, Datum)
+    extern void filmsim_effects_apply(char *raw);
+    filmsim_effects_apply(rawadr);
+
+    // Filmsim: Film zum Foto ins Logbuch schreiben
+    extern void filmsim_log_shot(void);
+    filmsim_log_shot();
 }
 
 //-------------------------------------------------------------------

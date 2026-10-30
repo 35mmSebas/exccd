@@ -1,0 +1,8 @@
+# Test 3: umbenennen, umsortieren, entfernen, Look ohne Lasche
+# Erwartet: Aus, Schwarzweiss Test, Satt, Zwanzig Zeichen Name, Daylight Test
+#
+# Name               | Modus | Kon | Sch | Sat |  R |  G |  B | Haut | Kurve      | Lasche | Mix
+Schwarzweiss Test    |  3    |  0  |  0  |  0  |  0 |  0 |  0 |  0   | SILVER.CV  | SILVER | 0
+Satt                 | 11    |  1  |  1  |  2  |  1 |  1 |  1 |  0   | POSTCRD.CV | POSTCRD | 0
+Zwanzig Zeichen Name | 11    |  1  |  0  | -1  | -1 | -1 |  0 |  0   | JOURNAL.CV | -      | 0
+Daylight Test        |  0    |  0  |  0  |  0  |  0 |  0 |  0 |  0   | -          | DAYLITE | 0
