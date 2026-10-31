@@ -32,7 +32,9 @@ WB = (1.90, 1.0, 1.0, 1.45)
 #   gain     : (R,G,B) Kanal-Gewichtung, v.a. fuer Schwarzweiss-Filter-Effekte
 # ---------------------------------------------------------------------------
 RECIPES = {
-    "POSTCRD": dict(contrast=0.28, lift=0.00, shoulder=0.05,
+    # v1.9.21: Postcard, Journal und Drugstore mit offeneren Schatten (soffen bei
+    # Gegenlicht ab) und ohne Canon-Kontrast +1 in FILMS.TXT
+    "POSTCRD": dict(contrast=0.20, lift=0.03, shoulder=0.05,
                     shadow=(0.00, 0.00, 0.010), highlight=(0.010, 0.00, -0.005)),
     "BLUSH":   dict(contrast=0.10, lift=0.01, shoulder=0.15,
                     shadow=(0.00, 0.00, 0.005), highlight=(0.008, 0.003, 0.00)),
@@ -42,18 +44,18 @@ RECIPES = {
                     gain=(1.10, 1.0, 0.92)),          # leichter Gelbfilter-Effekt
     # Stuetzpunkt-Looks: je Kanal (x, y) im Anzeige-Raum, PCHIP-interpoliert,
     # (0,0) und (1,1) werden ergaenzt
-    "JOURNAL": dict(points=dict(             # Journal: harte Schatten, kuehle Tiefen, gedaempft
-        R=((.08, .04),  (.25, .19),  (.5, .48),  (.75, .77),  (.92, .92)),
-        G=((.08, .06),  (.25, .212), (.5, .49),  (.75, .765), (.92, .915)),
-        B=((.08, .055), (.25, .215), (.5, .49),  (.75, .75),  (.92, .905)))),
+    "JOURNAL": dict(points=dict(             # Journal: kraeftig, kuehle Tiefen, gedaempft
+        R=((.08, .075), (.25, .22),  (.5, .485), (.75, .77),  (.92, .92)),
+        G=((.08, .09),  (.25, .238), (.5, .495), (.75, .765), (.92, .915)),
+        B=((.08, .088), (.25, .24),  (.5, .495), (.75, .75),  (.92, .905)))),
     "STUDIO":  dict(points=dict(             # Studio: flach, offene Schatten
         R=((.08, .097), (.25, .272), (.5, .507), (.75, .738), (.92, .897)),
         G=((.08, .095), (.25, .27),  (.5, .505), (.75, .735), (.92, .895)),
         B=((.08, .095), (.25, .268), (.5, .503), (.75, .733), (.92, .894)))),
     "DRUGSTR": dict(points=dict(             # Drugstore: hart, cyan Schatten, warme Lichter
-        R=((.08, .035), (.25, .175), (.5, .49),  (.75, .80),  (.92, .94)),
-        G=((.08, .062), (.25, .212), (.5, .505), (.75, .785), (.92, .93)),
-        B=((.08, .065), (.25, .215), (.5, .48),  (.75, .74),  (.92, .895)))),
+        R=((.08, .065), (.25, .203), (.5, .495), (.75, .80),  (.92, .94)),
+        G=((.08, .09),  (.25, .236), (.5, .508), (.75, .785), (.92, .93)),
+        B=((.08, .093), (.25, .238), (.5, .485), (.75, .74),  (.92, .895)))),
 }
 
 def pchip(pts):

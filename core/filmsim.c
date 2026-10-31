@@ -38,11 +38,11 @@ static const filmsim_t sims_builtin[] = {
     // name              mode        con shp sat  R   G   B  skin  curve           label
     { "Aus",             MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              0          },
     { "Daylight 100",    MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              "DAYLITE"  },
-    { "Postcard 100",    MC_CUSTOM,   1,  1,  2,  1,  1,  1,  0,  "POSTCRD.CV",   "POSTCRD"  },
+    { "Postcard 100",    MC_CUSTOM,   0,  1,  2,  1,  1,  1,  0,  "POSTCRD.CV",   "POSTCRD"  },
     { "Blush 100",       MC_CUSTOM,  -1,  0,  1,  0,  0,  0,  1,  "BLUSH.CV",     "BLUSH"    },
-    { "Journal 400",     MC_CUSTOM,   1,  0, -1, -1, -1,  0,  0,  "JOURNAL.CV",   "JOURNAL"  },
+    { "Journal 400",     MC_CUSTOM,   0,  0, -1, -1, -1,  0,  0,  "JOURNAL.CV",   "JOURNAL"  },
     { "Studio 160",      MC_CUSTOM,  -1, -1, -1,  0,  0,  0,  1,  "STUDIO.CV",    "STUDIO"   },
-    { "Drugstore 200",   MC_CUSTOM,   1,  0, -1,  0,  1, -1,  0,  "DRUGSTR.CV",   "DRUGSTR"  },
+    { "Drugstore 200",   MC_CUSTOM,   0,  0, -1,  0,  1, -1,  0,  "DRUGSTR.CV",   "DRUGSTR"  },
     { "Scene 500",       MC_CUSTOM,  -2, -1, -2,  0,  0,  0,  0,  "SCENE.CV",     "SCENE"    },
     { "Silver 400",      MC_BW,       0,  0,  0,  0,  0,  0,  0,  "SILVER.CV",    "SILVER"   },
 };

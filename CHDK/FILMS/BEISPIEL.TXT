@@ -25,10 +25,10 @@
 #
 # Name             | Modus | Kon | Sch | Sat |  R |  G |  B | Haut | Kurve       | Lasche   | Mix
 Daylight 100       |  0    |  0  |  0  |  0  |  0 |  0 |  0 |  0   | -           | DAYLITE  | 0
-Postcard 100       | 11    |  1  |  1  |  2  |  1 |  1 |  1 |  0   | POSTCRD.CV  | POSTCRD  | 0
+Postcard 100       | 11    |  0  |  1  |  2  |  1 |  1 |  1 |  0   | POSTCRD.CV  | POSTCRD  | 0
 Blush 100          | 11    | -1  |  0  |  1  |  0 |  0 |  0 |  1   | BLUSH.CV    | BLUSH    | 0
-Journal 400        | 11    |  1  |  0  | -1  | -1 | -1 |  0 |  0   | JOURNAL.CV  | JOURNAL  | 0
+Journal 400        | 11    |  0  |  0  | -1  | -1 | -1 |  0 |  0   | JOURNAL.CV  | JOURNAL  | 0
 Studio 160         | 11    | -1  | -1  | -1  |  0 |  0 |  0 |  1   | STUDIO.CV   | STUDIO   | 0
-Drugstore 200      | 11    |  1  |  0  | -1  |  0 |  1 | -1 |  0   | DRUGSTR.CV  | DRUGSTR  | 0
+Drugstore 200      | 11    |  0  |  0  | -1  |  0 |  1 | -1 |  0   | DRUGSTR.CV  | DRUGSTR  | 0
 Scene 500          | 11    | -2  | -1  | -2  |  0 |  0 |  0 |  0   | SCENE.CV    | SCENE    | 0
 Silver 400         |  3    |  0  |  0  |  0  |  0 |  0 |  0 |  0   | SILVER.CV   | SILVER   | 0
