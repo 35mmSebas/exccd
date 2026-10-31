@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [main]
+    branches: ['**']               # auch Port-Branches (z. B. ixus145)
     tags: ['v*']
   pull_request:
   workflow_dispatch:
