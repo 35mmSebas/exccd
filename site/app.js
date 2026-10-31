@@ -39,6 +39,11 @@ const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`;
 
 function renderHero() {
   const looks = state.camera.looks;
+  $("facts").append(
+    el("li", {}, el("b", { textContent: looks.length }), " looks"),
+    el("li", {}, el("b", { textContent: "+2" }), " Dynamic+ variants each"),
+    el("li", {}, el("b", { textContent: "0" }), " changes to the firmware"),
+    el("li", {}, el("b", { textContent: "Free" }), " and open source"));
 
   const box = $("cam-labels");
   const imgs = looks.map((look) => el("img", { src: labelSrc(look), alt: "", width: 600, height: 440 }));
@@ -48,7 +53,8 @@ function renderHero() {
     i = (n + looks.length) % looks.length;
     imgs.forEach((img, k) => img.classList.toggle("on", k === i));
     $("cam-name").textContent = looks[i].name;
-    $("cam-count").textContent = `${String(i + 1).padStart(2, "0")}/${String(looks.length).padStart(2, "0")}`;
+    $("cam-count").textContent = `${i + 1}/${looks.length}`;
+    $("cam-screen").style.setProperty("--accent", looks[i].accent);
   };
   show(0);
 
@@ -216,6 +222,7 @@ function update() {
   $("dl-status").textContent = !state.firmwareOk ? "Not available for this firmware." : n === 0 ? "Pick at least one look." : "";
   const s = state.config.support;
   btn.textContent = s.url && state.amount > 0 ? `Pay ${state.amount} ${s.currency} & download` : "Download ZIP";
+  $("dock-text").textContent = n ? `${n} look${n === 1 ? "" : "s"} selected` : "No looks selected";
 }
 
 async function download() {
@@ -246,6 +253,18 @@ async function download() {
   }
 }
 
+// Leiste unten: zwischen Look-Auswahl und Download sichtbar
+function watchDock() {
+  const dock = $("dock");
+  const seen = { looks: false, download: false };
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) seen[e.target.id === "looks-step" ? "looks" : "download"] = e.isIntersecting;
+    dock.hidden = !seen.looks || seen.download;
+  }, { rootMargin: "0px 0px -30% 0px" });
+  io.observe($("looks-step"));
+  io.observe($("download-step"));
+}
+
 async function main() {
   try {
     [state.site, state.config] = await Promise.all([loadJson("data/site.json"), loadJson("config.json")]);
@@ -261,6 +280,7 @@ async function main() {
   renderLooks();
   renderSupport();
   $("download").addEventListener("click", download);
+  watchDock();
   update();
 }
 
