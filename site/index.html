@@ -5,288 +5,222 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EXCCD – film looks for an old Canon</title>
 <meta name="description" content="A small CHDK add-on that gives the Canon IXUS 60 / PowerShot SD600 a set of film looks. Pick the looks you want and download a ZIP for the SD card. Free.">
-<meta name="theme-color" content="#050608">
+<meta name="theme-color" content="#09090b">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="app.js"></script>
 </head>
 <body>
 <header class="top">
-  <div class="wrap">
-    <a class="brand" href="#">EXCCD</a>
-    <nav class="nav">
-      <a href="#why">About</a>
-      <a href="#features">Features</a>
-      <a href="#looks-step">Looks</a>
-      <a href="#install">Install</a>
-      <a href="#faq">FAQ</a>
-    </nav>
-    <span class="ver" id="version"></span>
-  </div>
+  <a class="brand" href="#">EXCCD</a>
+  <nav class="nav">
+    <a href="#why">About</a>
+    <a href="#looks-step">Looks</a>
+    <a href="#install">Install</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://github.com/35mmSebas/exccd" class="repo">GitHub</a>
+  </nav>
 </header>
 
 <main>
-  <section class="hero wrap">
-    <div class="hero-text">
-      <p class="eyebrow">A CHDK add-on for the Canon IXUS 60 / PowerShot SD600</p>
-      <h1>Film looks for an old&nbsp;CCD&nbsp;camera.</h1>
-      <p class="lead">Press <b>Print</b>, pick a film, take the picture. The look is applied inside the camera,
-        so the JPEG on the card is already the finished photo.</p>
-      <div class="cta">
-        <a class="button primary" href="#looks-step">Pick looks</a>
-        <a class="button ghost" href="#how">How it works</a>
-      </div>
-      <ul class="facts" id="facts"></ul>
-    </div>
-
-    <figure class="cam" aria-label="Film selection on the camera display">
-      <div class="cam-body">
-        <div class="cam-screen" id="cam-screen">
-          <div class="cam-osd"><span id="cam-count"></span><span class="cam-batt" aria-hidden="true"></span></div>
-          <div class="cam-labels" id="cam-labels"></div>
-          <div class="cam-name" id="cam-name"></div>
-        </div>
-        <div class="cam-controls">
-          <button type="button" class="cam-print" id="cam-print" aria-label="Next look">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>
-          </button>
-          <div class="cam-dial" aria-hidden="true"><span></span></div>
-        </div>
-      </div>
-      <figcaption>The film selection as it looks on the camera. Tap <b>Print</b> to flip.</figcaption>
-    </figure>
+  <section class="intro">
+    <p class="meta"><span id="version">v–</span> · Canon IXUS 60 / PowerShot SD600 · CHDK add-on</p>
+    <h1>Film looks for an old CCD camera.</h1>
+    <p class="lead">Press <b>Print</b>, pick a film, take the picture. The look is applied inside the camera,
+      so the JPEG on the card is already the finished photo.</p>
+    <p class="intro-links"><a href="#looks-step">Pick looks</a> <a href="#how">How it works</a></p>
   </section>
 
-  <section class="why wrap" id="why">
+  <figure class="cam" aria-label="Film selection on the camera display">
+    <div class="cam-screen" id="cam-screen">
+      <div class="cam-labels" id="cam-labels"></div>
+    </div>
+    <figcaption>
+      <span><span id="cam-count"></span> · <span id="cam-name"></span></span>
+      <button type="button" class="link" id="cam-print">next film →</button>
+    </figcaption>
+  </figure>
+
+  <section id="why">
     <h2>Why this exists.</h2>
-    <div>
-      <p>This 20-year-old Canon has always been my favorite camera (and I have many)—it’s been with me for so long and holds countlessly cherished memories. Since I shoot a lot of analog film and also use a Fujifilm X-E2, I wanted to give it a fresh set of colors tuned against reference shots to match that specific film science and aesthetic.</p>
-      <p>Instead of keeping the custom matrices and scripts to myself, I cleaned everything up and put it online for anyone who enjoys shooting on old digicams. Have fun with it.</p>
-      <p>Also, credit to the CHDK developers—without their open-source work over the years, this wouldn't be possible.</p>
-    </div>
+    <p>This 20-year-old Canon has always been my favorite camera (and I have many)—it’s been with me for so long and holds countlessly cherished memories. Since I shoot a lot of analog film and also use a Fujifilm X-E2, I wanted to give it a fresh set of colors tuned against reference shots to match that specific film science and aesthetic.</p>
+    <p>Instead of keeping the custom matrices and scripts to myself, I cleaned everything up and put it online for anyone who enjoys shooting on old digicams. Have fun with it.</p>
+    <p>Also, credit to the CHDK developers—without their open-source work over the years, this wouldn't be possible.</p>
   </section>
 
-  <section class="how wrap" id="how">
-    <ol class="how-steps">
-      <li>
-        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="12" width="32" height="24" rx="2"/><path d="M14 30l7-8 5 6 4-4 6 6"/><circle cx="31" cy="19" r="2.5"/></svg>
-        <h3>Pick looks</h3>
-        <p>Choose the films you want on the card. This page puts them into one ZIP, in your browser.</p>
-      </li>
-      <li>
-        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 6h16l8 8v28H14z"/><path d="M20 6v7M25 6v7M30 6v7"/><path d="M21 30h10"/></svg>
-        <h3>Unpack to the SD card</h3>
-        <p>EXCCD runs from the card. Nothing is written to the camera; without the card it is a stock IXUS again.</p>
-      </li>
-      <li>
-        <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="36" height="24" rx="3"/><circle cx="24" cy="26" r="7"/><path d="M16 14l3-5h10l3 5"/></svg>
-        <h3>Press Print, shoot</h3>
-        <p>Each look sets Canon's own colour settings and applies a tone curve to the raw data before the JPEG is made.</p>
-      </li>
+  <section id="how">
+    <h2>How it works</h2>
+    <ol class="numbered">
+      <li><b>Pick looks.</b> Choose the films you want on the card. This page puts them into one ZIP, in your browser.</li>
+      <li><b>Unpack to the SD card.</b> EXCCD runs from the card. Nothing is written to the camera; without the card it is a stock IXUS again.</li>
+      <li><b>Press Print, shoot.</b> Each look sets Canon's own colour settings and applies a tone curve to the raw data before the JPEG is made.</li>
     </ol>
   </section>
 
-  <section class="simple wrap" id="simple">
-    <div class="simple-intro">
-      <p class="eyebrow">Keeping it simple</p>
-      <h2>Still a point-and-shoot.</h2>
-      <p>CHDK can do a lot, and its menus show it. For EXCCD I only kept what I actually use when I'm out
-        shooting: one button, a clean screen and films instead of settings. The rest sits in a short
-        options menu.</p>
-    </div>
-    <ol class="principles">
-      <li>
-        <h3>One button</h3>
-        <p><b>Print</b> opens the film selection, the arrow keys flip through it, <b>FUNC/SET</b> picks
-          the film. That's it.</p>
-      </li>
-      <li>
-        <h3>A clean screen</h3>
-        <p>Only the battery and the name of the film. On half-press, in Canon's menus and in FUNC/SET both
-          disappear and come back afterwards.</p>
-      </li>
-      <li>
-        <h3>Films, not parameters</h3>
-        <p>You pick a film by its label, a bit like grabbing a roll from the fridge. Contrast, colour and
-          curve come with it.</p>
-      </li>
-      <li>
-        <h3>Canon underneath</h3>
-        <p>Canon's menus, modes and buttons work as before. Choose <b>Off</b> and you get Canon's own
-          colours.</p>
-      </li>
-    </ol>
+  <section id="simple">
+    <h2>Keeping it simple</h2>
+    <p>CHDK can do a lot, and its menus show it. For EXCCD I only kept what I actually use when I'm out
+      shooting: one button, a clean screen and films instead of settings. The rest sits in a short
+      options menu.</p>
+    <dl class="rows">
+      <dt>One button</dt>
+      <dd><b>Print</b> opens the film selection, the arrow keys flip through it, <b>FUNC/SET</b> picks the film. That's it.</dd>
+      <dt>A clean screen</dt>
+      <dd>Only the battery and the name of the film. On half-press, in Canon's menus and in FUNC/SET both disappear and come back afterwards.</dd>
+      <dt>Films, not parameters</dt>
+      <dd>You pick a film by its label, a bit like grabbing a roll from the fridge. Contrast, colour and curve come with it.</dd>
+      <dt>Canon underneath</dt>
+      <dd>Canon's menus, modes and buttons work as before. Choose <b>Off</b> and you get Canon's own colours.</dd>
+    </dl>
   </section>
 
-  <section class="features wrap" id="features">
-    <header class="features-head">
-      <p class="eyebrow">Also in there</p>
-      <h2>A few extras.</h2>
-      <p class="muted">All optional, in the options menu (<b>MENU</b>). Like the looks, the effects are applied
-        to the raw sensor data before the camera makes the JPEG.</p>
-    </header>
-
-    <h3 class="feat-group">Effects</h3>
-    <ul class="feat-grid fx">
-      <li><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="5"/><circle cx="16" cy="16" r="10" class="soft"/><circle cx="16" cy="16" r="14" class="soft2"/></svg>
-        <h4>Black Mist</h4><p>A soft glow around the highlights, like a mist filter.</p><span class="opts">Off · 1/8 · 1/4</span></li>
-      <li><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="6"/><circle cx="16" cy="16" r="10" class="warm"/></svg>
-        <h4>Halation</h4><p>A red-orange halo around bright lights, as on film without an anti-halation layer.</p><span class="opts">Off · On</span></li>
-      <li><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="2"/><ellipse cx="16" cy="16" rx="9" ry="6" class="soft"/></svg>
-        <h4>Vignette</h4><p>Darker corners.</p><span class="opts">Off · Light · Strong</span></li>
-      <li><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="2"/><path d="M6 7c4 6 4 12 0 18" class="warm"/></svg>
-        <h4>Light Leak</h4><p>A warm streak from the left or right edge. The side and position change from shot to shot.</p><span class="opts">Off · On</span></li>
-      <li><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="2"/><path d="M15 21h3M20 21h3M25 21h1" class="warm"/></svg>
-        <h4>Date stamp</h4><p>Orange seven-segment digits in the corner, like on 90s compacts: <span class="stamp">'26 10 31</span></p><span class="opts">Off · On</span></li>
-      <li><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="12" cy="16" r="8"/><circle cx="20" cy="16" r="8"/></svg>
-        <h4>Double exposure</h4><p>Two shots on one frame, mixed in the raw data like two exposures on a negative.</p><span class="opts">Off · On</span></li>
-    </ul>
-
-    <h3 class="feat-group">Shooting</h3>
-    <ul class="feat-grid small-cards">
-      <li><h4>Dynamic+</h4><p>Exposes shorter and lifts the shadows with the curve, so bright skies keep more detail.</p><span class="opts">Off · +1 · +2</span></li>
-      <li><h4>Zone focus</h4><p>A fixed distance instead of autofocus.</p><span class="opts">AF · 0.5 m … ∞</span></li>
-      <li><h4>Shutter speed</h4><p>Set the exposure time by hand.</p><span class="opts">Auto · 16″ … 1/1000</span></li>
-      <li><h4>ND filter</h4><p>Move the built-in ND filter in or out by hand.</p><span class="opts">Auto · In · Out</span></li>
-      <li><h4>Flash power</h4><p>A fixed flash strength instead of automatic.</p><span class="opts">Auto · Low · Mid · High</span></li>
-      <li><h4>B&amp;W colour filter</h4><p>Yellow, orange or red filter for the black-and-white look. Darkens blue skies.</p><span class="opts">Off · Y · O · R</span></li>
-      <li><h4>Colour noise filter</h4><p>Smooths out the coloured blotches of the small sensor and leaves the fine luminance noise alone.</p><span class="opts">Off · Normal · Strong</span></li>
-      <li><h4>Raw + film log</h4><p>Saves a DNG next to each JPEG if you want one. <code>FILMLOG.CSV</code> lists every shot with its film.</p><span class="opts">Off · DNG</span></li>
-    </ul>
+  <section id="features">
+    <h2>A few extras</h2>
+    <p>All optional, in the options menu (<b>MENU</b>). Like the looks, the effects are applied to the raw
+      sensor data before the camera makes the JPEG.</p>
+    <h3>Effects</h3>
+    <dl class="rows opts-rows">
+      <dt>Black Mist <code>Off · 1/8 · 1/4</code></dt>
+      <dd>A soft glow around the highlights, like a mist filter.</dd>
+      <dt>Halation <code>Off · On</code></dt>
+      <dd>A red-orange halo around bright lights, as on film without an anti-halation layer.</dd>
+      <dt>Vignette <code>Off · Light · Strong</code></dt>
+      <dd>Darker corners.</dd>
+      <dt>Light Leak <code>Off · On</code></dt>
+      <dd>A warm streak from the left or right edge. The side and position change from shot to shot.</dd>
+      <dt>Date stamp <code>Off · On</code></dt>
+      <dd>Orange seven-segment digits in the corner, like on 90s compacts: <span class="stamp">'26 10 31</span></dd>
+      <dt>Double exposure <code>Off · On</code></dt>
+      <dd>Two shots on one frame, mixed in the raw data like two exposures on a negative.</dd>
+    </dl>
+    <h3>Shooting</h3>
+    <dl class="rows opts-rows">
+      <dt>Dynamic+ <code>Off · +1 · +2</code></dt>
+      <dd>Exposes shorter and lifts the shadows with the curve, so bright skies keep more detail.</dd>
+      <dt>Zone focus <code>AF · 0.5 m … ∞</code></dt>
+      <dd>A fixed distance instead of autofocus.</dd>
+      <dt>Shutter speed <code>Auto · 16″ … 1/1000</code></dt>
+      <dd>Set the exposure time by hand.</dd>
+      <dt>ND filter <code>Auto · In · Out</code></dt>
+      <dd>Move the built-in ND filter in or out by hand.</dd>
+      <dt>Flash power <code>Auto · Low · Mid · High</code></dt>
+      <dd>A fixed flash strength instead of automatic.</dd>
+      <dt>B&amp;W colour filter <code>Off · Y · O · R</code></dt>
+      <dd>Yellow, orange or red filter for the black-and-white look. Darkens blue skies.</dd>
+      <dt>Colour noise filter <code>Off · Normal · Strong</code></dt>
+      <dd>Smooths out the coloured blotches of the small sensor and leaves the fine luminance noise alone.</dd>
+      <dt>Raw + film log <code>Off · DNG</code></dt>
+      <dd>Saves a DNG next to each JPEG if you want one. <code>FILMLOG.CSV</code> lists every shot with its film.</dd>
+    </dl>
   </section>
 
-  <div class="wrap">
-    <section class="step" id="camera-step">
-      <header class="step-head"><span class="num">01</span><h2>Camera</h2></header>
-      <div class="camera">
-        <div class="camera-name" id="camera-name"></div>
-        <fieldset class="seg" id="fw">
-          <legend>Firmware version</legend>
-        </fieldset>
-        <p class="fw-note" id="fw-note" role="status"></p>
-        <details class="help">
-          <summary>How do I find my firmware version?</summary>
-          <ol>
-            <li>Download <a href="data/vers.req" download>vers.req</a> and copy it to the root of the SD card.</li>
-            <li>Put the card in the camera and switch it on in <b>playback</b> mode.</li>
-            <li>Hold <b>FUNC/SET</b> and press <b>DISP</b>. The camera shows a line like
-              <code>Firmware Ver GM1.00D</code>. The letter at the end is the one that counts.</li>
-            <li>You can delete <code>vers.req</code> from the card afterwards.</li>
-          </ol>
-        </details>
-      </div>
-    </section>
-
-    <section class="step" id="looks-step">
-      <header class="step-head"><span class="num">02</span><h2>Looks</h2></header>
-      <div class="looks-bar">
-        <div class="filters" id="filters" role="group" aria-label="Filter looks"></div>
-        <span class="looks-tools">
-          <button type="button" class="link" id="all">Select all</button>
-          <button type="button" class="link" id="none">Clear</button>
-        </span>
-      </div>
-      <div class="looks" id="looks"></div>
-      <p class="muted small">Every look comes with two <b>Dynamic+</b> variants (DR+1, DR+2): the camera exposes shorter
-        to protect the highlights and the curve lifts the shadows. They are always included.
-        The small graph shows each look's tone curve; the dashed line is neutral.</p>
-    </section>
-
-    <section class="step" id="download-step">
-      <header class="step-head"><span class="num">03</span><h2>Download</h2></header>
-      <div class="download">
-        <div class="summary" id="summary"></div>
-        <div class="pwyw" id="pwyw"></div>
-        <div class="dl-row">
-          <button type="button" class="button primary big" id="download">Download ZIP</button>
-          <span class="dl-status" id="dl-status" role="status"></span>
-        </div>
-      </div>
-    </section>
-
-    <section class="step" id="install">
-      <header class="step-head"><span class="num">04</span><h2>Install</h2></header>
-      <ol class="install">
-        <li><h3>Remove the old version</h3>
-          <p>Delete an old <code>CHDK</code> folder from the SD card, if there is one. An old
-            <code>FILMS.TXT</code> can point to labels or curves that no longer exist.</p></li>
-        <li><h3>Unpack</h3>
-          <p>Unpack the ZIP to the root of the SD card, so that <code>DISKBOOT.BIN</code> and the
-            <code>CHDK</code> folder sit at the top level.</p></li>
-        <li><h3>Start EXCCD</h3>
-          <p><b>Once per power-on:</b> switch on in playback mode, open <i>MENU → Firm Update</i> and confirm.</p>
-          <p><b>Automatically:</b> make the card bootable (for example with
-            <a href="https://chdk.fandom.com/wiki/STICK">STICK</a> or CHDK's <i>Make Card Bootable</i>) and lock
-            the card's write-protect switch. The camera still saves photos.</p></li>
-        <li><h3>Pick a look</h3>
-          <p>In shooting mode press <b>Print</b>, flip with the arrow keys, confirm with <b>FUNC/SET</b>.
-            The active look is shown at the bottom of the screen.</p></li>
+  <section class="step" id="camera-step">
+    <h2><span class="num">01</span>Camera</h2>
+    <p class="camera-name" id="camera-name"></p>
+    <fieldset class="seg" id="fw">
+      <legend>Firmware version</legend>
+    </fieldset>
+    <p class="fw-note" id="fw-note" role="status"></p>
+    <details class="help">
+      <summary>How do I find my firmware version?</summary>
+      <ol>
+        <li>Download <a href="data/vers.req" download>vers.req</a> and copy it to the root of the SD card.</li>
+        <li>Put the card in the camera and switch it on in <b>playback</b> mode.</li>
+        <li>Hold <b>FUNC/SET</b> and press <b>DISP</b>. The camera shows a line like
+          <code>Firmware Ver GM1.00D</code>. The letter at the end is the one that counts.</li>
+        <li>You can delete <code>vers.req</code> from the card afterwards.</li>
       </ol>
-    </section>
+    </details>
+  </section>
 
-    <section class="step" id="faq">
-      <header class="step-head"><span class="num">05</span><h2>Questions</h2></header>
-      <div class="faq">
-        <details><summary>Can this damage my camera?</summary>
-          <p>EXCCD is built on CHDK, which the CHDK community has been developing for Canon compacts since 2007.
-            It runs from the SD card and does not change the camera's firmware. Without the card, the camera
-            behaves exactly as before. Still, it's third-party software: use it at your own risk.</p></details>
-        <details><summary>Do I lose anything compared to the normal camera?</summary>
-          <p>No. Choose <b>Off</b> in the film selection and the camera uses Canon's own colours.
-            Canon's menus and modes stay as they are.</p></details>
-        <details><summary>How is this different from a filter app?</summary>
-          <p>The tone curve is applied to the sensor's raw data before the camera makes the JPEG, together with
-            Canon's own colour settings. The look is part of the picture the camera saves; there is nothing to
-            apply afterwards.</p></details>
-        <details><summary>Can I keep a raw file?</summary>
-          <p>Yes. CHDK can save a raw file (DNG) next to each JPEG. Turn it on in the options
-            (<b>MENU</b>).</p></details>
-        <details><summary>Which look did I use for a photo?</summary>
-          <p>EXCCD writes every shot with its look to <code>A/CHDK/FILMLOG.CSV</code> on the card.</p></details>
-        <details><summary>Can I add looks later?</summary>
-          <p>Yes. Come back, pick a new set and replace the <code>CHDK</code> folder on the card with the new download.</p></details>
-        <details><summary>Why are the menus in German?</summary>
-          <p>I'm German and built this for myself first. The film labels are in English, the option menus are
-            still German. An English version is on my list.</p></details>
-        <details><summary>What about other cameras?</summary>
-          <p>I'd like to bring EXCCD to more CCD compacts. Each one has to be bought, ported and tested, which
-            takes time and some money.</p></details>
-        <details><summary>Is it open source?</summary>
-          <p>Yes. The code is GPL v2 like CHDK, the looks (curves, labels, film table) are CC BY-SA 4.0.
-            Everything is on <a href="https://github.com/35mmSebas/exccd">GitHub</a>.</p></details>
-      </div>
-    </section>
+  <section class="step" id="looks-step">
+    <h2><span class="num">02</span>Looks</h2>
+    <div class="looks-bar">
+      <div class="filters" id="filters" role="group" aria-label="Filter looks"></div>
+      <span class="looks-tools">
+        <button type="button" class="link" id="all">all</button>
+        <button type="button" class="link" id="none">none</button>
+      </span>
+    </div>
+    <div class="looks" id="looks"></div>
+    <p class="note">Every look comes with two <b>Dynamic+</b> variants (DR+1, DR+2): the camera exposes shorter
+      to protect the highlights and the curve lifts the shadows. They are always included.
+      The small graph shows each look's tone curve; the dashed line is neutral.</p>
+  </section>
 
-    <section class="support" id="support">
-      <div>
-        <p class="eyebrow">Pay what you want</p>
-        <h2>It's free.</h2>
-      </div>
-      <div>
-        <p>EXCCD is free to download and use. If you like it and want to chip in, I'll put the money towards
-          the next camera: buying one second-hand, porting EXCCD and building looks for its sensor.</p>
-        <p class="muted">No pressure either way. The download never waits for a payment.</p>
-      </div>
-    </section>
-  </div>
+  <section class="step" id="download-step">
+    <h2><span class="num">03</span>Download</h2>
+    <div class="summary" id="summary"></div>
+    <div class="pwyw" id="pwyw"></div>
+    <div class="dl-row">
+      <button type="button" class="button" id="download">Download ZIP</button>
+      <span class="dl-status" id="dl-status" role="status"></span>
+    </div>
+  </section>
+
+  <section class="step" id="install">
+    <h2><span class="num">04</span>Install</h2>
+    <ol class="numbered">
+      <li><b>Remove the old version.</b> Delete an old <code>CHDK</code> folder from the SD card, if there is
+        one. An old <code>FILMS.TXT</code> can point to labels or curves that no longer exist.</li>
+      <li><b>Unpack.</b> Unpack the ZIP to the root of the SD card, so that <code>DISKBOOT.BIN</code> and the
+        <code>CHDK</code> folder sit at the top level.</li>
+      <li><b>Start EXCCD.</b> Once per power-on: switch on in playback mode, open <i>MENU → Firm Update</i> and
+        confirm. Or automatically: make the card bootable (for example with
+        <a href="https://chdk.fandom.com/wiki/STICK">STICK</a> or CHDK's <i>Make Card Bootable</i>) and lock
+        the card's write-protect switch. The camera still saves photos.</li>
+      <li><b>Pick a look.</b> In shooting mode press <b>Print</b>, flip with the arrow keys, confirm with
+        <b>FUNC/SET</b>. The active look is shown at the bottom of the screen.</li>
+    </ol>
+  </section>
+
+  <section class="step" id="faq">
+    <h2><span class="num">05</span>Questions</h2>
+    <div class="faq">
+      <details><summary>Can this damage my camera?</summary>
+        <p>EXCCD is built on CHDK, which the CHDK community has been developing for Canon compacts since 2007.
+          It runs from the SD card and does not change the camera's firmware. Without the card, the camera
+          behaves exactly as before. Still, it's third-party software: use it at your own risk.</p></details>
+      <details><summary>Do I lose anything compared to the normal camera?</summary>
+        <p>No. Choose <b>Off</b> in the film selection and the camera uses Canon's own colours.
+          Canon's menus and modes stay as they are.</p></details>
+      <details><summary>How is this different from a filter app?</summary>
+        <p>The tone curve is applied to the sensor's raw data before the camera makes the JPEG, together with
+          Canon's own colour settings. The look is part of the picture the camera saves; there is nothing to
+          apply afterwards.</p></details>
+      <details><summary>Can I keep a raw file?</summary>
+        <p>Yes. CHDK can save a raw file (DNG) next to each JPEG. Turn it on in the options
+          (<b>MENU</b>).</p></details>
+      <details><summary>Which look did I use for a photo?</summary>
+        <p>EXCCD writes every shot with its look to <code>A/CHDK/FILMLOG.CSV</code> on the card.</p></details>
+      <details><summary>Can I add looks later?</summary>
+        <p>Yes. Come back, pick a new set and replace the <code>CHDK</code> folder on the card with the new download.</p></details>
+      <details><summary>Why are the menus in German?</summary>
+        <p>I'm German and built this for myself first. The film labels are in English, the option menus are
+          still German. An English version is on my list.</p></details>
+      <details><summary>What about other cameras?</summary>
+        <p>I'd like to bring EXCCD to more CCD compacts. Each one has to be bought, ported and tested, which
+          takes time and some money.</p></details>
+      <details><summary>Is it open source?</summary>
+        <p>Yes. The code is GPL v2 like CHDK, the looks (curves, labels, film table) are CC BY-SA 4.0.
+          Everything is on <a href="https://github.com/35mmSebas/exccd">GitHub</a>.</p></details>
+    </div>
+  </section>
+
+  <section id="support">
+    <h2>Pay what you want</h2>
+    <p>EXCCD is free to download and use. If you like it and want to chip in, I'll put the money towards
+      the next camera: buying one second-hand, porting EXCCD and building looks for its sensor.</p>
+    <p class="note">No pressure either way. The download never waits for a payment.</p>
+  </section>
 </main>
 
-<div class="dock" id="dock" hidden>
-  <div class="wrap dock-in">
-    <span id="dock-text"></span>
-    <a class="button primary" href="#download-step">Continue</a>
-  </div>
-</div>
-
 <footer class="foot">
-  <div class="wrap">
-    <div class="brand">EXCCD</div>
-    <p><a id="repo-link" href="https://github.com/35mmSebas/exccd">Source code on GitHub</a> ·
-      Code: GPL v2, built on <a href="https://chdk.fandom.com/">CHDK</a> ·
-      Looks: CC BY-SA 4.0</p>
-    <p>EXCCD is an independent project, not affiliated with, endorsed by or sponsored by Canon Inc.
-      Canon, IXUS and PowerShot are trademarks of Canon Inc. and are used only to name the supported camera.
-      Use at your own risk, without any warranty.</p>
-  </div>
+  <p><a id="repo-link" href="https://github.com/35mmSebas/exccd">Source code on GitHub</a> ·
+    Code: GPL v2, built on <a href="https://chdk.fandom.com/">CHDK</a> ·
+    Looks: CC BY-SA 4.0</p>
+  <p>EXCCD is an independent project, not affiliated with, endorsed by or sponsored by Canon Inc.
+    Canon, IXUS and PowerShot are trademarks of Canon Inc. and are used only to name the supported camera.
+    Use at your own risk, without any warranty.</p>
 </footer>
 </body>
 </html>
