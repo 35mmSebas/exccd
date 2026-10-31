@@ -118,9 +118,19 @@ function chips(look) {
   return el("div", { className: "chips" }, ...out);
 }
 
+// Mit Augenzwinkern: aus einer 2006er Canon wird keine Fuji, die Sprueche gibt es trotzdem
+const STICKERS = ["SOOC", "no editing", "#nofilter", "wow", "recipe in comments", "straight out of camera",
+  "zero presets", "CCD magic", "film sim", "unedited!", "trust the JPEG"];
+
+function sticker(i) {
+  const s = el("span", { className: `sticker c${i % 4} p${i % 3}`, textContent: STICKERS[i % STICKERS.length] });
+  s.style.setProperty("--tilt", `${[-8, 5, -3, 9, -6][i % 5]}deg`);
+  return s;
+}
+
 function renderLooks() {
   const box = $("looks-grid");
-  for (const look of state.camera.looks) {
+  state.camera.looks.forEach((look, n) => {
     const input = el("input", { type: "checkbox", checked: true, value: look.id });
     input.addEventListener("change", () => {
       input.checked ? state.selected.add(look.id) : state.selected.delete(look.id);
@@ -130,9 +140,11 @@ function renderLooks() {
 
     const media = el("div", { className: "look-media" },
       el("img", { src: labelSrc(look), alt: `${look.name} film label`, loading: "lazy", width: 600, height: 440 }));
-    for (const src of look.samples) {
-      media.append(el("img", { src, alt: `Sample photo, ${look.name}`, loading: "lazy", className: "sample" }));
-    }
+    look.samples.forEach((src, k) => {
+      media.append(el("div", { className: "sample" },
+        el("img", { src, alt: `Sample photo, ${look.name}`, loading: "lazy" }),
+        sticker(n * 3 + k)));
+    });
 
     const card = el("label", { className: "look" },
       media,
@@ -147,7 +159,7 @@ function renderLooks() {
     card.dataset.kind = look.kind;
     card.style.setProperty("--accent", look.accent);
     box.append(card);
-  }
+  });
 
   const kinds = ["All", ...new Set(state.camera.looks.map((l) => l.kind))];
   for (const kind of kinds) {

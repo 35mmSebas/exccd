@@ -11,7 +11,7 @@
   --accent: #00cff3;
   --link: #8fd1ff;
   --warn: #ffb36b;
-  --top: 92px;
+  --top: 124px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 17px;
   line-height: 1.5;
@@ -44,25 +44,25 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 
 /* Kopfzeile: Menuepunkt = Symbol, Wort, drei Unterpunkte */
 .top { position: sticky; top: 0; z-index: 10; height: var(--top); background: #000;
-       display: flex; align-items: flex-start; gap: clamp(20px, 4vw, 56px); padding: 16px 24px 0; }
+       display: flex; align-items: flex-start; gap: clamp(24px, 5vw, 72px); padding: 28px clamp(16px, 3vw, 40px) 0; }
 .brand { display: flex; flex-direction: column; color: var(--text); text-decoration: none; font-size: 1.3rem;
          line-height: 1.05; letter-spacing: -.01em; white-space: nowrap; }
 .brand span + span { color: var(--muted); }
-.nav { display: flex; gap: clamp(20px, 4vw, 56px); flex: 1; }
-.nav-item { display: grid; grid-template-columns: auto auto; column-gap: 10px; align-content: start; }
+.nav { display: flex; justify-content: space-evenly; gap: clamp(24px, 4vw, 64px); flex: 1; }
+.nav-item { display: grid; grid-template-columns: auto auto; column-gap: 14px; align-content: start; }
 .nav-main { display: contents; color: var(--text); text-decoration: none; }
-.nav-main svg { grid-row: span 2; width: 40px; height: 40px; fill: none; stroke: currentColor; stroke-width: 1.4;
+.nav-main svg { grid-row: span 2; width: 46px; height: 46px; fill: none; stroke: currentColor; stroke-width: 1.3;
                 stroke-linejoin: round; }
-.nav-main span { font-size: 1.3rem; line-height: 1.05; letter-spacing: -.01em; }
+.nav-main span { font-size: 1.4rem; line-height: 1.05; letter-spacing: -.01em; }
 .nav-main:hover span, .nav-main[aria-current] span { color: var(--accent); }
 .nav-main[aria-current] svg { color: var(--accent); }
-.nav-sub { list-style: none; margin: 4px 0 0; padding: 0; font-size: .74rem; line-height: 1.3; }
+.nav-sub { list-style: none; margin: 8px 0 0; padding: 0; font-size: .78rem; line-height: 1.5; }
 .nav-sub a { color: #c9d0dc; text-decoration: none; }
 .nav-sub a:hover { color: var(--text); text-decoration: underline; }
 .ver { margin-left: auto; color: var(--muted); font-size: .8rem; letter-spacing: .08em; white-space: nowrap; }
 @media (max-width: 860px) {
-  :root { --top: 112px; }
-  .top { flex-wrap: wrap; row-gap: 12px; padding: 12px 16px 0; }
+  :root { --top: 124px; }
+  .top { flex-wrap: wrap; row-gap: 16px; padding: 16px 16px 0; }
   .brand { flex-direction: row; gap: 8px; font-size: 1.1rem; }
   .nav { order: 3; flex-basis: 100%; justify-content: space-between; gap: 8px; }
   .nav-item { grid-template-columns: auto; justify-items: center; }
@@ -176,7 +176,9 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .look:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 3px; }
 .look input { position: absolute; top: 0; left: 0; margin: 0; opacity: 0; }
 .look-media { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; transition: opacity .2s, filter .2s; }
-.look-media img { width: 100%; flex: 0 0 100%; height: auto; aspect-ratio: 600 / 440; object-fit: cover; display: block; scroll-snap-align: start; }
+.look-media > img, .sample { width: 100%; flex: 0 0 100%; scroll-snap-align: start; }
+.look-media img { width: 100%; height: auto; aspect-ratio: 600 / 440; object-fit: cover; display: block; }
+.sample { position: relative; }
 .look-body { padding: 14px 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
 .look-head { display: flex; justify-content: space-between; gap: 10px; }
 .look-name { display: block; font-weight: 700; font-size: 1.05rem; }
@@ -288,3 +290,18 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .why p { margin: 0 0 16px; color: #c9d0dc; font-size: 1.05rem; max-width: 38em; }
 .why p:last-child { color: var(--muted); font-size: .95rem; margin-bottom: 0; }
 @media (max-width: 900px) { .why { grid-template-columns: 1fr; } }
+
+/* Sticker: SOOC & Co., mit Augenzwinkern */
+.sticker { position: absolute; z-index: 3; transform: rotate(var(--tilt, -6deg)); pointer-events: none;
+           font: 800 .78rem/1 "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: .02em; white-space: nowrap;
+           padding: .45em .7em .4em; border-radius: 5px; color: #111; background: #ffe14d;
+           box-shadow: 0 0 0 2px #fff, 0 4px 10px rgb(0 0 0 / .45); }
+.sticker.c1 { background: #ff8ac2; }
+.sticker.c2 { background: #fff; }
+.sticker.c3 { background: #7fe0b0; }
+.sample .sticker.p0 { right: 8%; bottom: 10%; }
+.sample .sticker.p1 { left: 7%; top: 9%; }
+.sample .sticker.p2 { right: 7%; top: 10%; }
+.ixus .sticker { font-size: clamp(.62rem, 1.5vw, .95rem); }
+.ixus .sticker.s1 { left: 1%; top: 3%; --tilt: -11deg; }
+.ixus .sticker.s2 { right: 4%; bottom: 3%; --tilt: 6deg; }
