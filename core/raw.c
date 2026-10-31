@@ -288,6 +288,11 @@ void raw_process(void)
     if (conf.curve_enable)
         libcurves->curve_apply();
 #endif
+#if CAM_SENSOR_BITS_PER_PIXEL == 12
+    // Filmsim: eigene Tonkurven bei 12-Bit-Sensoren (curves.flt kann nur 10 Bit)
+    extern void filmsim_curve_apply(char *raw);
+    filmsim_curve_apply(rawadr);
+#endif
 
     // Filmsim: Kanalmischung fuer Spezialfilme (nach den Kurven, vor dem JPEG)
     extern void filmsim_raw_apply(char *raw);

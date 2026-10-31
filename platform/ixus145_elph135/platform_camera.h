@@ -93,8 +93,8 @@
     #define CAM_BITMAP_HEIGHT                   360     // http://chdk.setepontos.com/index.php?topic=12144.msg119748#msg119748
 
     #define CAM_ADJUSTABLE_ALT_BUTTON           1   // ALT-button can be set from menu
-    #define CAM_ALT_BUTTON_NAMES                { "Playback", "Help" }
-    #define CAM_ALT_BUTTON_OPTIONS              { KEY_PLAYBACK, KEY_HELP }
+    #define CAM_ALT_BUTTON_NAMES                { "Help", "Playback" }    // EXCCD: Hilfe-Taste zuerst, Wiedergabe bleibt frei
+    #define CAM_ALT_BUTTON_OPTIONS              { KEY_HELP, KEY_PLAYBACK }
 
     #define CAM_HAS_FILEWRITETASK_HOOK          1
     #define CAM_FILEWRITETASK_SEEKS             1
@@ -122,5 +122,10 @@
     #define CAM_SD_OVER_IN_MF                   1
 
     #define CAM_3ARG_DebugAssert                1   // DebugAssert takes 3 arguments
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
 
 //--------------------------------------------------

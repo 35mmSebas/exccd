@@ -29,6 +29,31 @@
 #include "filmsim.h"
 #include "filmsim_txt.h"
 
+//-------------------------------------------------------------------
+// Rohdaten-Zugriff fuer 10- und 12-Bit-Sensoren
+//   Alle RAW-Funktionen rechnen auf der 10-Bit-Skala der IXUS 60
+//   (Schwarz 31, Weiss 1023). Bei 12 Bit wird beim Lesen durch 4 geteilt
+//   (127 -> 31, 4095 -> 1023); beim Schreiben bleiben die unteren zwei Bit
+//   des Originalpixels erhalten - unveraenderte Pixel sind damit bitgleich,
+//   veraenderte behalten ihr feines Sensorrauschen als natuerlichen Dither.
+//   FS_GRP = Bytes je 8 Pixel.
+//
+//   FS_ROW0: erste Zeile mit R G (die Funktionen erwarten R G / G B).
+//   IXUS 60: R G / G B ab Zeile 0, IXUS 145: G B / R G -> ab Zeile 1.
+//-------------------------------------------------------------------
+#if CAM_SENSOR_BITS_PER_PIXEL == 10 || CAM_SENSOR_BITS_PER_PIXEL == 12
+#define FS_RAW 1
+#define FS_GRP CAM_SENSOR_BITS_PER_PIXEL
+
+#if cam_CFAPattern == 0x02010100        // Red Green Green Blue
+#define FS_ROW0 0
+#elif cam_CFAPattern == 0x01000201      // Green Blue Red Green
+#define FS_ROW0 1
+#else
+#error "Filmsim: Bayer-Anordnung nicht unterstuetzt (cam_CFAPattern)"
+#endif
+#endif
+
 #ifndef PROPCASE_MY_COLORS
     #error "Filmsimulation braucht PROPCASE_MY_COLORS (propset)"
 #endif
@@ -271,10 +296,87 @@ static int canon_props_match(const filmsim_t *s)
         && shooting_get_prop(PROPCASE_CUSTOM_SKIN_TONE)  == s->skin;
 }
 
+//-------------------------------------------------------------------
+// Eigene Tonkurven fuer 12-Bit-Sensoren
+//   curves.flt kann nur 10 Bit (CHDK schaltet OPT_CURVES bei 12 Bit ab).
+//   Die .CV-Dateien bleiben dieselben (4 x 1024 Werte, 10 Bit: R, G der
+//   R-Zeile, G der B-Zeile, B). Beim Laden entsteht daraus eine Tabelle
+//   mit 4 x 4096 Eintraegen, linear zwischen den 10-Bit-Stuetzstellen
+//   interpoliert (Schwarz 127 / Weiss 4095 liegen exakt auf 31 / 1023).
+//   Das Anwenden ist dann nur noch ein Tabellenzugriff je Pixel.
+//-------------------------------------------------------------------
+#if defined(FS_RAW) && CAM_SENSOR_BITS_PER_PIXEL == 12
+#define FS_OWN_CURVES 1
+#define CV_N 1024
+static unsigned short *curve_lut = 0;
+
+static void curve_lut_free(void)
+{
+    if (curve_lut) free(curve_lut);
+    curve_lut = 0;
+}
+
+static int curve_lut_load(const char *fn)
+{
+    unsigned short *cv = malloc(4 * CV_N * sizeof(unsigned short));
+    int ok = 0, c, v;
+    curve_lut_free();
+    if (!cv) return 0;
+    int fd = open(fn, O_RDONLY, 0777);
+    if (fd >= 0) {
+        ok = read(fd, cv, 4 * CV_N * sizeof(unsigned short)) == 4 * CV_N * (int)sizeof(unsigned short);
+        close(fd);
+    }
+    if (ok) curve_lut = malloc(4 * 4096 * sizeof(unsigned short));
+    if (curve_lut) {
+        for (c = 0; c < 4; c++) {
+            const unsigned short *k = cv + c * CV_N;
+            unsigned short *t = curve_lut + c * 4096;
+            for (v = 0; v < 4096; v++) {
+                int i = v >> 2, f = v & 3;
+                int k0 = k[i] > 1023 ? 1023 : k[i];
+                // letzte Stuetzstelle: Steigung fortsetzen (4093..4095)
+                int k1 = (i < CV_N - 1) ? (k[i + 1] > 1023 ? 1023 : k[i + 1]) : 2 * k0 - (k[i - 1] > 1023 ? 1023 : k[i - 1]);
+                int o = k0 * (4 - f) + k1 * f;          // = 4 * Interpolation
+                t[v] = v ? (o < 1 ? 1 : (o > 4095 ? 4095 : o)) : 0;   // 0 = Defekt-Markierung
+            }
+        }
+    }
+    free(cv);
+    return curve_lut != 0;
+}
+
+// Aus raw.c, an der Stelle von curves.flt
+__attribute__((optimize("O2"))) void filmsim_curve_apply(char *raw)
+{
+    if (!curve_lut || !raw) return;
+    int rows = camera_sensor.raw_rows, quads = camera_sensor.raw_rowpix / 4;
+    int rowlen = camera_sensor.raw_rowlen, y, g;
+    for (y = 0; y < rows; y++) {
+        // R-Zeile: Kurve 0 (gerade Spalten, R) / 1 (G), B-Zeile: 2 (G) / 3 (B)
+        const unsigned short *ce = curve_lut + (((y ^ FS_ROW0) & 1) << 1) * 4096;
+        const unsigned short *co = ce + 4096;
+        unsigned char *a = (unsigned char *)raw + y * rowlen;
+        for (g = 0; g < quads; g++, a += 6) {
+            int w0 = ce[(a[1] << 4) | (a[0] >> 4)];
+            int w1 = co[((a[0] & 0x0f) << 8) | a[3]];
+            int w2 = ce[(a[2] << 4) | (a[5] >> 4)];
+            int w3 = co[((a[5] & 0x0f) << 8) | a[4]];
+            a[1] = w0 >> 4;
+            a[0] = (w0 << 4) | (w1 >> 8);
+            a[3] = w1;
+            a[2] = w2 >> 4;
+            a[5] = (w2 << 4) | (w3 >> 8);
+            a[4] = w3;
+        }
+    }
+}
+#endif
+
 // Kurve laden bzw. abschalten
 static void set_curve(const filmsim_t *s)
 {
-#ifdef OPT_CURVES
+#if defined(OPT_CURVES) || defined(FS_OWN_CURVES)
     int dr = (conf.film_dr >= 1 && conf.film_dr <= 2) ? conf.film_dr : 0;
     if (s->curve || dr) {
         struct stat st;
@@ -297,7 +399,15 @@ static void set_curve(const filmsim_t *s)
         conf.curve_enable = 0;
         curve_file_ok = 0;
     }
+#ifdef FS_OWN_CURVES
+    if (!conf.curve_enable || !curve_lut_load(conf.curve_file)) {
+        curve_lut_free();
+        if (conf.curve_enable) curve_file_ok = -1;
+    }
+    conf.curve_enable = 0;           // curves.flt gibt es hier nicht
+#else
     libcurves->curve_init_mode();
+#endif
 #else
     (void)s;
 #endif
@@ -404,10 +514,20 @@ extern gui_handler menuGuiHandler;
 #define BAR_Y       (LABEL_TOP + LABEL_H + 10)
 #define LABEL_W     301                 // Breite der EXCCD-Laschen
 
-// EXCCD-Farben wie in den Laschen (Kamerapalette, Aufnahmemodus, alle deckend)
+// EXCCD-Farben wie in den Laschen (Kamerapalette, Aufnahmemodus, alle deckend).
+// Laschen (.FLM) und diese Farben sind Indizes der IXUS-60-Palette. Andere
+// Kameras zeigen die Textkarte in CHDK-Farben, bis es Laschen fuer ihre
+// Palette gibt (Optionen -> System -> Farbpalette speichern).
+#ifdef CAMERA_ixus60_sd600
+#define FS_FLM      1
 #define EX_BG       0xFF
 #define EX_GREY     0xA3
 #define EX_RULE     0xFA
+#else
+#define EX_BG       COLOR_BLACK
+#define EX_GREY     COLOR_GREY
+#define EX_RULE     COLOR_GREY_DK
+#endif
 
 static int sel = 0;                 // gerade angezeigter Film
 static int need_draw = 0;           // 1 = alles, 2 = nur Leiste
@@ -427,6 +547,9 @@ static void label_load(int i)
     struct stat st;
     label_free();
     label_for = i;
+#ifndef FS_FLM
+    return;
+#endif
     if (!sims[i].label) return;
     strcpy(fn, "A/CHDK/FILMS/");
     strcat(fn, sims[i].label);
@@ -641,7 +764,7 @@ void filmsim_draw_osd(void)
 //   Tageslicht-Weissabgleich normiert - per Matrix neu gemischt.
 //   Zeilensummen = 1, damit Grau grau bleibt.
 //-------------------------------------------------------------------
-#if CAM_SENSOR_BITS_PER_PIXEL == 10
+#ifdef FS_RAW
 // Faktoren *256. Lomochrome Purple: Gruen -> Violett, Blau -> Gruen/Tuerkis,
 // Gelb -> Pink
 static const short mix_lomo[3][3] = {
@@ -662,11 +785,49 @@ static const short mix_bw[4][3][3] = {
     {{141,102,13},{141,102,13},{141,102,13}},                       // Orange .55 .40 .05
     {{192, 64, 0},{192, 64, 0},{192, 64, 0}},                       // Rot    .75 .25 .00
 };
-// WB-Normierung (Rohwert * f / 256): R 1.9, B 1.45
+// WB-Normierung (Rohwert * f / 256), Tageslicht-Gains des Sensors.
+// IXUS 60: R 1.9, B 1.45. Andere Kameras: FILMSIM_WB_R/_B in platform_camera.h
+#ifdef FILMSIM_WB_R
+#define WB_R FILMSIM_WB_R
+#define WB_B FILMSIM_WB_B
+#else
 #define WB_R 486
 #define WB_B 371
+#endif
 #define BLK  31
 
+#if CAM_SENSOR_BITS_PER_PIXEL == 12
+// 4 Pixel in 6 Byte (Anordnung wie get_raw_pixel/set_raw_pixel in raw.c)
+static inline __attribute__((always_inline)) void dec4_12(const unsigned char *a, int *v)
+{
+    v[0] = ((a[1] << 4) | (a[0] >> 4)) >> 2;
+    v[1] = (((a[0] & 0x0f) << 8) | a[3]) >> 2;
+    v[2] = ((a[2] << 4) | (a[5] >> 4)) >> 2;
+    v[3] = (((a[5] & 0x0f) << 8) | a[4]) >> 2;
+}
+static inline __attribute__((always_inline)) void enc4_12(unsigned char *a, const int *v)
+{
+    // untere zwei Bit aus dem Original uebernehmen (0 bleibt 0: Defekt-Markierung)
+    int w0 = v[0] ? (v[0] << 2) | ((a[0] >> 4) & 3) : 0;
+    int w1 = v[1] ? (v[1] << 2) | (a[3] & 3) : 0;
+    int w2 = v[2] ? (v[2] << 2) | ((a[5] >> 4) & 3) : 0;
+    int w3 = v[3] ? (v[3] << 2) | (a[4] & 3) : 0;
+    a[1] = w0 >> 4;
+    a[0] = (w0 << 4) | ((w1 >> 8) & 0x0f);
+    a[3] = w1;
+    a[2] = w2 >> 4;
+    a[5] = (w2 << 4) | ((w3 >> 8) & 0x0f);
+    a[4] = w3;
+}
+static inline __attribute__((always_inline)) void dec8(const unsigned char *a, int *v)
+{
+    dec4_12(a, v); dec4_12(a + 6, v + 4);
+}
+static inline __attribute__((always_inline)) void enc8(unsigned char *a, const int *v)
+{
+    enc4_12(a, v); enc4_12(a + 6, v + 4);
+}
+#else
 static inline __attribute__((always_inline)) void dec8(const unsigned char *a, int *v)
 {
     v[0] = (a[1] << 2) | (a[0] >> 6);
@@ -691,6 +852,7 @@ static inline __attribute__((always_inline)) void enc8(unsigned char *a, const i
     a[9] = (v[6] << 2) | (v[7] >> 8);
     a[8] = v[7];
 }
+#endif
 static inline __attribute__((always_inline)) int clip10(int x) { return x < 0 ? 0 : (x > 1023 ? 1023 : x); }
 
 // Rueckrechnung des Weissabgleichs: (n << 8) / WB als Tabelle statt Division.
@@ -731,15 +893,15 @@ __attribute__((optimize("O2"))) void filmsim_raw_apply(char *raw)
     else if (s->mycolors == MC_BW && conf.film_bwfilter > 0 && conf.film_bwfilter < 4)
                           m = mix_bw[conf.film_bwfilter];
     else return;
-    int rows = camera_sensor.raw_rows & ~1;
+    int rows = (camera_sensor.raw_rows - FS_ROW0) & ~1;
     int groups = camera_sensor.raw_rowpix / 8;
     int rowlen = camera_sensor.raw_rowlen;
     int y, g, k;
     wbdiv_init();
     for (y = 0; y < rows; y += 2) {
-        unsigned char *a0 = (unsigned char *)raw + y * rowlen;   // R G R G
+        unsigned char *a0 = (unsigned char *)raw + (y + FS_ROW0) * rowlen;   // R G R G
         unsigned char *a1 = a0 + rowlen;                         // G B G B
-        for (g = 0; g < groups; g++, a0 += 10, a1 += 10) {
+        for (g = 0; g < groups; g++, a0 += FS_GRP, a1 += FS_GRP) {
             int p[8], q[8];
             dec8(a0, p); dec8(a1, q);
             for (k = 0; k < 8; k += 2) {
@@ -789,6 +951,9 @@ static void splash_load(void)
 {
     const char *fn = "A/CHDK/FILMS/SPLASH.FLM";
     struct stat st;
+#ifndef FS_FLM
+    return;
+#endif
     if (splash_buf) return;
     if (stat(fn, &st) != 0 || st.st_size < 8 || st.st_size > 120000) return;
     unsigned char *b = malloc(st.st_size);
@@ -881,9 +1046,13 @@ void filmsim_log_shot(void)
 //-------------------------------------------------------------------
 #include "cachebit.h"
 #define DBL_FILE  "A/CHDK/DBL1.RAW"
+#if CAM_SENSOR_BITS_PER_PIXEL == 12
+#define DBL_CHUNK 60000                     // Vielfaches von 12 Byte (8 Pixel)
+#else
 #define DBL_CHUNK 64000                     // Vielfaches von 10 Byte (8 Pixel)
+#endif
 
-#if CAM_SENSOR_BITS_PER_PIXEL == 10
+#ifdef FS_RAW
 __attribute__((optimize("O2"))) static void dbl_merge(char *raw, int fd)
 {
     unsigned char *buf = malloc(DBL_CHUNK);
@@ -895,9 +1064,9 @@ __attribute__((optimize("O2"))) static void dbl_merge(char *raw, int fd)
         if (want > DBL_CHUNK) want = DBL_CHUNK;
         int got = read(fd, buf, want);
         if (got <= 0) break;
-        got -= got % 10;
+        got -= got % FS_GRP;
         int i, k;
-        for (i = 0; i < got; i += 10) {
+        for (i = 0; i < got; i += FS_GRP) {
             int a[8], b[8];
             dec8(dst + done + i, a);
             dec8(buf + i, b);
@@ -917,7 +1086,7 @@ __attribute__((optimize("O2"))) static void dbl_merge(char *raw, int fd)
 
 void filmsim_double_hook(char *raw)
 {
-#if CAM_SENSOR_BITS_PER_PIXEL == 10
+#ifdef FS_RAW
     if (!conf.film_double || !raw || !filmsim_photo_mode()) return;
     if (conf.film_double == 1) {
         // erstes Bild sichern
@@ -982,9 +1151,16 @@ const char* filmsim_bwfilter_str(void)
 #include "raw.h"
 #include "time.h"
 
-#if CAM_SENSOR_BITS_PER_PIXEL == 10
-#define MIST_BS 32                   // Zellgroesse Black Mist (Pixel)
-#define HAL_BS  16                   // Zellgroesse Halation
+#ifdef FS_RAW
+// Zellgroessen in Pixeln, mit der Sensorbreite wachsend: gleiche Wirkung
+// im Bild und hoechstens 256 Zellen je Richtung
+#if CAM_RAW_ROWPIX > 4096
+#define MIST_BS 48                   // Black Mist
+#define HAL_BS  24                   // Halation
+#else
+#define MIST_BS 32
+#define HAL_BS  16
+#endif
 
 // Weichzeichnen eines kleinen Gitters (Kastenfilter, mehrfach = annaehernd Gauss)
 static int blur_tmp[256];
@@ -1077,8 +1253,8 @@ __attribute__((optimize("O2"))) static void effects_glow_and_tone(char *raw)
         memset(acc, 0, (3 * 256 + 256) * sizeof(int));
         for (y = 0; y < rows; y++) {
             unsigned char *a = (unsigned char *)raw + y * rowlen;
-            int odd = y & 1;
-            for (k = 0; k < groups; k++, a += 10) {
+            int odd = (y ^ FS_ROW0) & 1;
+            for (k = 0; k < groups; k++, a += FS_GRP) {
                 int v[8], j;
                 dec8(a, v);
                 for (j = 0; j < 8; j++) {
@@ -1159,7 +1335,7 @@ __attribute__((optimize("O2"))) static void effects_glow_and_tone(char *raw)
     int (*rm)[256] = glow_rm;
     int *rh = glow_rh;
     for (y = 0; y < rows; y++) {
-        int odd = y & 1;
+        int odd = (y ^ FS_ROW0) & 1;
         // vertikal interpolierte Gitterzeilen fuer diese Rohdatenzeile
         if (do_mist) {
             int f = ((y * 256 + 128) / MIST_BS) - 128, c0 = f >> 8, fr = f & 255, ch;
@@ -1190,11 +1366,11 @@ __attribute__((optimize("O2"))) static void effects_glow_and_tone(char *raw)
         }
 
         unsigned char *a = (unsigned char *)raw + y * rowlen;
-        for (k = 0; k < groups; k++, a += 10) {
+        for (k = 0; k < groups; k++, a += FS_GRP) {
             int v[8], j;
             dec8(a, v);
             for (j = 0; j < 8; j++) {
-                if (!v[j]) continue;                      // Defekt-Markierung erhalten
+                if (!v[j]) continue;                     // Defekt-Markierung erhalten
                 int xx = k * 8 + j;
                 int c = (odd << 1) | (xx & 1);
                 int add = 0;
@@ -1251,9 +1427,9 @@ static void stamp_rect(int x0, int y0, int w, int h, int slant_base, int slant)
         int off = ((slant_base - y) * slant) >> 8;    // kursiv: oben weiter rechts
         for (x = x0 + off; x < x0 + off + w; x++) {
             if (x < 0 || y < 0 || x >= (int)camera_sensor.raw_rowpix || y >= (int)camera_sensor.raw_rows) continue;
-            int c = ((y & 1) << 1) | (x & 1);
+            int c = (((y ^ FS_ROW0) & 1) << 1) | (x & 1);
             if (get_raw_pixel(x, y) == 0) continue;     // Defekt-Markierung erhalten
-            set_raw_pixel(x, y, col[c]);
+            set_raw_pixel(x, y, col[c] << (CAM_SENSOR_BITS_PER_PIXEL - 10));
         }
     }
 }
@@ -1305,7 +1481,7 @@ static void effects_datestamp(void)
 //   Bunte Flecken verschwinden, das feine Helligkeitsrauschen (wie Korn)
 //   bleibt erhalten.
 //-------------------------------------------------------------------
-#if CAM_SENSOR_BITS_PER_PIXEL == 10
+#ifdef FS_RAW
 #define CNR_RMAX 4
 static int cnr_recip[512];                            // 65536 / e
 #define CNR_CLIP 1000
@@ -1315,10 +1491,10 @@ __attribute__((optimize("O2")))
 static void cnr_row(const char *raw, int j, int nb, short *cr, short *cb, short *cl)
 {
     int rowlen = camera_sensor.raw_rowlen, groups = nb / 4, g, k, i = 0;
-    const unsigned char *a0 = (const unsigned char *)raw + (2 * j) * rowlen;
+    const unsigned char *a0 = (const unsigned char *)raw + (2 * j + FS_ROW0) * rowlen;
     const unsigned char *a1 = a0 + rowlen;
     int lr = 0, lb = 0, ll = 0;
-    for (g = 0; g < groups; g++, a0 += 10, a1 += 10) {
+    for (g = 0; g < groups; g++, a0 += FS_GRP, a1 += FS_GRP) {
         int p[8], q[8];
         dec8(a0, p); dec8(a1, q);
         for (k = 0; k < 8; k += 2, i++) {
@@ -1343,7 +1519,7 @@ static void filmsim_cnr_apply(char *raw)
     if (!R || !raw || !filmsim_photo_mode()) return;
     int RB = 2 * R + 1;
     int nb = (camera_sensor.raw_rowpix / 8) * 4;     // Bloecke pro Zeile
-    int nbr = camera_sensor.raw_rows / 2;             // Blockzeilen
+    int nbr = (camera_sensor.raw_rows - FS_ROW0) / 2; // Blockzeilen
     int rowlen = camera_sensor.raw_rowlen;
     short *ring_r = malloc(RB * nb * sizeof(short));
     short *ring_b = malloc(RB * nb * sizeof(short));
@@ -1378,10 +1554,10 @@ static void filmsim_cnr_apply(char *raw)
         // horizontal gleitend summieren und Block schreiben
         int sumr = 0, sumb = 0, suml = 0;
         for (d = -R; d <= R; d++) { int ii = d < 0 ? 0 : d; sumr += vr[ii]; sumb += vb[ii]; suml += vl[ii]; }
-        unsigned char *a0 = (unsigned char *)raw + (2 * j) * rowlen;
+        unsigned char *a0 = (unsigned char *)raw + (2 * j + FS_ROW0) * rowlen;
         unsigned char *a1 = a0 + rowlen;
         int g, k; i = 0;
-        for (g = 0; g < nb / 4; g++, a0 += 10, a1 += 10) {
+        for (g = 0; g < nb / 4; g++, a0 += FS_GRP, a1 += FS_GRP) {
             int p[8], q[8], changed = 0;
             dec8(a0, p); dec8(a1, q);
             for (k = 0; k < 8; k += 2, i++) {
@@ -1445,7 +1621,7 @@ const char* filmsim_cnr_enum(int change, __attribute__ ((unused))int arg)
 
 void filmsim_effects_apply(char *raw)
 {
-#if CAM_SENSOR_BITS_PER_PIXEL == 10
+#ifdef FS_RAW
     if (!raw || !filmsim_photo_mode()) return;
     effects_glow_and_tone(raw);
     effects_datestamp();

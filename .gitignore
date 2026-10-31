@@ -19,6 +19,7 @@ CHDK/LUALIB/GEN/propset8.lua
 CHDK/LUALIB/GEN/propset9.lua
 CHDK/MODULES/
 bin/
+dist/
 doc/camnotes.txt
 doc/readme.txt
 lib/armutil/.o/
@@ -48,6 +49,7 @@ platform/ixus60_sd600/main.o
 platform/ixus60_sd600/platform_palette.o
 platform/ixus60_sd600/shooting.o
 platform/ixus60_sd600/sub/100d/PRIMARY.BIN
+platform/ixus145_elph135/sub/100c/PRIMARY.BIN
 platform/ixus60_sd600/sub/100d/bin_compat.h
 platform/ixus60_sd600/sub/100d/boot.o
 platform/ixus60_sd600/sub/100d/camera_info.thm.o
