@@ -138,13 +138,12 @@ function renderLooks() {
     });
     state.selected.add(look.id);
 
-    const media = el("div", { className: "look-media" },
-      el("img", { src: labelSrc(look), alt: `${look.name} film label`, loading: "lazy", width: 600, height: 440 }));
-    look.samples.forEach((src, k) => {
-      media.append(el("div", { className: "sample" },
+    // Beispielfotos zuerst, die Lasche dahinter
+    const media = el("div", { className: "look-media" }, ...look.samples.map((src, k) =>
+      el("div", { className: "sample" },
         el("img", { src, alt: `Sample photo, ${look.name}`, loading: "lazy" }),
-        sticker(n * 3 + k)));
-    });
+        sticker(n * 3 + k))));
+    media.append(el("img", { src: labelSrc(look), alt: `${look.name} film label`, loading: "lazy", width: 600, height: 440 }));
 
     const card = el("label", { className: "look" },
       media,
