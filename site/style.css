@@ -255,3 +255,10 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .feat-grid.fx { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 860px) { .feat-grid.fx { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .feat-grid.fx { grid-template-columns: 1fr; } }
+
+/* Warum es das gibt */
+.why { display: grid; grid-template-columns: .8fr 1.2fr; gap: 24px 64px; padding-top: 8px; padding-bottom: 72px; }
+.why h2 { font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.05; letter-spacing: -.02em; }
+.why p { margin: 0 0 16px; color: #c9d0dc; font-size: 1.05rem; max-width: 38em; }
+.why p:last-child { color: var(--muted); font-size: .95rem; margin-bottom: 0; }
+@media (max-width: 900px) { .why { grid-template-columns: 1fr; } }

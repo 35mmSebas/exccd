@@ -42,8 +42,8 @@ function renderHero() {
   $("facts").append(
     el("li", {}, el("b", { textContent: looks.length }), " looks"),
     el("li", {}, el("b", { textContent: "+2" }), " Dynamic+ variants each"),
-    el("li", {}, el("b", { textContent: "0" }), " changes to the camera"),
-    el("li", {}, el("b", { textContent: "Free" }), " pay what you want"));
+    el("li", {}, el("b", { textContent: "0" }), " changes to the firmware"),
+    el("li", {}, el("b", { textContent: "Free" }), " and open source"));
 
   const box = $("cam-labels");
   const imgs = looks.map((look) => el("img", { src: labelSrc(look), alt: "", width: 600, height: 440 }));
@@ -81,8 +81,8 @@ function renderCamera() {
       $("fw-note").textContent = ok
         ? ""
         : v === "Other"
-          ? `EXCCD needs firmware ${cam.firmware}. Other versions do not work.`
-          : `Firmware ${v} is not supported yet. It may come later – for now EXCCD needs ${cam.firmware}.`;
+          ? `EXCCD needs firmware ${cam.firmware}. Other versions won't work.`
+          : `Firmware ${v} isn't supported yet. Maybe later; for now EXCCD needs ${cam.firmware}.`;
       update();
     });
     fw.append(el("label", { className: "seg-opt" }, input, el("span", { textContent: v })));
@@ -180,11 +180,11 @@ function renderSupport() {
   const s = state.config.support;
   const box = $("pwyw");
   box.append(el("p", {},
-    "Free – pay what you want. ",
+    "It's free. If you want to chip in, around ",
     el("b", { textContent: `${s.suggested} ${s.currency}` }),
-    " is a good amount and helps bring EXCCD to more cameras."));
+    " is a nice amount. It goes towards the next camera."));
   if (!s.url) {
-    box.append(el("p", { className: "muted small", textContent: "Payments are not open yet – download for free for now." }));
+    box.append(el("p", { className: "muted small", textContent: "Donations aren't set up yet, so for now it's simply free." }));
     return;
   }
   state.amount = s.suggested;
@@ -219,7 +219,7 @@ function update() {
 
   const btn = $("download");
   btn.disabled = n === 0 || !state.firmwareOk;
-  $("dl-status").textContent = !state.firmwareOk ? "Not available for this firmware." : n === 0 ? "Pick at least one look." : "";
+  $("dl-status").textContent = !state.firmwareOk ? "Not available for this firmware yet." : n === 0 ? "Pick at least one look." : "";
   const s = state.config.support;
   btn.textContent = s.url && state.amount > 0 ? `Pay ${state.amount} ${s.currency} & download` : "Download ZIP";
   $("dock-text").textContent = n ? `${n} look${n === 1 ? "" : "s"} selected` : "No looks selected";

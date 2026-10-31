@@ -112,9 +112,13 @@ def main():
         version = re.search(r'#define FILMSIM_VERSION "(.*)"', h).group(1)
 
     site_src = os.path.join(ROOT, "site")
+    # Nur den Inhalt leeren: unter Windows laesst sich ein Ordner, in dem gerade
+    # ein Webserver oder eine Shell steht, nicht loeschen
     if os.path.exists(args.out):
-        shutil.rmtree(args.out)
-    shutil.copytree(site_src, args.out, ignore=shutil.ignore_patterns("samples", "README.md"))
+        for name in os.listdir(args.out):
+            path = os.path.join(args.out, name)
+            shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
+    shutil.copytree(site_src, args.out, ignore=shutil.ignore_patterns("samples", "README.md"), dirs_exist_ok=True)
 
     cam_dir = os.path.join(args.out, "data", CAMERA["id"])
     os.makedirs(os.path.join(cam_dir, "looks"))
