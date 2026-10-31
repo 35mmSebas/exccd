@@ -1,7 +1,7 @@
 #!/bin/sh
 # EXCCD lokal bauen, jede Kamera fuer sich.
 #
-#   tools/filmsim/build.sh                 alle Kameras
+#   tools/filmsim/build.sh                 alle Kameras aus cameras.txt
 #   tools/filmsim/build.sh ixus145_elph135 nur eine
 #
 # Die Objektdateien in core/, lib/ und modules/ teilen sich alle Kameras.
@@ -13,7 +13,8 @@
 set -e
 cd "$(dirname "$0")/../.."
 
-CAMERAS="ixus60_sd600:100d ixus145_elph135:100c"
+# Kameraliste: tools/filmsim/cameras.txt (Plattform, Sub, Status, Name)
+CAMERAS=$(awk '!/^#/ && NF { print $1 ":" $2 }' tools/filmsim/cameras.txt)
 [ $# -gt 0 ] && CAMERAS=$(for p in "$@"; do echo "$CAMERAS" | tr ' ' '\n' | grep "^$p:"; done)
 [ -n "$CAMERAS" ] || { echo "Unbekannte Kamera: $*" >&2; exit 1; }
 

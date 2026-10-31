@@ -28,6 +28,33 @@
 #include "keyboard.h"
 #include "filmsim.h"
 #include "filmsim_txt.h"
+#include "filmsim_raw.h"
+
+//-------------------------------------------------------------------
+// Kameraeinstellungen fuer EXCCD
+//   Jede Kamera setzt sie in platform/<kamera>/platform_camera.h, Block
+//   "EXCCD". Der Kern fragt nur diese Schalter ab, nie den Kameranamen.
+//   Was CHDK schon weiss (Bit-Tiefe, Bayer-Anordnung, Sensorgroesse),
+//   kommt direkt aus camera.h.
+//
+//   FILMSIM_LABELS       1 = Laschen (.FLM) und Splash passen zur Palette
+//                        der Kamera (gebaut aus tools/filmsim/cams/<kamera>/).
+//                        Ohne: Textkarten, kein Splash.
+//   FILMSIM_COLOR_BG     Palettenindizes fuer Textkarte und Leiste
+//   FILMSIM_COLOR_GREY   (Standard: CHDK-Farben)
+//   FILMSIM_COLOR_RULE
+//   FILMSIM_WB_R/_B      Tageslicht-Gains des Sensors * 256
+//                        (Standard: Werte der IXUS 60, bis kalibriert)
+//-------------------------------------------------------------------
+#ifndef FILMSIM_COLOR_BG
+#define FILMSIM_COLOR_BG    COLOR_BLACK
+#define FILMSIM_COLOR_GREY  COLOR_GREY
+#define FILMSIM_COLOR_RULE  COLOR_GREY_DK
+#endif
+#ifndef FILMSIM_WB_R
+#define FILMSIM_WB_R        486
+#define FILMSIM_WB_B        371
+#endif
 
 //-------------------------------------------------------------------
 // Rohdaten-Zugriff fuer 10- und 12-Bit-Sensoren
@@ -307,7 +334,6 @@ static int canon_props_match(const filmsim_t *s)
 //-------------------------------------------------------------------
 #if defined(FS_RAW) && CAM_SENSOR_BITS_PER_PIXEL == 12
 #define FS_OWN_CURVES 1
-#define CV_N 1024
 static unsigned short *curve_lut = 0;
 
 static void curve_lut_free(void)
@@ -319,7 +345,7 @@ static void curve_lut_free(void)
 static int curve_lut_load(const char *fn)
 {
     unsigned short *cv = malloc(4 * CV_N * sizeof(unsigned short));
-    int ok = 0, c, v;
+    int ok = 0;
     curve_lut_free();
     if (!cv) return 0;
     int fd = open(fn, O_RDONLY, 0777);
@@ -328,20 +354,7 @@ static int curve_lut_load(const char *fn)
         close(fd);
     }
     if (ok) curve_lut = malloc(4 * 4096 * sizeof(unsigned short));
-    if (curve_lut) {
-        for (c = 0; c < 4; c++) {
-            const unsigned short *k = cv + c * CV_N;
-            unsigned short *t = curve_lut + c * 4096;
-            for (v = 0; v < 4096; v++) {
-                int i = v >> 2, f = v & 3;
-                int k0 = k[i] > 1023 ? 1023 : k[i];
-                // letzte Stuetzstelle: Steigung fortsetzen (4093..4095)
-                int k1 = (i < CV_N - 1) ? (k[i + 1] > 1023 ? 1023 : k[i + 1]) : 2 * k0 - (k[i - 1] > 1023 ? 1023 : k[i - 1]);
-                int o = k0 * (4 - f) + k1 * f;          // = 4 * Interpolation
-                t[v] = v ? (o < 1 ? 1 : (o > 4095 ? 4095 : o)) : 0;   // 0 = Defekt-Markierung
-            }
-        }
-    }
+    if (curve_lut) curve_lut_build(cv, curve_lut);
     free(cv);
     return curve_lut != 0;
 }
@@ -351,24 +364,12 @@ __attribute__((optimize("O2"))) void filmsim_curve_apply(char *raw)
 {
     if (!curve_lut || !raw) return;
     int rows = camera_sensor.raw_rows, quads = camera_sensor.raw_rowpix / 4;
-    int rowlen = camera_sensor.raw_rowlen, y, g;
+    int rowlen = camera_sensor.raw_rowlen, y;
     for (y = 0; y < rows; y++) {
         // R-Zeile: Kurve 0 (gerade Spalten, R) / 1 (G), B-Zeile: 2 (G) / 3 (B)
         const unsigned short *ce = curve_lut + (((y ^ FS_ROW0) & 1) << 1) * 4096;
         const unsigned short *co = ce + 4096;
-        unsigned char *a = (unsigned char *)raw + y * rowlen;
-        for (g = 0; g < quads; g++, a += 6) {
-            int w0 = ce[(a[1] << 4) | (a[0] >> 4)];
-            int w1 = co[((a[0] & 0x0f) << 8) | a[3]];
-            int w2 = ce[(a[2] << 4) | (a[5] >> 4)];
-            int w3 = co[((a[5] & 0x0f) << 8) | a[4]];
-            a[1] = w0 >> 4;
-            a[0] = (w0 << 4) | (w1 >> 8);
-            a[3] = w1;
-            a[2] = w2 >> 4;
-            a[5] = (w2 << 4) | (w3 >> 8);
-            a[4] = w3;
-        }
+        curve_row12((unsigned char *)raw + y * rowlen, quads, ce, co);
     }
 }
 #endif
@@ -514,20 +515,10 @@ extern gui_handler menuGuiHandler;
 #define BAR_Y       (LABEL_TOP + LABEL_H + 10)
 #define LABEL_W     301                 // Breite der EXCCD-Laschen
 
-// EXCCD-Farben wie in den Laschen (Kamerapalette, Aufnahmemodus, alle deckend).
-// Laschen (.FLM) und diese Farben sind Indizes der IXUS-60-Palette. Andere
-// Kameras zeigen die Textkarte in CHDK-Farben, bis es Laschen fuer ihre
-// Palette gibt (Optionen -> System -> Farbpalette speichern).
-#ifdef CAMERA_ixus60_sd600
-#define FS_FLM      1
-#define EX_BG       0xFF
-#define EX_GREY     0xA3
-#define EX_RULE     0xFA
-#else
-#define EX_BG       COLOR_BLACK
-#define EX_GREY     COLOR_GREY
-#define EX_RULE     COLOR_GREY_DK
-#endif
+// EXCCD-Farben wie in den Laschen (Kamerapalette, Aufnahmemodus, alle deckend)
+#define EX_BG       FILMSIM_COLOR_BG
+#define EX_GREY     FILMSIM_COLOR_GREY
+#define EX_RULE     FILMSIM_COLOR_RULE
 
 static int sel = 0;                 // gerade angezeigter Film
 static int need_draw = 0;           // 1 = alles, 2 = nur Leiste
@@ -547,7 +538,7 @@ static void label_load(int i)
     struct stat st;
     label_free();
     label_for = i;
-#ifndef FS_FLM
+#ifndef FILMSIM_LABELS
     return;
 #endif
     if (!sims[i].label) return;
@@ -785,75 +776,11 @@ static const short mix_bw[4][3][3] = {
     {{141,102,13},{141,102,13},{141,102,13}},                       // Orange .55 .40 .05
     {{192, 64, 0},{192, 64, 0},{192, 64, 0}},                       // Rot    .75 .25 .00
 };
-// WB-Normierung (Rohwert * f / 256), Tageslicht-Gains des Sensors.
-// IXUS 60: R 1.9, B 1.45. Andere Kameras: FILMSIM_WB_R/_B in platform_camera.h
-#ifdef FILMSIM_WB_R
+// WB-Normierung (Rohwert * f / 256), Tageslicht-Gains des Sensors
 #define WB_R FILMSIM_WB_R
 #define WB_B FILMSIM_WB_B
-#else
-#define WB_R 486
-#define WB_B 371
-#endif
 #define BLK  31
 
-#if CAM_SENSOR_BITS_PER_PIXEL == 12
-// 4 Pixel in 6 Byte (Anordnung wie get_raw_pixel/set_raw_pixel in raw.c)
-static inline __attribute__((always_inline)) void dec4_12(const unsigned char *a, int *v)
-{
-    v[0] = ((a[1] << 4) | (a[0] >> 4)) >> 2;
-    v[1] = (((a[0] & 0x0f) << 8) | a[3]) >> 2;
-    v[2] = ((a[2] << 4) | (a[5] >> 4)) >> 2;
-    v[3] = (((a[5] & 0x0f) << 8) | a[4]) >> 2;
-}
-static inline __attribute__((always_inline)) void enc4_12(unsigned char *a, const int *v)
-{
-    // untere zwei Bit aus dem Original uebernehmen (0 bleibt 0: Defekt-Markierung)
-    int w0 = v[0] ? (v[0] << 2) | ((a[0] >> 4) & 3) : 0;
-    int w1 = v[1] ? (v[1] << 2) | (a[3] & 3) : 0;
-    int w2 = v[2] ? (v[2] << 2) | ((a[5] >> 4) & 3) : 0;
-    int w3 = v[3] ? (v[3] << 2) | (a[4] & 3) : 0;
-    a[1] = w0 >> 4;
-    a[0] = (w0 << 4) | ((w1 >> 8) & 0x0f);
-    a[3] = w1;
-    a[2] = w2 >> 4;
-    a[5] = (w2 << 4) | ((w3 >> 8) & 0x0f);
-    a[4] = w3;
-}
-static inline __attribute__((always_inline)) void dec8(const unsigned char *a, int *v)
-{
-    dec4_12(a, v); dec4_12(a + 6, v + 4);
-}
-static inline __attribute__((always_inline)) void enc8(unsigned char *a, const int *v)
-{
-    enc4_12(a, v); enc4_12(a + 6, v + 4);
-}
-#else
-static inline __attribute__((always_inline)) void dec8(const unsigned char *a, int *v)
-{
-    v[0] = (a[1] << 2) | (a[0] >> 6);
-    v[1] = ((a[0] & 0x3f) << 4) | (a[3] >> 4);
-    v[2] = ((a[3] & 0x0f) << 6) | (a[2] >> 2);
-    v[3] = ((a[2] & 0x03) << 8) | a[5];
-    v[4] = (a[4] << 2) | (a[7] >> 6);
-    v[5] = ((a[7] & 0x3f) << 4) | (a[6] >> 4);
-    v[6] = ((a[6] & 0x0f) << 6) | (a[9] >> 2);
-    v[7] = ((a[9] & 0x03) << 8) | a[8];
-}
-static inline __attribute__((always_inline)) void enc8(unsigned char *a, const int *v)
-{
-    a[1] = v[0] >> 2;
-    a[0] = (v[0] << 6) | (v[1] >> 4);
-    a[3] = (v[1] << 4) | (v[2] >> 6);
-    a[2] = (v[2] << 2) | (v[3] >> 8);
-    a[5] = v[3];
-    a[4] = v[4] >> 2;
-    a[7] = (v[4] << 6) | (v[5] >> 4);
-    a[6] = (v[5] << 4) | (v[6] >> 6);
-    a[9] = (v[6] << 2) | (v[7] >> 8);
-    a[8] = v[7];
-}
-#endif
-static inline __attribute__((always_inline)) int clip10(int x) { return x < 0 ? 0 : (x > 1023 ? 1023 : x); }
 
 // Rueckrechnung des Weissabgleichs: (n << 8) / WB als Tabelle statt Division.
 // Die alten ARM-Prozessoren haben keinen Divisionsbefehl - jede Division
@@ -951,7 +878,7 @@ static void splash_load(void)
 {
     const char *fn = "A/CHDK/FILMS/SPLASH.FLM";
     struct stat st;
-#ifndef FS_FLM
+#ifndef FILMSIM_LABELS
     return;
 #endif
     if (splash_buf) return;

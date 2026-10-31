@@ -129,3 +129,7 @@
     #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
 
 //--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // Noch keine Laschen (Palette fehlt) und kein eigener Weissabgleich:
+    // Textkarten in CHDK-Farben, WB-Gains der IXUS 60.
+    // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.

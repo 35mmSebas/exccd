@@ -76,24 +76,34 @@ a host GCC, GNU make and Info-ZIP `zip`.
 
 ```sh
 export PATH=/path/to/xpack-arm-none-eabi-gcc-10.3.1-2.3/bin:$PATH
-mkdir -p bin
-make PLATFORM=ixus60_sd600 PLATFORMSUB=100d firzipsubcomplete
+tools/filmsim/build.sh                  # every camera in tools/filmsim/cameras.txt
+tools/filmsim/build.sh ixus60_sd600     # one camera
 ```
 
-Result: `bin/ixus60_sd600-100d-1.6.1-0-full.zip`.
+Result: `dist/exccd-<version>-<platform>-<sub>-full.zip`. The script runs `make clean`
+before and after each camera, because CHDK shares the object files in `core/`, `lib/` and
+`modules/` between all platforms.
 
 On Windows, keep LF line endings. The repository's `.gitattributes` takes care of that;
 an older checkout with `core.autocrlf=true` will not build.
 
-Test for the `FILMS.TXT` parser on the PC:
+Tests on the PC, for the `FILMS.TXT` parser and for the raw codec and 12-bit curves
+(`core/filmsim_raw.h`, checked against CHDK's `get_raw_pixel`/`set_raw_pixel`):
 
 ```sh
 gcc -Wall -Wextra -I core -o test_films_txt tools/filmsim/test_films_txt.c core/filmsim_txt.c
 ./test_films_txt CHDK/FILMS/BEISPIEL.TXT
+gcc -Wall -Wextra -I core -DCAM_SENSOR_BITS_PER_PIXEL=10 -o test_raw10 tools/filmsim/test_raw.c && ./test_raw10
+gcc -Wall -Wextra -I core -DCAM_SENSOR_BITS_PER_PIXEL=12 -o test_raw12 tools/filmsim/test_raw.c && ./test_raw12
 ```
 
-GitHub Actions builds every push. A tag `vX.Y.Z` that matches `FILMSIM_VERSION` in
-`core/filmsim.h` creates a release with the ZIP and publishes the download page on GitHub Pages.
+When a core change must not touch another camera, `tools/filmsim/compare_build.sh <git-ref> <platform>`
+builds both states with the same version and timestamp and compares `main.bin` and every object file.
+
+GitHub Actions builds every push, one job per camera in `tools/filmsim/cameras.txt`.
+A tag `vX.Y.Z` that matches `FILMSIM_VERSION` in `core/filmsim.h` creates a release with the
+ZIPs of the cameras marked `stabil` and publishes the download page on GitHub Pages.
+Cameras marked `test` are only build artifacts.
 
 The download page is static. `tools/site/build_site.py` splits the firmware ZIP into a base
 ZIP and one small ZIP per look; the browser copies the chosen entries into a new ZIP and adds
@@ -109,7 +119,11 @@ python -m http.server -d _site
 | Path | Content |
 |---|---|
 | `core/filmsim.c` | Film selection, look logic, OSD |
+| `core/filmsim_raw.h` | Raw codec (10/12 bit) and 12-bit tone curves, also used by the PC test |
 | `core/filmsim_txt.c` | Parser for `A/CHDK/FILMS/FILMS.TXT` |
+| `platform/<camera>/platform_camera.h` | CHDK camera settings; block `EXCCD` with the `FILMSIM_*` switches |
+| `tools/filmsim/cameras.txt` | Cameras EXCCD is built for, with status `stabil` or `test` |
+| `tools/filmsim/cams/<camera>/` | Per camera: palette, notes, camera test; [porting guide](tools/filmsim/cams/README.md) |
 | `CHDK/CURVES/`, `CHDK/FILMS/` | Curves, labels and film table of the looks |
 | `tools/filmsim/` | Generators for curves (`make_curves.py`) and labels (`make_label_art.py`, `make_labels.py`) |
 | `site/`, `tools/site/` | Download page: pick looks, the browser assembles the ZIP for the SD card |

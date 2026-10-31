@@ -12,12 +12,61 @@ permissions:
 
 env:
   XPACK_VERSION: 10.3.1-2.3
-  PLATFORM: ixus60_sd600
-  PLATFORMSUB: 100d
 
+# Kameras kommen aus tools/filmsim/cameras.txt: jede wird in einem eigenen
+# Job auf einer frischen Maschine gebaut. Release und Webseite bekommen nur
+# Kameras mit Status "stabil".
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      matrix: ${{ steps.cameras.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version pruefen
+        id: version
+        run: |
+          version=$(sed -n 's/^#define FILMSIM_VERSION "\(.*\)"/\1/p' core/filmsim.h)
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zu FILMSIM_VERSION $version in core/filmsim.h"
+            exit 1
+          fi
+
+      - name: Kameraliste lesen
+        id: cameras
+        run: |
+          matrix=$(awk '!/^#/ && NF { printf "%s{\"platform\":\"%s\",\"sub\":\"%s\",\"status\":\"%s\"}", n++ ? "," : "", $1, $2, $3 }
+                        END { if (!n) exit 1 }' tools/filmsim/cameras.txt)
+          echo "matrix={\"include\":[$matrix]}" >> "$GITHUB_OUTPUT"
+          echo "{\"include\":[$matrix]}"
+
+      - name: PC-Test FILMS.TXT-Parser
+        run: |
+          gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
+          "$RUNNER_TEMP/test_films_txt" CHDK/FILMS/BEISPIEL.TXT
+
+      - name: PC-Test Rohdaten (10 und 12 Bit)
+        run: |
+          for b in 10 12; do
+            gcc -Wall -Wextra -Werror -I core -DCAM_SENSOR_BITS_PER_PIXEL=$b -o "$RUNNER_TEMP/test_raw$b" tools/filmsim/test_raw.c
+            "$RUNNER_TEMP/test_raw$b"
+          done
+
+  build:
+    needs: setup
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    name: build (${{ matrix.platform }} ${{ matrix.sub }}, ${{ matrix.status }})
+    env:
+      VERSION: ${{ needs.setup.outputs.version }}
+      PLATFORM: ${{ matrix.platform }}
+      PLATFORMSUB: ${{ matrix.sub }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,21 +94,6 @@ jobs:
           echo "$HOME/xpack-arm-none-eabi-gcc/bin" >> "$GITHUB_PATH"
           command -v zip >/dev/null || sudo apt-get install -y zip
 
-      - name: Version pruefen
-        run: |
-          version=$(sed -n 's/^#define FILMSIM_VERSION "\(.*\)"/\1/p' core/filmsim.h)
-          test -n "$version"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "$version" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME passt nicht zu FILMSIM_VERSION $version in core/filmsim.h"
-            exit 1
-          fi
-
-      - name: PC-Test FILMS.TXT-Parser
-        run: |
-          gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
-          "$RUNNER_TEMP/test_films_txt" CHDK/FILMS/BEISPIEL.TXT
-
       - name: Firmware bauen
         run: |
           arm-none-eabi-gcc --version | head -1
@@ -68,19 +102,44 @@ jobs:
           cp bin/$PLATFORM-$PLATFORMSUB-*-full.zip dist/exccd-$VERSION-$PLATFORM-$PLATFORMSUB-full.zip
           unzip -l dist/*.zip | grep -E 'DISKBOOT.BIN|PS.FIR'
 
-      - name: Download-Webseite bauen und pruefen
-        run: |
-          sudo apt-get install -y python3-pil
-          python3 tools/site/build_site.py dist/*.zip _site --version "$VERSION"
-          node tools/site/test_zipjoin.mjs _site "$RUNNER_TEMP/zipjoin"
-          unzip -tq "$RUNNER_TEMP/zipjoin/exccd-all.zip"
-          unzip -tq "$RUNNER_TEMP/zipjoin/exccd-two.zip"
-          "$RUNNER_TEMP/test_films_txt" "$RUNNER_TEMP/zipjoin/FILMS-all.TXT"
-
       - uses: actions/upload-artifact@v4
         with:
           name: exccd-${{ env.VERSION }}-${{ env.PLATFORM }}-${{ env.PLATFORMSUB }}
           path: dist/*.zip
+
+  site:
+    needs: [setup, build]
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.setup.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: exccd-*
+          path: dist
+          merge-multiple: true
+
+      - name: Stabile Kameras auswaehlen
+        run: |
+          mkdir -p release
+          for cam in $(awk '!/^#/ && $3 == "stabil" { print $1 "-" $2 }' tools/filmsim/cameras.txt); do
+            cp "dist/exccd-$VERSION-$cam-full.zip" release/
+          done
+          ls -l release
+          # build_site.py kann bisher nur eine Kamera (siehe TODO: Webseite fuer weitere Modelle)
+          test "$(ls release | wc -l)" -eq 1 || { echo "::error::Webseite kann bisher genau eine stabile Kamera"; exit 1; }
+
+      - name: Download-Webseite bauen und pruefen
+        run: |
+          sudo apt-get install -y python3-pil
+          gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
+          python3 tools/site/build_site.py release/*.zip _site --version "$VERSION"
+          node tools/site/test_zipjoin.mjs _site "$RUNNER_TEMP/zipjoin"
+          unzip -tq "$RUNNER_TEMP/zipjoin/exccd-all.zip"
+          unzip -tq "$RUNNER_TEMP/zipjoin/exccd-two.zip"
+          "$RUNNER_TEMP/test_films_txt" "$RUNNER_TEMP/zipjoin/FILMS-all.TXT"
 
       - uses: actions/upload-pages-artifact@v4
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
@@ -91,13 +150,13 @@ jobs:
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --title "EXCCD $GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" release/*.zip --title "EXCCD $GITHUB_REF_NAME" --generate-notes
 
   # Webseite nur bei Releases (Tag) oder von Hand veroeffentlichen.
   # Einmalig im Repo einstellen: Settings -> Pages -> Source: GitHub Actions
   pages:
     if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-    needs: build
+    needs: site
     runs-on: ubuntu-24.04
     permissions:
       pages: write

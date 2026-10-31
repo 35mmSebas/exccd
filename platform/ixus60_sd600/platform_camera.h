@@ -83,3 +83,12 @@
     #undef  CAM_DEFAULT_MENU_CURSOR_FG
     #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
     #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    #define FILMSIM_LABELS              1       // Laschen aus tools/filmsim/cams/ixus60_sd600
+    #define FILMSIM_COLOR_BG            0xFF    // Palettenindizes wie in den Laschen
+    #define FILMSIM_COLOR_GREY          0xA3
+    #define FILMSIM_COLOR_RULE          0xFA
+    #define FILMSIM_WB_R                486     // R 1.9 (Tageslicht)
+    #define FILMSIM_WB_B                371     // B 1.45
