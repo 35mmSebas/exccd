@@ -219,7 +219,7 @@ function update() {
 
   const btn = $("download");
   btn.disabled = n === 0 || !state.firmwareOk;
-  $("dl-status").textContent = !state.firmwareOk ? "Not available for this firmware yet." : n === 0 ? "Pick at least one look." : "";
+  $("dl-status").textContent = !state.firmwareOk ? "Not available for this firmware." : n === 0 ? "Pick at least one look." : "";
   const s = state.config.support;
   btn.textContent = s.url && state.amount > 0 ? `Pay ${state.amount} ${s.currency} & download` : "Download ZIP";
   $("dock-text").textContent = n ? `${n} look${n === 1 ? "" : "s"} selected` : "No looks selected";
