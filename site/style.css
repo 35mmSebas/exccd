@@ -299,22 +299,22 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
            --fill: #ffe31a; --ink: #e8202a;
            position: absolute; z-index: 3; isolation: isolate; display: grid; place-items: center; pointer-events: none;
            padding: .95em 1.15em; max-width: 8.5em; text-align: center; transform: rotate(var(--tilt, -6deg));
-           font: italic 400 1rem/.9 Impact, "Arial Black", "Helvetica Neue", sans-serif; letter-spacing: .02em;
+           font: italic 400 1rem/1.05 Impact, "Arial Black", "Helvetica Neue", sans-serif; letter-spacing: .05em;
            text-transform: uppercase; color: var(--ink);
            /* Kontur wie im Comic: innen weiss, aussen schwarz, dazu ein harter Schatten */
-           text-shadow: .06em 0 #fff, -.06em 0 #fff, 0 .06em #fff, 0 -.06em #fff,
-                        .045em .045em #fff, -.045em .045em #fff, .045em -.045em #fff, -.045em -.045em #fff,
-                        .12em 0 #111, -.12em 0 #111, 0 .12em #111, 0 -.12em #111,
-                        .09em .09em #111, -.09em .09em #111, .09em -.09em #111, -.09em -.09em #111,
-                        .17em .17em #111, .14em .14em #111;
+           text-shadow: .045em 0 #fff, -.045em 0 #fff, 0 .045em #fff, 0 -.045em #fff,
+                        .032em .032em #fff, -.032em .032em #fff, .032em -.032em #fff, -.032em -.032em #fff,
+                        .085em 0 #111, -.085em 0 #111, 0 .085em #111, 0 -.085em #111,
+                        .06em .06em #111, -.06em .06em #111, .06em -.06em #111, -.06em -.06em #111,
+                        .12em .12em #111;
            filter: drop-shadow(0 6px 10px rgb(0 0 0 / .5)); }
 .sticker::before, .sticker::after { content: ""; position: absolute; z-index: -1; clip-path: var(--burst); }
 .sticker::before { inset: 0; background: #111; }
 .sticker::after { inset: .16em; background:
-  repeating-conic-gradient(from 3deg, rgb(255 255 255 / .35) 0 4deg, transparent 4deg 15deg), var(--fill); }
-.sticker.c1 { --fill: #ff4f9a; --ink: #ffe31a; }
+  repeating-conic-gradient(from 3deg, rgb(255 255 255 / .18) 0 4deg, transparent 4deg 15deg), var(--fill); }
+.sticker.c1 { --fill: #e8202a; --ink: #ffe31a; }
 .sticker.c2 { --fill: #fff; --ink: #1f6bff; }
-.sticker.c3 { --fill: #2ec5ff; --ink: #ffe31a; }
+.sticker.c3 { --fill: #1f5cff; --ink: #ffe31a; }
 .sample .sticker { font-size: 1.2rem; }
 .sample .sticker.p0 { right: 3%; bottom: 4%; }
 .sample .sticker.p1 { left: 3%; top: 4%; }
