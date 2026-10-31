@@ -39,11 +39,7 @@ const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`;
 
 function renderHero() {
   const looks = state.camera.looks;
-  $("facts").append(
-    el("li", {}, el("b", { textContent: looks.length }), " looks"),
-    el("li", {}, el("b", { textContent: "+2" }), " Dynamic+ variants each"),
-    el("li", {}, el("b", { textContent: "0" }), " changes to the firmware"),
-    el("li", {}, el("b", { textContent: "Free" }), " and open source"));
+  $("facts").textContent = `${looks.length} looks · free · open source · ${state.site.version}`;
 
   const box = $("cam-labels");
   const imgs = looks.map((look) => el("img", { src: labelSrc(look), alt: "", width: 600, height: 440 }));
@@ -123,7 +119,7 @@ function chips(look) {
 }
 
 function renderLooks() {
-  const box = $("looks");
+  const box = $("looks-grid");
   for (const look of state.camera.looks) {
     const input = el("input", { type: "checkbox", checked: true, value: look.id });
     input.addEventListener("change", () => {
@@ -167,7 +163,7 @@ function renderLooks() {
 }
 
 function setAll(on) {
-  for (const input of $("looks").querySelectorAll("input")) {
+  for (const input of $("looks-grid").querySelectorAll("input")) {
     input.checked = on;
     on ? state.selected.add(input.value) : state.selected.delete(input.value);
   }
@@ -245,7 +241,7 @@ async function download() {
     const url = URL.createObjectURL(new Blob([zip], { type: "application/zip" }));
     el("a", { href: url, download: name }).click();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    status.textContent = `${name} – ${mb(zip.length)}. Next: install it (step 04).`;
+    status.textContent = `${name} – ${mb(zip.length)}.`;
   } catch (err) {
     status.textContent = `Download failed: ${err.message}`;
   } finally {
@@ -265,7 +261,28 @@ function watchDock() {
   io.observe($("download-step"));
 }
 
+// --- Menue: je Menuepunkt eine Ansicht, die Startseite zeigt nur die Kamera
+
+function route() {
+  const target = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+  const view = target?.closest("[data-view]") ?? $("home");
+  const switched = view.hidden;
+  for (const v of document.querySelectorAll("[data-view]")) v.hidden = v !== view;
+  for (const a of document.querySelectorAll(".nav-main")) {
+    if (a.getAttribute("href") === `#${view.id}`) a.setAttribute("aria-current", "page");
+    else a.removeAttribute("aria-current");
+  }
+  document.body.dataset.page = view.id;
+  // Beim Wechsel der Ansicht springen statt scrollen
+  const behavior = switched || reducedMotion ? "instant" : "smooth";
+  if (!target || target === view) window.scrollTo({ top: 0, behavior });
+  else target.scrollIntoView({ behavior });
+}
+
 async function main() {
+  route();
+  addEventListener("hashchange", route);
+
   try {
     [state.site, state.config] = await Promise.all([loadJson("data/site.json"), loadJson("config.json")]);
   } catch (err) {
@@ -274,7 +291,7 @@ async function main() {
   }
   state.camera = state.site.cameras[0];
   $("version").textContent = state.site.version;
-  $("repo-link").href = state.config.repo;
+  for (const a of document.querySelectorAll(".repo-link")) a.href = state.config.repo;
   renderHero();
   renderCamera();
   renderLooks();
