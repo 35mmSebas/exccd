@@ -193,6 +193,96 @@ def icon_moon(d, cx, cy, r, c):
         d.line([(x - s * r, y), (x + s * r, y)], fill=c, width=STROKE - 2)
         d.line([(x, y - s * r), (x, y + s * r)], fill=c, width=STROKE - 2)
 
+def icon_portrait(d, cx, cy, r, c):
+    # Kopf und Schultern in einem ovalen Bilderrahmen
+    d.ellipse([cx - 0.72 * r, cy - 0.95 * r, cx + 0.72 * r, cy + 0.95 * r], outline=c, width=STROKE)
+    _circle(d, cx, cy - 0.28 * r, 0.27 * r, c)
+    d.arc([cx - 0.5 * r, cy + 0.08 * r, cx + 0.5 * r, cy + 1.0 * r], 180, 360, fill=c, width=STROKE)
+
+def icon_bulb(d, cx, cy, r, c):
+    # Gluehbirne mit Wendel und Fassung
+    by = cy - 0.25 * r
+    d.arc([cx - 0.55 * r, by - 0.55 * r, cx + 0.55 * r, by + 0.55 * r], 140, 400, fill=c, width=STROKE)
+    x0, x1 = cx + 0.55 * r * math.cos(math.radians(140)), cx + 0.55 * r * math.cos(math.radians(40))
+    y0 = by + 0.55 * r * math.sin(math.radians(40))
+    d.line([(x0, y0), (cx - 0.22 * r, cy + 0.5 * r)], fill=c, width=STROKE)
+    d.line([(x1, y0), (cx + 0.22 * r, cy + 0.5 * r)], fill=c, width=STROKE)
+    for k in range(3):
+        y = cy + 0.5 * r + k * 0.16 * r
+        d.line([(cx - 0.22 * r, y), (cx + 0.22 * r, y)], fill=c, width=STROKE)
+    d.line([(cx - 0.12 * r, cy + 0.32 * r), (cx - 0.12 * r, by), (cx - 0.04 * r, by - 0.12 * r),
+            (cx + 0.04 * r, by), (cx + 0.12 * r, by - 0.12 * r), (cx + 0.12 * r, cy + 0.32 * r)],
+           fill=c, width=STROKE - 3, joint="curve")
+
+def icon_hourglass(d, cx, cy, r, c):
+    w, h = 0.62 * r, 0.85 * r
+    for y in (cy - h, cy + h):
+        d.line([(cx - w - 0.12 * r, y), (cx + w + 0.12 * r, y)], fill=c, width=STROKE)
+    _poly(d, [(cx - w, cy - h), (cx + w, cy - h), (cx + 0.08 * r, cy), (cx + w, cy + h),
+              (cx - w, cy + h), (cx - 0.08 * r, cy)], c)
+    # Rest Sand oben, Haeufchen unten
+    d.line([(cx - 0.3 * r, cy - 0.42 * r), (cx + 0.3 * r, cy - 0.42 * r)], fill=c, width=STROKE)
+    _poly(d, [(cx - 0.42 * r, cy + 0.72 * r), (cx, cy + 0.42 * r), (cx + 0.42 * r, cy + 0.72 * r)], c, close=False)
+
+def icon_cross(d, cx, cy, r, c):
+    # zwei gekreuzte Pfeile
+    def arrow(x0, y0, x1, y1):
+        d.line([(x0, y0), (x1, y1)], fill=c, width=STROKE)
+        a = math.atan2(y1 - y0, x1 - x0)
+        for da in (2.6, -2.6):
+            d.line([(x1, y1), (x1 + 0.3 * r * math.cos(a + da), y1 + 0.3 * r * math.sin(a + da))],
+                   fill=c, width=STROKE)
+    k = 0.72 * r
+    arrow(cx - k, cy + k, cx + k, cy - k)
+    arrow(cx - k, cy - k, cx + k, cy + k)
+
+def icon_flower(d, cx, cy, r, c):
+    # sechs Bluetenblaetter um eine Mitte
+    _circle(d, cx, cy, 0.2 * r, c)
+    for k in range(6):
+        a = k * math.pi / 3
+        pts = []
+        for i in range(41):
+            t = i / 40 * math.pi
+            u, v = 0.27 * r + 0.62 * r * (1 - math.cos(t)) / 2, 0.24 * r * math.sin(t)
+            pts.append((u, v))
+        pts += [(u, -v) for u, v in reversed(pts)]
+        _poly(d, [(cx + u * math.cos(a) - v * math.sin(a), cy + u * math.sin(a) + v * math.cos(a))
+                  for u, v in pts], c)
+
+def icon_city(d, cx, cy, r, c):
+    # Hochhaeuser mit Fensterreihen auf einer Grundlinie
+    base = cy + 0.85 * r
+    d.line([(cx - 1.05 * r, base), (cx + 1.05 * r, base)], fill=c, width=STROKE)
+    for x0, x1, top in ((-0.9, -0.4, -0.2), (-0.4, 0.15, -0.85), (0.15, 0.85, -0.45)):
+        d.rectangle([cx + x0 * r, cy + top * r, cx + x1 * r, base], outline=c, width=STROKE)
+        y = cy + (top + 0.25) * r
+        while y < base - 0.2 * r:
+            d.line([(cx + (x0 + 0.13) * r, y), (cx + (x1 - 0.13) * r, y)], fill=c, width=STROKE - 4)
+            y += 0.22 * r
+    d.line([(cx - 0.12 * r, cy - 0.85 * r), (cx - 0.12 * r, cy - 1.05 * r)], fill=c, width=STROKE)
+
+def icon_flame(d, cx, cy, r, c):
+    # Tropfenform (Spitze oben), innen eine kleinere
+    def flame(s, oy):
+        pts = [(cx + s * 0.75 * r * math.sin(t) * math.sin(t / 2) ** 1.5, cy + oy * r - s * 0.95 * r * math.cos(t))
+               for t in (i * 2 * math.pi / 160 for i in range(160))]
+        _poly(d, pts, c)
+    flame(1.0, 0.0)
+    flame(0.42, 0.52)
+
+def icon_canister(d, cx, cy, r, c):
+    # Filmpatrone mit herausstehender Zunge
+    w, h = 0.95 * r, 1.45 * r
+    x0, y0 = cx - 0.75 * r, cy - h / 2
+    d.rounded_rectangle([x0, y0, x0 + w, y0 + h], radius=0.12 * r, outline=c, width=STROKE)
+    d.rectangle([x0 + 0.3 * r, y0 - 0.22 * r, x0 + w - 0.3 * r, y0], outline=c, width=STROKE)
+    d.line([(x0 + w, y0 + 0.3 * r), (cx + 0.95 * r, y0 + 0.3 * r), (cx + 0.95 * r, y0 + h - 0.3 * r),
+            (x0 + w, y0 + h - 0.3 * r)], fill=c, width=STROKE, joint="curve")
+    for k in range(3):
+        x = x0 + w + 0.2 * r + k * 0.3 * r
+        d.rectangle([x, y0 + 0.42 * r, x + 0.12 * r, y0 + 0.56 * r], fill=c)
+
 # ---------------------------------------------------------------------------
 # Looks: Schluessel (8.3), Name, ISO, Filmart, Beschreibung, Motiv, Akzentfarbe
 # ---------------------------------------------------------------------------
@@ -205,6 +295,14 @@ LOOKS = [
     ("DRUGSTR", "DRUGSTORE", "200", "COLOR NEG",     "RETRO NEGATIVE",     icon_camera,    0x5A),
     ("SCENE",   "SCENE",     "500", "CINEMA",        "CINEMATIC FLAT",     icon_reel,      0x2E),
     ("SILVER",  "SILVER",    "400", "BLACK & WHITE", "FINE MONO",          icon_moon,      WHITE),
+    ("PORTRT",  "PORTRAIT",  "400", "COLOR NEG",     "WARM SKIN",          icon_portrait,  0x6F),
+    ("TUNGSTN", "TUNGSTEN",  "800", "CINEMA",        "NEON NIGHTS",        icon_bulb,      0xDF),
+    ("EXPIRED", "EXPIRED",   "200", "COLOR NEG",     "FADED MEMORY",       icon_hourglass, 0x5E),
+    ("CROSS",   "CROSS",     "100", "COLOR SLIDE",   "CROSS PROCESSED",    icon_cross,     0x66),
+    ("VIOLET",  "VIOLET",    "400", "COLOR NEG",     "PURPLE FOLIAGE",     icon_flower,    0xE3),
+    ("CONCRET", "CONCRETE",  "100", "COLOR NEG",     "MUTED URBAN",        icon_city,      0xF3),
+    ("EMBER",   "EMBER",     "200", "COLOR NEG",     "RED SCALE",          icon_flame,     0x22),
+    ("GRIT",    "GRIT",      "400", "BLACK & WHITE", "PUSHED GRAIN",       icon_canister,  0xE6),
 ]
 
 def name_size(d):

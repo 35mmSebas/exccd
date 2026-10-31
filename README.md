@@ -24,6 +24,14 @@ More cameras are planned.
 | Drugstore 200 | Color negative | Retro negative |
 | Scene 500 | Cinema | Cinematic flat |
 | Silver 400 | Black and white | Fine mono |
+| Portrait 400 | Color negative | Warm skin |
+| Tungsten 800 | Cinema | Neon nights |
+| Expired 200 | Color negative | Faded memory |
+| Cross 100 | Color slide | Cross processed |
+| Violet 400 | Color negative | Purple foliage |
+| Concrete 100 | Color negative | Muted urban |
+| Ember 200 | Color negative | Red scale |
+| Grit 400 | Black and white | Pushed grain |
 
 Every look also has two **Dynamic+** variants (DR+1, DR+2) that expose shorter to protect
 highlights and lift the shadows with the curve.

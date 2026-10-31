@@ -23,6 +23,14 @@ static const filmsim_t expected[] = {
     { "Drugstore 200",   MC_CUSTOM,   0,  0, -1,  0,  1, -1,  0,  "DRUGSTR.CV",   "DRUGSTR",  0 },
     { "Scene 500",       MC_CUSTOM,  -2, -1, -2,  0,  0,  0,  0,  "SCENE.CV",     "SCENE",    0 },
     { "Silver 400",      MC_BW,       0,  0,  0,  0,  0,  0,  0,  "SILVER.CV",    "SILVER",   0 },
+    { "Portrait 400",    MC_CUSTOM,  -1, -1,  0,  0,  0, -1,  1,  "PORTRT.CV",    "PORTRT",   0 },
+    { "Tungsten 800",    MC_OFF,      0,  0,  0,  0,  0,  0,  0,  "TUNGSTN.CV",   "TUNGSTN",  0 },
+    { "Expired 200",     MC_CUSTOM,  -1, -1, -1,  0,  0,  0,  0,  "EXPIRED.CV",   "EXPIRED",  0 },
+    { "Cross 100",       MC_CUSTOM,   0,  1,  2,  0,  0,  0,  0,  "CROSS.CV",     "CROSS",    0 },
+    { "Violet 400",      MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "VIOLET.CV",    "VIOLET",   1 },
+    { "Concrete 100",    MC_CUSTOM,   0,  1, -1,  0,  0,  0,  0,  "CONCRET.CV",   "CONCRET",  2 },
+    { "Ember 200",       MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "EMBER.CV",     "EMBER",    0 },
+    { "Grit 400",        MC_BW,       0,  0,  0,  0,  0,  0,  0,  "GRIT.CV",      "GRIT",     0 },
 };
 #define NUM_EXPECTED ((int)(sizeof(expected)/sizeof(expected[0])))
 

@@ -56,6 +56,30 @@ RECIPES = {
         R=((.08, .065), (.25, .203), (.5, .495), (.75, .80),  (.92, .94)),
         G=((.08, .09),  (.25, .236), (.5, .508), (.75, .785), (.92, .93)),
         B=((.08, .093), (.25, .238), (.5, .485), (.75, .74),  (.92, .895)))),
+    # v1.9.22: zweite Runde Looks
+    # Violet und Concrete: Farbtausch macht die Kanalmischung (Mix 1/2 in FILMS.TXT)
+    "VIOLET":  dict(contrast=0.15, lift=0.02, shoulder=0.10,
+                    shadow=(0.006, -0.004, 0.010), highlight=(0.006, 0.00, 0.004)),
+    "CONCRET": dict(contrast=0.28, lift=0.02, shoulder=0.10,
+                    shadow=(0.00, 0.00, 0.004), highlight=(0.004, 0.002, 0.00)),
+    "PORTRT":  dict(contrast=0.05, lift=0.02, shoulder=0.20,
+                    shadow=(0.004, 0.002, -0.002), highlight=(0.012, 0.004, -0.006)),
+    "EXPIRED": dict(contrast=-0.05, lift=0.09, shoulder=0.20,
+                    shadow=(0.028, -0.015, 0.018), highlight=(0.005, 0.022, -0.028)),
+    "GRIT":    dict(contrast=0.38, lift=0.00, shoulder=0.04,
+                    gain=(1.20, 1.0, 0.80)),          # Orangefilter-Effekt, haerter als Silver
+    "EMBER":   dict(points=dict(             # Ember: Redscale, Blau fast weg, Lichter gelblich
+        R=((.08, .15),  (.25, .42),  (.5, .70),  (.75, .88),  (.92, .96)),
+        G=((.08, .04),  (.25, .13),  (.5, .33),  (.75, .57),  (.92, .80)),
+        B=((.08, .02),  (.25, .07),  (.5, .18),  (.75, .35),  (.92, .55)))),
+    "TUNGSTN": dict(points=dict(             # Tungsten: kuehl, Teal-Schatten, warme Spitzlichter
+        R=((.08, .07),  (.25, .22),  (.5, .48),  (.75, .77),  (.92, .93)),
+        G=((.08, .085), (.25, .245), (.5, .50),  (.75, .755), (.92, .92)),
+        B=((.08, .11),  (.25, .29),  (.5, .545), (.75, .775), (.92, .915)))),
+    "CROSS":   dict(points=dict(             # Cross: hart, gelbgruene Lichter, blaue Schatten
+        R=((.08, .04),  (.25, .17),  (.5, .49),  (.75, .82),  (.92, .95)),
+        G=((.08, .06),  (.25, .21),  (.5, .53),  (.75, .84),  (.92, .96)),
+        B=((.08, .12),  (.25, .27),  (.5, .45),  (.75, .66),  (.92, .82)))),
 }
 
 def pchip(pts):
