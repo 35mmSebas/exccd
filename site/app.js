@@ -120,7 +120,7 @@ function chips(look) {
 
 // Mit Augenzwinkern: aus einer 2006er Canon wird keine Fuji, die Sprueche gibt es trotzdem
 const STICKERS = ["SOOC", "no editing", "#nofilter", "wow", "recipe in comments", "straight out of camera",
-  "zero presets", "CCD magic", "film sim", "unedited!", "trust the JPEG"];
+  "zero presets", "CCD magic", "film sim", "unedited!", "trust the JPEG", "100% not a SaaS", "#ccdcore"];
 
 function sticker(i) {
   const s = el("span", { className: `sticker c${i % 4} p${i % 3}`, textContent: STICKERS[i % STICKERS.length] });

@@ -329,3 +329,25 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .ixus .sticker { font-size: clamp(.85rem, 2.3vw, 1.6rem); }
 .ixus .sticker.s1 { left: -4%; top: -7%; --tilt: -12deg; }
 .ixus .sticker.s2 { right: -3%; bottom: -6%; --tilt: 8deg; }
+
+/* Startseite: rund um die Kamera Internet-Chaos, die Kamera selbst bleibt frei */
+.home .sticker { animation: pop .5s cubic-bezier(.3, 1.6, .5, 1) both; animation-delay: var(--d, .2s); }
+@keyframes pop { from { transform: rotate(var(--tilt)) scale(0); } }
+@media (prefers-reduced-motion: reduce) { .home .sticker { animation: none; } }
+.ixus .sticker.s1 { --d: .3s; }
+.ixus .sticker.s2 { --d: .45s; }
+.stickers .sticker { font-size: clamp(1rem, 1.7vw, 1.5rem); }
+.stickers .h1 { left: 5%; top: 14%; --tilt: -15deg; --d: .6s; }
+.stickers .h2 { right: 4%; top: 22%; --tilt: 8deg; --d: .75s; }
+.stickers .h3 { left: 9%; top: 52%; --tilt: 11deg; --d: .9s; }
+.stickers .h4 { right: 8%; top: 58%; --tilt: -9deg; --d: 1.05s; }
+.stickers .h5 { left: 6%; bottom: 10%; --tilt: -5deg; --d: 1.2s; }
+.stickers small { display: block; font-size: .55em; letter-spacing: .04em; margin-top: .3em; color: #111; text-shadow: none; }
+.stickers .h2 { max-width: 14em; }
+@media (max-width: 1100px) { .stickers .h2, .stickers .h5 { display: none; } }
+@media (max-width: 860px) {
+  .stickers .sticker { font-size: .9rem; }
+  .stickers .h1 { left: auto; right: 3%; top: 2%; }
+  .stickers .h3 { left: 3%; top: auto; bottom: 4%; }
+  .stickers .h4 { display: none; }
+}
