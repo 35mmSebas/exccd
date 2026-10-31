@@ -76,8 +76,16 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 @keyframes fade { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .view { animation: none; } }
 .home { min-height: calc(100svh - var(--top)); display: flex; flex-direction: column; align-items: center;
-        justify-content: center; gap: 28px; padding: 24px 16px 56px;
-        background: radial-gradient(ellipse 55% 75% at 50% 0%, #3b3e45 0%, #17181c 50%, #000 80%); }
+        justify-content: center; gap: 28px; padding: 24px 16px 56px; position: relative; isolation: isolate; overflow: hidden; }
+/* Licht von oben: Kegel faellt auf die Kamera, darunter ein heller Fleck auf dem Boden */
+.home::before { content: ""; position: absolute; inset: 0; z-index: -2; pointer-events: none;
+                background: conic-gradient(from 180deg at 50% -60%, transparent -30deg, rgb(255 255 255 / .17) -16deg,
+                  rgb(255 255 255 / .17) 16deg, transparent 30deg);
+                -webkit-mask-image: linear-gradient(rgb(0 0 0 / .35), #000 55%, #000 72%, transparent 95%);
+                mask-image: linear-gradient(rgb(0 0 0 / .35), #000 55%, #000 72%, transparent 95%); }
+.cam { position: relative; }
+.cam::before { content: ""; position: absolute; left: -30%; right: -30%; bottom: -16%; height: 38%; z-index: -1;
+               background: radial-gradient(closest-side, rgb(255 255 255 / .22), rgb(255 255 255 / .06) 60%, transparent); }
 .cam { margin: 0; width: min(780px, 92vw, (100svh - var(--top) - 300px) * 1.5); min-width: min(320px, 92vw); }
 .ixus { position: relative; aspect-ratio: 900 / 600; isolation: isolate; }
 .ixus::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: -7%; height: 10%; z-index: -1;
