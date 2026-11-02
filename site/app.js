@@ -56,7 +56,7 @@ function renderHero() {
   show(0);
 
   let timer = null;
-  const start = () => { if (!reducedMotion && !timer) timer = setInterval(() => show(i + 1), 2600); };
+  const start = () => { if (!reducedMotion && !timer) timer = setInterval(() => show(i + 1), 4500); };
   const stop = () => { clearInterval(timer); timer = null; };
   $("cam-print").addEventListener("click", () => { stop(); show(i + 1); start(); });
   $("cam-screen").addEventListener("click", () => { stop(); show(i + 1); start(); });
@@ -117,16 +117,6 @@ function chips(look) {
   }
   if (!look.tone) out.push(el("span", { className: "chip no-curve", textContent: "No curve" }));
   return el("div", { className: "chips" }, ...out);
-}
-
-// Mit Augenzwinkern: aus einer 2006er Canon wird keine Fuji, die Sprueche gibt es trotzdem
-const STICKERS = ["SOOC", "no editing", "#nofilter", "wow", "recipe in comments", "straight out of camera",
-  "zero presets", "CCD magic", "film sim", "unedited!", "trust the JPEG", "100% not a SaaS", "#ccdcore"];
-
-function sticker(i) {
-  const s = el("span", { className: `sticker c${i % 4} p${i % 3}`, textContent: STICKERS[i % STICKERS.length] });
-  s.style.setProperty("--tilt", `${[-8, 5, -3, 9, -6][i % 5]}deg`);
-  return s;
 }
 
 // --- WB-Verschiebung je Look (R/B wie bei Fuji), steckt in der Kurve ----
@@ -195,7 +185,7 @@ function wbPanel(look, card) {
 
 function renderLooks() {
   const box = $("looks-grid");
-  state.camera.looks.forEach((look, n) => {
+  state.camera.looks.forEach((look) => {
     const input = el("input", { type: "checkbox", checked: true, value: look.id });
     input.addEventListener("change", () => {
       input.checked ? state.selected.add(look.id) : state.selected.delete(look.id);
@@ -204,10 +194,9 @@ function renderLooks() {
     state.selected.add(look.id);
 
     // Beispielfotos zuerst, die Lasche dahinter
-    const media = el("div", { className: "look-media" }, ...look.samples.map((src, k) =>
+    const media = el("div", { className: "look-media" }, ...look.samples.map((src) =>
       el("div", { className: "sample" },
-        el("img", { src, alt: `Sample photo, ${look.name}`, loading: "lazy" }),
-        sticker(n * 3 + k))));
+        el("img", { src, alt: `Sample photo, ${look.name}`, loading: "lazy" }))));
     media.append(el("img", { src: labelSrc(look), alt: `${look.name} film label`, loading: "lazy", width: 600, height: 440 }));
 
     // Nur die Auswahl ist ein <label>; die WB-Regler liegen daneben, sonst
