@@ -11,7 +11,8 @@ Download. Dafuer wird das Firmware-ZIP hier zerlegt:
     data/<kamera>/looks/<ID>.zip     je Look: Kurve + DR-Varianten, Lasche (.FLM)
     data/<kamera>/looks/<ID>.png     Laschen-Vorschau
     data/samples/<ID>-*.jpg          Beispielfotos aus site/samples (falls vorhanden)
-    data/site.json                   Version, Kameras, Looks mit FILMS.TXT-Zeile
+    data/site.json                   Version, Kameras, Looks mit FILMS.TXT-Zeile und
+                                     Kurvenrezept (fuer die WB-Verschiebung, site/curves.js)
 
 Die Looks kommen aus CHDK/FILMS/BEISPIEL.TXT (gleich der eingebauten Tabelle),
 Art/Beschreibung/Akzentfarbe aus tools/filmsim/make_label_art.py.
@@ -139,6 +140,10 @@ def main():
             copy_entries(fw, files, zpath)
             look["size"] = os.path.getsize(zpath)
             look["tone"] = curve_preview(fw.read(CURVES_DIR + look["curve"])) if look["curve"] else None
+            # Rezept, damit die Seite die Kurve mit WB-Verschiebung neu rechnen kann;
+            # Looks ohne Kurve bekommen dafuer eine neutrale, eigene Kurven ohne Rezept keine
+            stem = os.path.splitext(look["curve"])[0] if look["curve"] else None
+            look["recipe"] = make_curves.RECIPES.get(stem) if stem else {}
 
         # BEISPIEL.TXT nennt alle Looks; die Download-ZIP bekommt stattdessen
         # eine FILMS.TXT mit genau den gewaehlten Looks.
@@ -165,7 +170,9 @@ def main():
             shutil.copy(path, samples_out)
             look["samples"].append("data/samples/" + os.path.basename(path))
 
-    site = {"version": version, "cameras": [dict(CAMERA, base_size=base_size, looks=looks)]}
+    curve = {"black": make_curves.BLACK, "white": make_curves.WHITE,
+             "gamma": make_curves.GAMMA, "wb": list(make_curves.WB)}
+    site = {"version": version, "cameras": [dict(CAMERA, base_size=base_size, curve=curve, looks=looks)]}
     with open(os.path.join(args.out, "data", "site.json"), "w", encoding="utf-8") as f:
         json.dump(site, f, indent=1)
 

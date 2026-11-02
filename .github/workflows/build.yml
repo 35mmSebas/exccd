@@ -73,6 +73,8 @@ jobs:
           sudo apt-get install -y python3-pil
           python3 tools/site/build_site.py dist/*.zip _site --version "$VERSION"
           node tools/site/test_zipjoin.mjs _site "$RUNNER_TEMP/zipjoin"
+          python3 tools/filmsim/make_curves.py "$RUNNER_TEMP/curves" > /dev/null
+          node tools/site/test_curves.mjs _site "$RUNNER_TEMP/curves"
           unzip -tq "$RUNNER_TEMP/zipjoin/exccd-all.zip"
           unzip -tq "$RUNNER_TEMP/zipjoin/exccd-two.zip"
           "$RUNNER_TEMP/test_films_txt" "$RUNNER_TEMP/zipjoin/FILMS-all.TXT"

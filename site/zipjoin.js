@@ -125,7 +125,10 @@ export function writeZip(entries) {
   return out;
 }
 
+const sign = (v) => (v > 0 ? `+${v}` : String(v));
+
 // FILMS.TXT im Format von CHDK/FILMS/BEISPIEL.TXT, nur mit den gewaehlten Looks.
+// look.wb = [R, B] steht nur als Kommentar drin, die Verschiebung steckt in der Kurve.
 export function filmsTxt(looks, version) {
   const widths = [18, 5, 3, 3, 3, 2, 2, 2, 4, 11, 8, 3];
   const row = (cols, w0 = widths[0]) =>
@@ -136,6 +139,8 @@ export function filmsTxt(looks, version) {
     "# Only these looks are on this card; the curves and labels they need are",
     "# in A/CHDK/CURVES and A/CHDK/FILMS.",
     "#",
+    ...looks.filter((l) => l.wb).map((l) => `# WB shift ${l.name}: R${sign(l.wb[0])} B${sign(l.wb[1])}`),
+    ...(looks.some((l) => l.wb) ? ["#"] : []),
     "# " + row(["Name", "Modus", "Kon", "Sch", "Sat", "R", "G", "B", "Haut", "Kurve", "Lasche", "Mix"], widths[0] - 2),
     ...looks.map((l) => row(l.cols)),
     "",
@@ -144,10 +149,12 @@ export function filmsTxt(looks, version) {
 }
 
 // Basis + gewaehlte Looks + FILMS.TXT, Eintraege nach Pfad sortiert.
-export function assemble(baseZip, lookZips, looks, version, when = new Date()) {
+// extra = [{ name, bytes }] ersetzt oder ergaenzt Dateien (z. B. Kurven mit WB-Verschiebung).
+export function assemble(baseZip, lookZips, looks, version, when = new Date(), extra = []) {
   const byName = new Map();
   for (const e of readZip(baseZip)) byName.set(e.name, e);
   for (const z of lookZips) for (const e of readZip(z)) byName.set(e.name, e);
+  for (const f of extra) byName.set(f.name, fileEntry(f.name, f.bytes, when));
   const txt = new TextEncoder().encode(filmsTxt(looks, version));
   byName.set("CHDK/FILMS/FILMS.TXT", fileEntry("CHDK/FILMS/FILMS.TXT", txt, when));
   const entries = [...byName.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
