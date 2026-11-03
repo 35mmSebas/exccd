@@ -28,5 +28,9 @@ extern const char* filmsim_datestamp_enum(int change, int arg);
 extern const char* filmsim_dr_enum(int change, int arg);
 extern int filmsim_dr_tv96_shift(void);
 extern const char* filmsim_cnr_enum(int change, int arg);
+extern const char* filmsim_zoom_enum(int change, int arg);
+extern const char* filmsim_zoom_str(void);
+extern int filmsim_zoom_kbd(void);
+extern void filmsim_zoom_tick(void);
 
 #endif

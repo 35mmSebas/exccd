@@ -480,6 +480,7 @@ typedef struct
     int film_dr;                // Dynamik+: 0 aus, 1 = -1 EV + Kurve, 2 = -2 EV + Kurve
     int film_cnr;               // Farbrauschen-Filter: 0 aus, 1 normal, 2 stark  // Check firmware CRC on startup. 0 = no. 1 = Check and set to 0. 2 = always
     int exccd_ui;               // Stufe der uebernommenen EXCCD-Optik (2 = v1.9.20), kleiner -> einmalige Umstellung beim Start
+    int film_zoom;              // Zoom: 0 frei, 1 Stufen, 2+k fest auf Stufe k (core/filmsim_zoom.c)
 
 } Conf;
 

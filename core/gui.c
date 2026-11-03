@@ -2400,6 +2400,7 @@ static CMenuItem root_menu_items[] = {
     MENU_ITEM   (0x5f,(int)"Dynamik+",                      MENUITEM_ENUM,      filmsim_dr_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Farbrauschen",                  MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Fokus",                         MENUITEM_ENUM,      gui_filmsim_focus_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Zoom",                          MENUITEM_ENUM,      filmsim_zoom_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Graufilter",                    MENUITEM_ENUM,      gui_filmsim_nd_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Blitz",                         MENUITEM_ENUM,      gui_filmsim_flash_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Farbfilter (S/W)",              MENUITEM_ENUM,      filmsim_bwfilter_enum, 0 ),

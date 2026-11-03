@@ -452,6 +452,8 @@ void filmsim_tick(void)
         close_sent = 0;
     }
 
+    filmsim_zoom_tick();
+
     if (++cnt < 25) return;          // ~ alle 0,5 s pruefen
     cnt = 0;
 
@@ -715,7 +717,8 @@ void filmsim_draw_osd(void)
     if (conf.film_sim == 0 && !preview_pending && !conf.tv_override_enabled
         && !conf.film_double && !conf.subj_dist_override_koef
         && !conf.film_mist && !conf.film_halation && !conf.film_vignette
-        && !conf.film_leak && !conf.film_datestamp && !conf.film_dr && !conf.film_cnr) return;
+        && !conf.film_leak && !conf.film_datestamp && !conf.film_dr && !conf.film_cnr
+        && !conf.film_zoom) return;
     strcpy(buf, filmsim_name());
     if (preview_pending) {
         strcat(buf, " - Ausloeser antippen");
@@ -726,6 +729,8 @@ void filmsim_draw_osd(void)
         extern const char* filmsim_focus_str(void);
         const char *fo = filmsim_focus_str();
         if (fo) { strcat(buf, " | "); strcat(buf, fo); }
+        const char *zo = filmsim_zoom_str();
+        if (zo) { strcat(buf, " | "); strcat(buf, zo); }
         if (conf.film_double) strcat(buf, conf.film_double == 1 ? " | 2x 1/2" : " | 2x 2/2");
         if (conf.film_dr == 1) strcat(buf, " | DR+1");
         if (conf.film_dr == 2) strcat(buf, " | DR+2");
