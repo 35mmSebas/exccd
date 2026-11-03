@@ -141,3 +141,4 @@ tools/stubs_load.o
 
 # EXCCD-Webseite, gebaut mit tools/site/build_site.py
 /_site/
+platform/sx110is/sub/100b/PRIMARY.BIN

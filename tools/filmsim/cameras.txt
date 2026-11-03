@@ -7,3 +7,4 @@
 #             und tools/filmsim/cams/<plattform>/ (Palette, Laschen, Notizen, Kameratest)
 ixus60_sd600     100d  stabil  IXUS 60 / PowerShot SD600
 ixus145_elph135  100c  test    IXUS 145 / PowerShot ELPH 135
+sx110is          100b  test    PowerShot SX110 IS
