@@ -248,6 +248,10 @@ void raw_process(void)
 
     if (conf.bad_pixel_removal) patch_bad_pixels();
 
+    // Filmsim: defekte Sensorspalten aus A/CHDK/BADCOLS.TXT (vor DNG und JPEG)
+    extern void filmsim_badcols_apply(void);
+    filmsim_badcols_apply();
+
     shooting_bracketing();
 
     if (conf.tv_bracket_value || conf.av_bracket_value || conf.iso_bracket_value || conf.subj_dist_bracket_value)

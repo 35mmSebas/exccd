@@ -28,13 +28,15 @@ AREA_W, AREA_H = 360, 196
 PIXEL_ASPECT = 320 / 360
 NCOLORS = 28                     # Hauptfarben je Lasche vor der Palettenzuordnung
 
+import json
+_here = os.path.dirname(os.path.abspath(__file__))
+# Kamera ueber die Umgebungsvariable EXCCD_CAM (Ordner in cams/), Standard IXUS 60
+CAM = os.environ.get("EXCCD_CAM", "ixus60_sd600")
+_cam = os.path.join(_here, "cams", CAM)
 # Palette der SD600 im Aufnahmemodus: 256 Indizes, aus einem Foto des
 # CHDK-Palettenrasters gemessen (Index = Zeile*16 + Spalte). Normierung:
 # Schwarz 0xFF abziehen, Farbstich ueber Weiss 0x11 neutralisieren, dann so
 # skalieren, dass die hellsten Felder (98. Perzentil) 255 erreichen.
-import json
-_here = os.path.dirname(os.path.abspath(__file__))
-_cam = os.path.join(_here, "cams", "ixus60_sd600")   # Laschen gibt es bisher nur fuer die IXUS 60
 def _load_palette(fn):
     raw = {int(k, 16): v for k, v in json.load(open(fn))["roh_rgb"].items()}
     blk, wht = raw[0xFF], raw[0x11]
@@ -45,38 +47,76 @@ def _load_palette(fn):
     r = (len(peaks) - 1) * 0.98
     top = peaks[int(r)] + (peaks[min(int(r) + 1, len(peaks) - 1)] - peaks[int(r)]) * (r - int(r))
     return {i: tuple(min(max(c / top * 255, 0.0), 255.0) for c in v) for i, v in d.items()}
-PALETTE = _load_palette(os.path.join(_cam, "palette_foto.json"))
 
-# Nur Indizes, die auf dem Display nachweislich deckend erscheinen: alle Farben
-# der Laschen aus v1.8.2 plus die CHDK-Grundfarben. Andere Eintraege koennen
-# (halb)transparent sein oder weichen stark vom Messwert ab (0xEE ist z.B.
-# pink-rot, nicht gelb).
-CANDIDATES = {
-    0x11, 0x12, 0x15, 0x1B, 0x1F, 0x21, 0x26, 0x28, 0x29, 0x2A, 0x2B, 0x2E, 0x2F,
-    0x31, 0x32, 0x34, 0x36, 0x39, 0x3C, 0x3F, 0x44, 0x45, 0x46, 0x49, 0x4A, 0x51,
-    0x53, 0x54, 0x56, 0x5A, 0x5B, 0x5C, 0x5E, 0x5F, 0x62, 0x64, 0x67, 0x69, 0x6F,
-    0x76, 0x78, 0x7B, 0x7F, 0x83, 0x84, 0x87, 0x88, 0x89, 0x8E, 0x8F, 0x92, 0x94,
-    0x98, 0x99, 0x9C, 0x9F, 0xA1, 0xA2, 0xA3, 0xA9, 0xAB, 0xAC, 0xB3, 0xB4, 0xB5,
-    0xB7, 0xBB, 0xBF, 0xC4, 0xCD, 0xD1, 0xD6, 0xDC, 0xE3, 0xE5, 0xE6, 0xE7, 0xEB,
-    0xEC, 0xF1, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xFA, 0xFB, 0xFD, 0xFE, 0xFF,
-    # CHDK-Grundfarben
-    0x22, 0x55, 0x25, 0xDF, 0xDD, 0x66, 0xCC,
-}
-# Deckkraft aus dem Palettendump der Kamera (System -> Farbpalette speichern,
-# PALREC.BIN): 16 Grundfarben zu je A, Y, U, V. Ein Farbindex 0xXY mischt die
-# Grundfarben X und Y, auch deren Alpha. Nur Indizes, bei denen beide Haelften
-# voll deckend sind (A = 0xFF), kommen in Frage - sonst scheint das Sucherbild
-# durch (z.B. 0xF4, 0x44, 0x89).
-def _opaque(fn):
+# Palettentyp 3 (DIGIC 4, z. B. IXUS 132): PALREC.BIN = 256 Eintraege zu je
+# V, U (mit Vorzeichen), Y, Alpha 0..3. Direkt nach RGB umgerechnet.
+def _ayuv_rgb(w):
+    s8 = lambda b: b - 256 if b > 127 else b
+    v, u, y = s8(w & 0xFF), s8((w >> 8) & 0xFF), (w >> 16) & 0xFF
+    rgb = (y + 1.402 * v, y - 0.344 * u - 0.714 * v, y + 1.772 * u)
+    return tuple(min(max(c, 0.0), 255.0) for c in rgb), w >> 24
+
+def _load_palrec_ayuv(fn):
     d = open(fn, "rb").read()
-    full = {k for k in range(16) if d[4 * k] == 0xFF}
-    return {i for i in range(256) if (i >> 4) in full and (i & 15) in full}
-OPAQUE = _opaque(os.path.join(_cam, "PALREC.BIN"))
-CANDIDATES &= OPAQUE
+    pal, opaque = {}, set()
+    for i in range(256):
+        pal[i], a = _ayuv_rgb(struct.unpack_from("<I", d, 4 * i)[0])
+        if a == 3: opaque.add(i)
+    return pal, opaque
 
-# Die Palette hat keine neutralen hellen Grautoene (Grau wirkt blaugrau).
-# Unbunte Motivfarben deshalb fest auf diese drei Stufen legen.
-GREYS = ((0xFA, 28), (0x3F, 48), (0x1F, 66))     # (Index, Helligkeit L*)
+# Zusatzfarben, die EXCCD selbst in die Kamerapalette laedt
+# (EXCCD_PAL_BASE / EXCCD_PAL_EXTRA in platform_camera.h)
+def _pal_extra(cam):
+    import re
+    h = open(os.path.join(_here, "..", "..", "platform", cam, "platform_camera.h"), encoding="latin-1").read()
+    base = re.search(r"#define\s+EXCCD_PAL_BASE\s+(\w+)", h)
+    words = re.search(r"#define\s+EXCCD_PAL_EXTRA\s+\{([^}]*)\}", h)
+    if not base or not words: return {}
+    return {int(base.group(1), 0) + k: _ayuv_rgb(int(w, 0))[0]
+            for k, w in enumerate(words.group(1).replace(",", " ").split())}
+
+if CAM == "ixus60_sd600":
+    PALETTE = _load_palette(os.path.join(_cam, "palette_foto.json"))
+
+    # Nur Indizes, die auf dem Display nachweislich deckend erscheinen: alle Farben
+    # der Laschen aus v1.8.2 plus die CHDK-Grundfarben. Andere Eintraege koennen
+    # (halb)transparent sein oder weichen stark vom Messwert ab (0xEE ist z.B.
+    # pink-rot, nicht gelb).
+    CANDIDATES = {
+        0x11, 0x12, 0x15, 0x1B, 0x1F, 0x21, 0x26, 0x28, 0x29, 0x2A, 0x2B, 0x2E, 0x2F,
+        0x31, 0x32, 0x34, 0x36, 0x39, 0x3C, 0x3F, 0x44, 0x45, 0x46, 0x49, 0x4A, 0x51,
+        0x53, 0x54, 0x56, 0x5A, 0x5B, 0x5C, 0x5E, 0x5F, 0x62, 0x64, 0x67, 0x69, 0x6F,
+        0x76, 0x78, 0x7B, 0x7F, 0x83, 0x84, 0x87, 0x88, 0x89, 0x8E, 0x8F, 0x92, 0x94,
+        0x98, 0x99, 0x9C, 0x9F, 0xA1, 0xA2, 0xA3, 0xA9, 0xAB, 0xAC, 0xB3, 0xB4, 0xB5,
+        0xB7, 0xBB, 0xBF, 0xC4, 0xCD, 0xD1, 0xD6, 0xDC, 0xE3, 0xE5, 0xE6, 0xE7, 0xEB,
+        0xEC, 0xF1, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xFA, 0xFB, 0xFD, 0xFE, 0xFF,
+        # CHDK-Grundfarben
+        0x22, 0x55, 0x25, 0xDF, 0xDD, 0x66, 0xCC,
+    }
+    # Deckkraft aus dem Palettendump der Kamera (System -> Farbpalette speichern,
+    # PALREC.BIN): 16 Grundfarben zu je A, Y, U, V. Ein Farbindex 0xXY mischt die
+    # Grundfarben X und Y, auch deren Alpha. Nur Indizes, bei denen beide Haelften
+    # voll deckend sind (A = 0xFF), kommen in Frage - sonst scheint das Sucherbild
+    # durch (z.B. 0xF4, 0x44, 0x89).
+    def _opaque(fn):
+        d = open(fn, "rb").read()
+        full = {k for k in range(16) if d[4 * k] == 0xFF}
+        return {i for i in range(256) if (i >> 4) in full and (i & 15) in full}
+    OPAQUE = _opaque(os.path.join(_cam, "PALREC.BIN"))
+    CANDIDATES &= OPAQUE
+
+    # Die Palette hat keine neutralen hellen Grautoene (Grau wirkt blaugrau).
+    # Unbunte Motivfarben deshalb fest auf diese drei Stufen legen.
+    GREYS = ((0xFA, 28), (0x3F, 48), (0x1F, 66))     # (Index, Helligkeit L*)
+else:
+    PALETTE, _opq = _load_palrec_ayuv(os.path.join(_cam, "PALREC.BIN"))
+    # deckende Eintraege; ohne 0x5E..0x72 (21 x dasselbe Grau, Verwendung durch
+    # Canon unbekannt). 0x73..0x7F sind die CHDK-Farben, die CHDK selbst laedt.
+    CANDIDATES = _opq - set(range(0x5E, 0x73)) - {0}
+    _extra = _pal_extra(CAM)
+    PALETTE.update(_extra)
+    CANDIDATES |= set(_extra)
+    GREYS = None                 # echte neutrale Grautoene vorhanden
 
 def _lab(rgb):
     def lin(c):
@@ -96,7 +136,7 @@ def nearest(rgb, pal):
     L = _lab(rgb)
     chroma = (L[1] ** 2 + L[2] ** 2) ** 0.5
     plab = _PAL_LAB[id(pal)]
-    if chroma < 8 and 22 < L[0] < 88:
+    if GREYS and chroma < 8 and 22 < L[0] < 88:
         return min(GREYS, key=lambda g: abs(g[1] - L[0]))[0]
     best, bd = None, 1e18
     for idx, (l2, a2, b2) in plab.items():

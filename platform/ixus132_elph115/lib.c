@@ -125,6 +125,17 @@ void load_chdk_palette()
             pal[CHDK_COLOR_BASE+10] = 0x3A9A917;  // Yellow
             pal[CHDK_COLOR_BASE+11] = 0x3819137;  // Dark Yellow
             pal[CHDK_COLOR_BASE+12] = 0x3DED115;  // Light Yellow
+#ifdef FILMSIM_LABELS
+            // EXCCD: Akzentfarben der Laschen, die in der Canon-Palette fehlen.
+            // 0x5E..0x72 ist 21 x dasselbe Grau (unbenutzt). Werte erzeugt und
+            // geprueft von tools/filmsim/make_labels.py (EXCCD_CAM=ixus132_elph115)
+            {
+                static const int exccd_pal[] = EXCCD_PAL_EXTRA;
+                unsigned i;
+                for (i = 0; i < sizeof(exccd_pal) / sizeof(exccd_pal[0]); i++)
+                    pal[EXCCD_PAL_BASE + i] = exccd_pal[i];
+            }
+#endif
 
             extern char palette_control;
             palette_control = 1; // note appears to be a bitmask, bit 2 is also used

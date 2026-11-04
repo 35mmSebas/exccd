@@ -104,8 +104,8 @@
                                                     // see http://chdk.setepontos.com/index.php/topic,3994.405.html
 
     #define CAM_ADJUSTABLE_ALT_BUTTON       1
-    #define CAM_ALT_BUTTON_NAMES            { "Playback", "Video" }
-    #define CAM_ALT_BUTTON_OPTIONS          { KEY_PLAYBACK, KEY_VIDEO }
+    #define CAM_ALT_BUTTON_NAMES            { "Video", "Playback" }     // EXCCD: Video-Taste zuerst, Wiedergabe bleibt frei
+    #define CAM_ALT_BUTTON_OPTIONS          { KEY_VIDEO, KEY_PLAYBACK }
 
     // verified
     #undef  CAM_USB_EVENTID
@@ -145,3 +145,23 @@
     #undef CAM_HAS_WIFI
 
 //----------------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//----------------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // Laschen aus tools/filmsim/cams/ixus132_elph115/CHDK/FILMS (Palette PALREC.BIN).
+    // Noch kein eigener Weissabgleich: WB-Gains der IXUS 60.
+    #define FILMSIM_LABELS              1
+    #define FILMSIM_COLOR_BG            0xFF    // Schwarz
+    #define FILMSIM_COLOR_GREY          0x0C    // neutrales Grau
+    #define FILMSIM_COLOR_RULE          0x63    // Schiefer (EXCCD_PAL_EXTRA)
+    // Laschenfarben, die Canon nicht hat (geladen in lib.c, load_chdk_palette):
+    // Rosa, Lavendel, Flieder-Grau, Schieferblau, Karmin, Schiefer
+    #define EXCCD_PAL_BASE              0x5E
+    #define EXCCD_PAL_EXTRA             { 0x390fb1e, 0x3ab1208, 0x3b80c03, 0x37119ed, 0x361f14c, 0x34312f4 }
+    // Testphase: System -> Debug zeigt Propcases (My Colors = 187 in propset 6)
+    #define FILMSIM_DIAG                1

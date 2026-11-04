@@ -1,6 +1,6 @@
 # IXUS 145 / PowerShot ELPH 135
 
-Status: test (seit v1.9.23, Kameratest siehe `kameratest.md`)
+Status: test (seit v1.9.23, noch nie auf einer Kamera gelaufen: die geplante Testkamera war eine IXUS 132)
 
 - Firmware nur 1.00c, DryOS, DIGIC 4+, propset 6
 - Kein `PS.FIR`: Start nur per Autoboot (bootfaehige Karte, Schreibschutz auf LOCK)
