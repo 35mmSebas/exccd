@@ -88,11 +88,11 @@
 // Eingebaute Tabelle, falls A/CHDK/FILMS/FILMS.TXT fehlt oder unbrauchbar ist
 static const filmsim_t sims_builtin[] = {
     // name              mode        con shp sat  R   G   B  skin  curve           label      mix
-    { "Aus",             MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              0,          0 },
+    { "Aus",             MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              "AUS",      0 },
     { "Daylight 100",    MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              "DAYLITE",  0 },
     { "Postcard 100",    MC_CUSTOM,   0,  1,  2,  1,  1,  1,  0,  "POSTCRD.CV",   "POSTCRD",  0 },
     { "Blush 100",       MC_CUSTOM,  -1,  0,  1,  0,  0,  0,  1,  "BLUSH.CV",     "BLUSH",    0 },
-    { "Journal 400",     MC_CUSTOM,   0,  0, -1, -1, -1,  0,  0,  "JOURNAL.CV",   "JOURNAL",  0 },
+    { "Journal 400",     MC_CUSTOM,   0,  0, -1,  0, -1,  0,  0,  "JOURNAL.CV",   "JOURNAL",  0 },
     { "Studio 160",      MC_CUSTOM,  -1, -1, -1,  0,  0,  0,  1,  "STUDIO.CV",    "STUDIO",   0 },
     { "Drugstore 200",   MC_CUSTOM,   0,  0, -1,  0,  1, -1,  0,  "DRUGSTR.CV",   "DRUGSTR",  0 },
     { "Scene 500",       MC_CUSTOM,  -2, -1, -2,  0,  0,  0,  0,  "SCENE.CV",     "SCENE",    0 },
@@ -103,7 +103,7 @@ static const filmsim_t sims_builtin[] = {
     { "Cross 100",       MC_CUSTOM,   0,  1,  2,  0,  0,  0,  0,  "CROSS.CV",     "CROSS",    0 },
     { "Violet 400",      MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "VIOLET.CV",    "VIOLET",   1 },
     { "Concrete 100",    MC_CUSTOM,   0,  1, -1,  0,  0,  0,  0,  "CONCRET.CV",   "CONCRET",  2 },
-    { "Ember 200",       MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "EMBER.CV",     "EMBER",    0 },
+    { "Ember 200",       MC_CUSTOM,   0,  0,  0,  0,  0,  0,  0,  "EMBER.CV",     "EMBER",    0 },
     { "Grit 400",        MC_BW,       0,  0,  0,  0,  0,  0,  0,  "GRIT.CV",      "GRIT",     0 },
 };
 #define NUM_BUILTIN ((int)(sizeof(sims_builtin)/sizeof(sims_builtin[0])))
@@ -288,6 +288,8 @@ const char* filmsim_name(void)
 }
 
 static int curve_file_ok = 0;     // Diagnose: Kurvendatei gefunden?
+static int curve_dr = 0;          // Dynamik+-Stufe der geladenen Kurve
+static volatile int shot_dr = -1; // Dynamik+-Stufe, mit der wirklich belichtet wurde (-1 = unbekannt)
 static int set_count = 0;         // Diagnose: wie oft Propcases gesetzt
 
 // Canon uebernimmt neue Farbwerte im Sucherbild erst beim naechsten
@@ -374,11 +376,11 @@ __attribute__((optimize("O2"))) void filmsim_curve_apply(char *raw)
 }
 #endif
 
-// Kurve laden bzw. abschalten
-static void set_curve(const filmsim_t *s)
+// Kurve laden bzw. abschalten. dr: Dynamik+-Stufe (0..2), deren Kurve gilt
+static void set_curve_dr(const filmsim_t *s, int dr)
 {
 #if defined(OPT_CURVES) || defined(FS_OWN_CURVES)
-    int dr = (conf.film_dr >= 1 && conf.film_dr <= 2) ? conf.film_dr : 0;
+    curve_dr = dr;
     if (s->curve || dr) {
         struct stat st;
         strcpy(conf.curve_file, CURVE_DIR "/");
@@ -410,8 +412,13 @@ static void set_curve(const filmsim_t *s)
     libcurves->curve_init_mode();
 #endif
 #else
-    (void)s;
+    (void)s; (void)dr;
 #endif
+}
+
+static void set_curve(const filmsim_t *s)
+{
+    set_curve_dr(s, (conf.film_dr >= 1 && conf.film_dr <= 2) ? conf.film_dr : 0);
 }
 
 // Simulation vollstaendig anwenden (bei Menueauswahl / Start)
@@ -698,6 +705,17 @@ const char* filmsim_menu_enum(int change, __attribute__ ((unused))int arg)
     return filmsim_name();
 }
 
+// Anti-Farbrauschen: conf.film_cnr 0 aus, 1 leicht, 2 stark, 3 auto
+// (3 statt 0, damit alte Einstellungen gueltig bleiben).
+// Auto richtet sich nach der ISO des Bildes. Rueckgabe 0 / 1 / 2.
+#define CNR_AUTO 3
+static int cnr_level(void)
+{
+    if (conf.film_cnr != CNR_AUTO) return conf.film_cnr;
+    int iso = shooting_get_iso_market();
+    return iso >= 800 ? 2 : (iso >= 400 ? 1 : 0);
+}
+
 // Kleine Anzeige des aktiven Films im Sucherbild
 void filmsim_draw_osd(void)
 {
@@ -734,7 +752,7 @@ void filmsim_draw_osd(void)
         if (conf.film_double) strcat(buf, conf.film_double == 1 ? " | 2x 1/2" : " | 2x 2/2");
         if (conf.film_dr == 1) strcat(buf, " | DR+1");
         if (conf.film_dr == 2) strcat(buf, " | DR+2");
-        if (conf.film_cnr) strcat(buf, " | NR");
+        if (conf.film_cnr) strcat(buf, conf.film_cnr == CNR_AUTO ? " | NR auto" : " | NR");
         extern int filmsim_effects_active(void);
         if (filmsim_effects_active()) strcat(buf, " | FX");
         extern const char* filmsim_bwfilter_str(void);
@@ -1061,6 +1079,7 @@ const char* filmsim_double_enum(int change, __attribute__ ((unused))int arg)
 const char* filmsim_bwfilter_enum(int change, __attribute__ ((unused))int arg)
 {
     static const char *modes[] = { "Aus", "Gelb", "Orange", "Rot" };
+    if (current()->mycolors != MC_BW) return "nur S/W";
     if (change) conf.film_bwfilter = (conf.film_bwfilter + change + 4) % 4;
     return modes[conf.film_bwfilter % 4];
 }
@@ -1447,7 +1466,8 @@ static void cnr_row(const char *raw, int j, int nb, short *cr, short *cb, short 
 __attribute__((optimize("O2")))
 static void filmsim_cnr_apply(char *raw)
 {
-    int R = conf.film_cnr == 1 ? 2 : (conf.film_cnr == 2 ? CNR_RMAX : 0);
+    int level = cnr_level();
+    int R = level == 1 ? 2 : (level == 2 ? CNR_RMAX : 0);
     if (!R || !raw || !filmsim_photo_mode()) return;
     int RB = 2 * R + 1;
     int nb = (camera_sensor.raw_rowpix / 8) * 4;     // Bloecke pro Zeile
@@ -1544,11 +1564,37 @@ void filmsim_cnr_hook(char *raw)
     filmsim_cnr_apply(raw);
 }
 
+//-------------------------------------------------------------------
+// Heisse Pixel entfernen (siehe hotpix_fix in filmsim_raw.h), sobald
+// EXCCD das Rohbild veraendert. Bei "Aus" ohne Extras bleibt alles bei Canon.
+//-------------------------------------------------------------------
+void filmsim_hotpix_hook(char *raw)
+{
+#ifdef FS_RAW
+    extern int filmsim_effects_active(void);
+    if (!raw || !filmsim_photo_mode()) return;
+    if (!conf.film_sim && !conf.film_dr && !cnr_level() && !conf.film_double && !filmsim_effects_active())
+        return;
+    short *ring = malloc(5 * (camera_sensor.raw_rowpix / 8) * 8 * sizeof(short));
+    if (!ring) return;
+    hotpix_fix((unsigned char *)raw, camera_sensor.raw_rows, camera_sensor.raw_rowpix,
+               camera_sensor.raw_rowlen, ring);
+    free(ring);
+#else
+    (void)raw;
+#endif
+}
+
 const char* filmsim_cnr_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *m[] = { "Aus", "Normal", "Stark" };
-    if (change) conf.film_cnr = (conf.film_cnr + change + 3) % 3;
-    return m[conf.film_cnr % 3];
+    // Anzeige-Reihenfolge Aus, Auto, Leicht, Stark -> gespeicherter Wert
+    static const char *m[] = { "Aus", "Auto", "Leicht", "Stark" };
+    static const int   val[] = { 0, CNR_AUTO, 1, 2 };
+    int i;
+    for (i = 0; i < 4 && val[i] != conf.film_cnr; i++);
+    if (i == 4) i = 0;
+    if (change) { i = (i + change + 4) % 4; conf.film_cnr = val[i]; }
+    return m[i];
 }
 
 void filmsim_effects_apply(char *raw)
@@ -1612,11 +1658,26 @@ const char* filmsim_dr_enum(int change, __attribute__ ((unused))int arg)
     return m[conf.film_dr % 3];
 }
 
-// Belichtungsverschiebung in 1/96 EV (0 = keine), von shooting.c genutzt
-int filmsim_dr_tv96_shift(void)
+// Belichtungsverschiebung in 1/96 EV (0 = keine), von shooting.c bei jeder
+// Aufnahme genutzt (bei Tv-Override oder Skript mit auto = 0, ohne Verschiebung)
+int filmsim_dr_tv96_shift(int automatic)
 {
+    shot_dr = 0;
+    if (!automatic) return 0;
     if (conf.film_dr < 1 || conf.film_dr > 2) return 0;
     if (!filmsim_photo_mode()) return 0;
     if (shooting_get_prop(PROPCASE_IS_FLASH_READY)) return 0;   // mit Blitz nicht
+    shot_dr = conf.film_dr;
     return conf.film_dr * 96;
+}
+
+// Vor den Kurven (raw.c): Wurde nicht knapper belichtet (Blitz, Tv-Override),
+// darf auch die Aufhell-Kurve nicht wirken -> fuer dieses Bild die normale
+// Kurve laden. Danach (end = 1) wieder die Kurve der Menueeinstellung.
+void filmsim_dr_curve_hook(int end)
+{
+    int want = end ? ((conf.film_dr >= 1 && conf.film_dr <= 2) ? conf.film_dr : 0) : shot_dr;
+    if (end) shot_dr = -1;
+    if (want < 0 || !filmsim_photo_mode() || want == curve_dr) return;
+    set_curve_dr(current(), want);
 }

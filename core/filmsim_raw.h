@@ -66,6 +66,78 @@ static inline __attribute__((always_inline)) void enc8(unsigned char *a, const i
 #endif
 static inline __attribute__((always_inline)) int clip10(int x) { return x < 0 ? 0 : (x > 1023 ? 1023 : x); }
 
+// Heisse Pixel
+//   Canon ersetzt defekte Pixel erst bei der JPEG-Erzeugung, und nur die aus
+//   seiner Werksliste (in den Rohdaten mit 0 markiert). Andere heisse Pixel
+//   bleiben im Rohbild. Dynamik+ und Kurven heben sie mit den Schatten an,
+//   Kanalmischung und Farbrauschfilter verteilen sie auf die Nachbarn.
+//   Deshalb vor allen anderen Schritten: Ein Pixel, der ueber Schwarz mehr
+//   als doppelt so hell ist wie alle 8 gleichfarbigen Nachbarn (Abstand 2)
+//   plus HP_MIN, wird durch den Mittelwert der 4 direkten gleichfarbigen
+//   Nachbarn ersetzt. Echte Lichtpunkte sind durch das Objektiv breiter als
+//   ein Pixel: Sie heben auch die direkt angrenzenden (andersfarbigen) Pixel
+//   ueber deren eigene Umgebung - dann bleibt der Pixel, wie er ist.
+#define HP_BLK 31
+#define HP_MIN 16                       // 10-Bit-Skala
+
+// m deutlich heller (1,5-fach ueber Schwarz) als die gleichfarbigen Pixel a und b?
+static inline __attribute__((always_inline)) int hp_raised(int m, int a, int b)
+{
+    int r = (a > b ? a : b) - HP_BLK;
+    if (r < 0) r = 0;
+    return m - HP_BLK > r + (r >> 1) + HP_MIN;
+}
+
+static void hp_row(const unsigned char *a, int groups, short *out)
+{
+    int g, k, v[8];
+    for (g = 0; g < groups; g++, a += CAM_SENSOR_BITS_PER_PIXEL, out += 8) {
+        dec8(a, v);
+        for (k = 0; k < 8; k++) out[k] = v[k];
+    }
+}
+
+// ring: 5 * (rowpix / 8) * 8 shorts. Rueckgabe: Anzahl ersetzter Pixel.
+__attribute__((optimize("O2")))
+static int hotpix_fix(unsigned char *raw, int rows, int rowpix, int rowlen, short *ring)
+{
+    static const short recip[5] = { 0, 256, 128, 85, 64 };
+    int groups = rowpix / 8, w = groups * 8, y, x, n = 0;
+#define HP_ROW(r) (ring + ((r) % 5) * w)
+    for (y = 0; y < 4 && y < rows; y++) hp_row(raw + y * rowlen, groups, HP_ROW(y));
+    for (y = 2; y < rows - 2; y++) {
+        hp_row(raw + (y + 2) * rowlen, groups, HP_ROW(y + 2));
+        const short *u = HP_ROW(y - 2), *c = HP_ROW(y), *d = HP_ROW(y + 2);
+        for (x = 2; x < w - 2; x++) {
+            int v = c[x];
+            if (v <= HP_BLK + HP_MIN) continue;
+            int lim = ((v - HP_BLK - HP_MIN) >> 1) + HP_BLK;
+            if (c[x-2] >= lim || c[x+2] >= lim || u[x] >= lim || d[x] >= lim) continue;
+            if (u[x-2] >= lim || u[x+2] >= lim || d[x-2] >= lim || d[x+2] >= lim) continue;
+            // echter Lichtpunkt? Direkte Nachbarn mit ihren eigenen Nachbarn quer dazu vergleichen
+            const short *u1 = HP_ROW(y - 1), *d1 = HP_ROW(y + 1);
+            if (hp_raised(c[x-1], u[x-1], d[x-1]) || hp_raised(c[x+1], u[x+1], d[x+1]) ||
+                hp_raised(u1[x], u1[x-2], u1[x+2]) || hp_raised(d1[x], d1[x-2], d1[x+2])) continue;
+            // Mittelwert der direkten Nachbarn, Defekt-Markierungen (0) auslassen
+            int s = 0, k = 0;
+            if (c[x-2]) { s += c[x-2]; k++; }
+            if (c[x+2]) { s += c[x+2]; k++; }
+            if (u[x])   { s += u[x];   k++; }
+            if (d[x])   { s += d[x];   k++; }
+            if (!k) continue;
+            s = (s * recip[k]) >> 8;
+            unsigned char *a = raw + y * rowlen + (x >> 3) * CAM_SENSOR_BITS_PER_PIXEL;
+            int p[8];
+            dec8(a, p);
+            p[x & 7] = s ? s : 1;
+            enc8(a, p);
+            n++;
+        }
+    }
+#undef HP_ROW
+    return n;
+}
+
 #if CAM_SENSOR_BITS_PER_PIXEL == 12
 #define CV_N 1024
 

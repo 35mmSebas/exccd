@@ -1911,20 +1911,22 @@ static void shooting_set_flash_override()
 
 void shooting_expo_param_override_thumb(void)
 {
+    extern int filmsim_dr_tv96_shift(int automatic);
     if (((camera_info.state.state_kbd_script_run) || (usb_remote_active)) && (photo_param_put_off.tv96 != PHOTO_PARAM_TV_NONE))
     {
         shooting_set_tv96_direct(photo_param_put_off.tv96, SET_NOW);
         photo_param_put_off.tv96=PHOTO_PARAM_TV_NONE;
+        filmsim_dr_tv96_shift(0);
     }
     else if (is_tv_override_enabled)
     {
         shooting_set_tv96_direct(shooting_get_tv96_override_value(),SET_NOW);
+        filmsim_dr_tv96_shift(0);
     }
     else
     {
         // Filmsim Dynamik+: kuerzer belichten als gemessen (nur bei automatischer Zeit)
-        extern int filmsim_dr_tv96_shift(void);
-        int shift = filmsim_dr_tv96_shift();
+        int shift = filmsim_dr_tv96_shift(1);
         if (shift)
             shooting_set_tv96_direct(shooting_get_tv96() + shift, SET_NOW);
     }

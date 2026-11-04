@@ -44,10 +44,12 @@ RECIPES = {
                     gain=(1.10, 1.0, 0.92)),          # leichter Gelbfilter-Effekt
     # Stuetzpunkt-Looks: je Kanal (x, y) im Anzeige-Raum, PCHIP-interpoliert,
     # (0,0) und (1,1) werden ergaenzt
-    "JOURNAL": dict(points=dict(             # Journal: kraeftig, kuehle Tiefen, gedaempft
-        R=((.08, .075), (.25, .22),  (.5, .485), (.75, .77),  (.92, .92)),
-        G=((.08, .09),  (.25, .238), (.5, .495), (.75, .765), (.92, .915)),
-        B=((.08, .088), (.25, .24),  (.5, .495), (.75, .75),  (.92, .905)))),
+    # v1.9.24: gemessen, Classic Chrome relativ zu Provia (X-E2, gleiche RAFs,
+    # kalibrierung/fit_relative.py): fast neutral, leichtes S, kein Farbstich
+    "JOURNAL": dict(points=dict(             # Journal: dokumentarisch, gedaempft
+        R=((.08, .072), (.25, .226), (.5, .505), (.75, .77),  (.92, .927)),
+        G=((.08, .077), (.25, .23),  (.5, .503), (.75, .767), (.92, .925)),
+        B=((.08, .075), (.25, .23),  (.5, .51),  (.75, .77),  (.92, .923)))),
     "STUDIO":  dict(points=dict(             # Studio: flach, offene Schatten
         R=((.08, .097), (.25, .272), (.5, .507), (.75, .738), (.92, .897)),
         G=((.08, .095), (.25, .27),  (.5, .505), (.75, .735), (.92, .895)),
@@ -68,10 +70,11 @@ RECIPES = {
                     shadow=(0.028, -0.015, 0.018), highlight=(0.005, 0.022, -0.028)),
     "GRIT":    dict(contrast=0.38, lift=0.00, shoulder=0.04,
                     gain=(1.20, 1.0, 0.80)),          # Orangefilter-Effekt, haerter als Silver
-    "EMBER":   dict(points=dict(             # Ember: Redscale, Blau fast weg, Lichter gelblich
-        R=((.08, .15),  (.25, .42),  (.5, .70),  (.75, .88),  (.92, .96)),
-        G=((.08, .04),  (.25, .13),  (.5, .33),  (.75, .57),  (.92, .80)),
-        B=((.08, .02),  (.25, .07),  (.5, .18),  (.75, .35),  (.92, .55)))),
+    # v1.9.24: Ember deutlich zurueckgenommen (auf der Kamera war das ganze Bild rot)
+    "EMBER":   dict(points=dict(             # Ember: kupfern-warm, Blau gedaempft, Himmel pfirsich
+        R=((.08, .12),  (.25, .35),  (.5, .615), (.75, .83),  (.92, .945)),
+        G=((.08, .058), (.25, .19),  (.5, .42),  (.75, .675), (.92, .867)),
+        B=((.08, .041), (.25, .14),  (.5, .327), (.75, .553), (.92, .746)))),
     "TUNGSTN": dict(points=dict(             # Tungsten: kuehl, Teal-Schatten, warme Spitzlichter
         R=((.08, .07),  (.25, .22),  (.5, .48),  (.75, .77),  (.92, .93)),
         G=((.08, .085), (.25, .245), (.5, .50),  (.75, .755), (.92, .92)),

@@ -162,6 +162,51 @@ static void test_curves(void)
 }
 #endif
 
+// --- heisse Pixel ------------------------------------------------------------
+#define HROWS 16
+static unsigned char hbuf[HROWS * ROWLEN];
+static int hin[HROWS][ROWPIX];
+static short hring[5 * ROWPIX];
+
+// Grundbild: links dunkel, rechts hell, Farben wie unter Tageslicht, leichtes Rauschen
+static int hflat(int x, int y)
+{
+    static const int f[4] = { 60, 100, 100, 75 };      // R G / G B in %
+    int base = x < 32 ? 45 : 400;
+    return HP_BLK + (base - HP_BLK) * f[((y & 1) << 1) | (x & 1)] / 100 + (x * 7 + y * 13) % 5 - 2;
+}
+
+static void test_hotpix(void)
+{
+    static const int hot[][2] = { {10, 5}, {11, 8}, {50, 6}, {14, 11} };
+    const int nhot = sizeof hot / sizeof hot[0];
+    int x, y, i;
+    for (y = 0; y < HROWS; y++)
+        for (x = 0; x < ROWPIX; x++) hin[y][x] = hflat(x, y);
+    hin[5][10] = 400; hin[8][11] = 250;                // dunkel: R, G
+    hin[6][50] = 1023;                                 // hell, voll gesaettigt
+    hin[9][14] = 0; hin[11][14] = 300;                 // Defekt-Markierung + heisser Nachbar
+    for (y = 10; y <= 12; y++)                         // echter Lichtpunkt 3 x 3
+        for (x = 20; x <= 22; x++) hin[y][x] = 600;
+    for (i = 0; i <= 8; i++) hin[2 + i][40 + i] = 900; // Diagonale, 1 Pixel breit
+    for (x = 24; x <= 30; x++) hin[13][x] = 700;       // waagrechte Linie, 1 Pixel breit
+    for (y = 0; y < HROWS; y++)
+        for (x = 0; x < ROWPIX; x++) set_px(hbuf, x, y, (unsigned short)(hin[y][x] << (BPP - 10)));
+
+    int n = hotpix_fix(hbuf, HROWS, ROWPIX, ROWLEN, hring);
+    CHECK(n == nhot, "hotpix: %d statt %d Pixel ersetzt", n, nhot);
+    for (y = 0; y < HROWS; y++)
+        for (x = 0; x < ROWPIX; x++) {
+            int v = (int)(get_px(hbuf, x, y) >> (BPP - 10)), is_hot = 0;
+            for (i = 0; i < nhot; i++) is_hot |= hot[i][0] == x && hot[i][1] == y;
+            if (is_hot) {
+                int e = hflat(x, y), dv = v - e;
+                CHECK(dv >= -4 && dv <= 4, "hotpix x%d y%d: %d statt ca. %d", x, y, v, e);
+            } else
+                CHECK(v == hin[y][x], "hotpix x%d y%d: veraendert %d -> %d", x, y, hin[y][x], v);
+        }
+}
+
 int main(void)
 {
     unsigned i;
@@ -172,6 +217,7 @@ int main(void)
     set_px(orig, 6, 2, (1 << BPP) - 1);
 
     test_codec();
+    test_hotpix();
 #if BPP == 12
     test_curves();
 #endif

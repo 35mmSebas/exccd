@@ -2373,6 +2373,7 @@ static const char* gui_filmsim_flash_enum(int change, __attribute__ ((unused))in
 }
 
 static CMenuItem effects_submenu_items[] = {
+    MENU_ITEM   (0x5f,(int)"Doppelbelichtung",              MENUITEM_ENUM,      filmsim_double_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Black Mist",                    MENUITEM_ENUM,      filmsim_mist_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Halation",                      MENUITEM_ENUM,      filmsim_halation_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Vignette",                      MENUITEM_ENUM,      filmsim_vignette_enum, 0 ),
@@ -2398,13 +2399,12 @@ static CMenu system_submenu = {0x29,(int)"System", system_submenu_items };
 static CMenuItem root_menu_items[] = {
     MENU_ITEM   (0x61,(int)"Belichtungszeit",               MENUITEM_ENUM,      gui_filmsim_tv_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Dynamik+",                      MENUITEM_ENUM,      filmsim_dr_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Farbrauschen",                  MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Fokus",                         MENUITEM_ENUM,      gui_filmsim_focus_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Zoom",                          MENUITEM_ENUM,      filmsim_zoom_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Graufilter",                    MENUITEM_ENUM,      gui_filmsim_nd_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Blitz",                         MENUITEM_ENUM,      gui_filmsim_flash_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Graufilter",                    MENUITEM_ENUM,      gui_filmsim_nd_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)"Anti-Farbrauschen",             MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Farbfilter (S/W)",              MENUITEM_ENUM,      filmsim_bwfilter_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Doppelbelichtung",              MENUITEM_ENUM,      filmsim_double_enum, 0 ),
     MENU_ITEM   (0x5f,(int)"Effekte",                       MENUITEM_SUBMENU,   &effects_submenu, 0 ),
     MENU_ITEM   (0x5c,(int)"RAW speichern",                 MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
     MENU_ITEM   (0x29,(int)"System",                        MENUITEM_SUBMENU,   &system_submenu, 0 ),
