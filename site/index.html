@@ -329,17 +329,22 @@
       <section class="step first" id="install-steps">
         <header class="step-head"><span class="num">01</span><h2>Install</h2></header>
         <ol class="install">
-          <li><h3>Remove the old version</h3>
-            <p>Delete an old <code>CHDK</code> folder from the SD card, if there is one. An old
-              <code>FILMS.TXT</code> can point to labels or curves that no longer exist.</p></li>
-          <li><h3>Unpack</h3>
-            <p>Unpack the ZIP to the root of the SD card, so that <code>DISKBOOT.BIN</code> and the
-              <code>CHDK</code> folder sit at the top level.</p></li>
-          <li><h3>Start EXCCD</h3>
-            <p><b>Once per power-on:</b> switch on in playback mode, open <i>MENU → Firm Update</i> and confirm.</p>
-            <p><b>Automatically:</b> make the card bootable (for example with
-              <a href="https://chdk.fandom.com/wiki/STICK">STICK</a> or CHDK's <i>Make Card Bootable</i>) and lock
-              the card's write-protect switch. The camera still saves photos.</p></li>
+          <li><h3>Format the card in the camera</h3>
+            <p>Use the camera's own <i>Format</i> menu. This erases the card, so copy your photos off first.
+              The IXUS 60 starts EXCCD automatically only from cards up to 2 GB.</p></li>
+          <li><h3>Run the installer</h3>
+            <p><a class="button outline" href="exccd-installer.exe" download>EXCCD installer for Windows</a></p>
+            <p>It finds your download, lists only SD cards, unpacks EXCCD and makes the card bootable.
+              Windows will warn about an unknown app: click <i>More info → Run anyway</i>. The installer is
+              open source but not signed, and it asks for administrator rights to write the card's boot sector.</p>
+            <details><summary>Without the installer (macOS, Linux)</summary>
+              <p>Delete an old <code>CHDK</code> folder from the card, then unpack the ZIP to the root of the card,
+                so that <code>DISKBOOT.BIN</code> and the <code>CHDK</code> folder sit at the top level. Start EXCCD
+                once per power-on in playback mode with <i>MENU → Firm Update</i>. To start it automatically, run
+                CHDK's <i>Make Card Bootable</i> from the EXCCD menu once.</p></details></li>
+          <li><h3>Lock the card</h3>
+            <p>Slide the card's write-protect switch to <b>LOCK</b> and put it in the camera. That's what makes
+              EXCCD start on its own. The camera still saves photos.</p></li>
           <li><h3>Pick a look</h3>
             <p>In shooting mode press <b>Print</b>, flip with the arrow keys, confirm with <b>FUNC/SET</b>.
               The active look is shown at the bottom of the screen.</p></li>

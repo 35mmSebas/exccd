@@ -49,6 +49,11 @@ jobs:
           gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
           "$RUNNER_TEMP/test_films_txt" CHDK/FILMS/BEISPIEL.TXT
 
+      - name: PC-Test SD-Installer (Bootsektor, Kameraliste)
+        run: |
+          make -C tools/installer test_core
+          tools/installer/test_core tools/filmsim/cameras.txt "$RUNNER_TEMP/installer"
+
       - name: PC-Test Rohdaten (10 und 12 Bit)
         run: |
           for b in 10 12; do
@@ -107,8 +112,28 @@ jobs:
           name: exccd-${{ env.VERSION }}-${{ env.PLATFORM }}-${{ env.PLATFORMSUB }}
           path: dist/*.zip
 
+  # SD-Karten-Installer fuer Windows (MinGW-Cross-Build, unsigniert)
+  installer:
+    needs: setup
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.setup.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer bauen
+        run: |
+          sudo apt-get install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+          make -C tools/installer CROSS=x86_64-w64-mingw32- VERSION=$VERSION
+          ls -l tools/installer/exccd-installer.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exccd-installer
+          path: tools/installer/exccd-installer.exe
+
   site:
-    needs: [setup, build]
+    needs: [setup, build, installer]
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ needs.setup.outputs.version }}
@@ -120,6 +145,16 @@ jobs:
           pattern: exccd-*
           path: dist
           merge-multiple: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: exccd-installer
+          path: installer
+
+      - name: Installer mit allen Firmware-ZIPs testen
+        run: |
+          make -C tools/installer test_core
+          tools/installer/test_core tools/filmsim/cameras.txt "$RUNNER_TEMP/installer" dist/*.zip
 
       - name: Stabile Kameras auswaehlen
         run: |
@@ -142,6 +177,8 @@ jobs:
           unzip -tq "$RUNNER_TEMP/zipjoin/exccd-all.zip"
           unzip -tq "$RUNNER_TEMP/zipjoin/exccd-two.zip"
           "$RUNNER_TEMP/test_films_txt" "$RUNNER_TEMP/zipjoin/FILMS-all.TXT"
+          tools/installer/test_core tools/filmsim/cameras.txt "$RUNNER_TEMP/installer-site" "$RUNNER_TEMP"/zipjoin/exccd-*.zip
+          cp installer/exccd-installer.exe _site/
 
       - uses: actions/upload-pages-artifact@v4
         if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
@@ -152,7 +189,7 @@ jobs:
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" release/*.zip --title "EXCCD $GITHUB_REF_NAME" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" release/*.zip installer/exccd-installer.exe --title "EXCCD $GITHUB_REF_NAME" --generate-notes
 
   # Webseite nur bei Releases (Tag) oder von Hand veroeffentlichen.
   # Einmalig im Repo einstellen: Settings -> Pages -> Source: GitHub Actions
