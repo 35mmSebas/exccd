@@ -2390,6 +2390,10 @@ static CMenuItem system_submenu_items[] = {
     MENU_ITEM   (0x80,LANG_MENU_MISC_BUILD_INFO,            MENUITEM_PROC,      gui_show_build_info, 0 ),
     MENU_ITEM   (0x33,LANG_MENU_DEBUG_MAKE_BOOTABLE,        MENUITEM_PROC,      gui_menuproc_mkbootdisk, 0 ),
     MENU_ITEM   (0x2b,LANG_MENU_MAIN_RESET_OPTIONS,         MENUITEM_PROC,      gui_menuproc_reset, 0 ),
+#if defined(FILMSIM_DIAG) && defined(OPT_DEBUGGING)
+    // nur fuer Kameratests neuer Ports: Propcases ablesen (platform_camera.h)
+    MENU_ITEM   (0x2a,LANG_MENU_MAIN_DEBUG,                 MENUITEM_SUBMENU,   &debug_submenu, 0 ),
+#endif
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
     {0}
 };

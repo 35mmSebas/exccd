@@ -167,6 +167,8 @@ firzipsubcomplete: infoline clean firsub
 	zip -9 $(bin)/$(ZIP_SMALL) $(chdk)/MODULES/* > $(DEVNULL)
 	zip -9j $(bin)/$(ZIP_FULL) $(tools)/vers.req > $(DEVNULL)
 	zip -9r $(bin)/$(ZIP_FULL) $(chdk)/* -x CHDK/logo\*.dat \*Makefile \*.svn\* > $(DEVNULL)
+# EXCCD: kameraeigene Dateien (z. B. Laschen fuer eine andere Palette) ersetzen die gemeinsamen
+	if [ -d $(tools)/filmsim/cams/$(PLATFORM)/CHDK ] ; then cd $(tools)/filmsim/cams/$(PLATFORM) && zip -9r $(CURDIR)/$(bin)/$(ZIP_FULL) CHDK > $(DEVNULL) ; fi
 
 
 firzipsubcompletecopy: infoline

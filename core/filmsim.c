@@ -1615,3 +1615,48 @@ int filmsim_dr_tv96_shift(void)
     if (shooting_get_prop(PROPCASE_IS_FLASH_READY)) return 0;   // mit Blitz nicht
     return conf.film_dr * 96;
 }
+
+//-------------------------------------------------------------------
+// Defekte Sensorspalten (A/CHDK/BADCOLS.TXT)
+//   Alte CCDs bekommen helle Spalten ueber die ganze Bildhoehe. Jede Zeile
+//   der Datei: eine Spaltennummer im Rohbild (wie in der DNG), # = Kommentar.
+//   Die Spalte wird aus den Nachbarn gleicher Farbe (x-2, x+2) neu
+//   berechnet, vor DNG und JPEG. Jeder Sensor hat andere Spalten, darum
+//   eine Datei auf der Karte und kein Wert im Code.
+//-------------------------------------------------------------------
+#define BADCOLS_TXT "A/CHDK/BADCOLS.TXT"
+#define BADCOLS_MAX 16
+static short badcols[BADCOLS_MAX];
+static int badcols_n = -1;          // -1 = Datei noch nicht gelesen
+
+static void badcols_load(void)
+{
+    char buf[256], *p;
+    int fd, len;
+    badcols_n = 0;
+    fd = open(BADCOLS_TXT, O_RDONLY, 0777);
+    if (fd < 0) return;
+    len = read(fd, buf, sizeof(buf) - 1);
+    close(fd);
+    if (len <= 0) return;
+    buf[len] = 0;
+    for (p = buf; *p && badcols_n < BADCOLS_MAX; ) {
+        while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
+        if (*p >= '0' && *p <= '9') {
+            int x = strtol(p, &p, 10);
+            if (x >= 2 && x < camera_sensor.raw_rowpix - 2) badcols[badcols_n++] = x;
+        }
+        while (*p && *p != '\n') p++;
+    }
+}
+
+void filmsim_badcols_apply(void)
+{
+    int i, y;
+    if (badcols_n < 0) badcols_load();
+    for (i = 0; i < badcols_n; i++) {
+        int x = badcols[i];
+        for (y = 0; y < camera_sensor.raw_rows; y++)
+            set_raw_pixel(x, y, (get_raw_pixel(x - 2, y) + get_raw_pixel(x + 2, y)) / 2);
+    }
+}
