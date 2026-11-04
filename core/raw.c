@@ -276,6 +276,10 @@ void raw_process(void)
         }
     }
 
+    // Filmsim: heisse Pixel entfernen (vor allem anderen, sonst werden sie verstaerkt)
+    extern void filmsim_hotpix_hook(char *raw);
+    filmsim_hotpix_hook(rawadr);
+
     // Filmsim: Doppelbelichtung (vor Kurven, damit der Look nur einmal wirkt)
     extern void filmsim_double_hook(char *raw);
     filmsim_double_hook(rawadr);
@@ -284,9 +288,18 @@ void raw_process(void)
     extern void filmsim_cnr_hook(char *raw);
     filmsim_cnr_hook(rawadr);
 
+    // Filmsim: ohne knappere Belichtung (Blitz, Tv-Override) keine Dynamik+-Kurve
+    extern void filmsim_dr_curve_hook(int end);
+    filmsim_dr_curve_hook(0);
+
 #ifdef OPT_CURVES
     if (conf.curve_enable)
         libcurves->curve_apply();
+#endif
+#if CAM_SENSOR_BITS_PER_PIXEL == 12
+    // Filmsim: eigene Tonkurven bei 12-Bit-Sensoren (curves.flt kann nur 10 Bit)
+    extern void filmsim_curve_apply(char *raw);
+    filmsim_curve_apply(rawadr);
 #endif
 
     // Filmsim: Kanalmischung fuer Spezialfilme (nach den Kurven, vor dem JPEG)
@@ -300,6 +313,8 @@ void raw_process(void)
     // Filmsim: Film zum Foto ins Logbuch schreiben
     extern void filmsim_log_shot(void);
     filmsim_log_shot();
+
+    filmsim_dr_curve_hook(1);
 }
 
 //-------------------------------------------------------------------

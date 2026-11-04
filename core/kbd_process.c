@@ -224,5 +224,10 @@ long kbd_process()
     extern void start_ptp_script();
     start_ptp_script();
 
+    // Filmsim: Zoomhebel bei Stufenzoom / fester Brennweite vor Canon verbergen
+    extern int filmsim_zoom_kbd(void);
+    if (!kbd_blocked && filmsim_zoom_kbd())
+        return 1;
+
     return kbd_blocked;
 }

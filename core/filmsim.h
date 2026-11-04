@@ -5,7 +5,7 @@
 // Kombiniert Canon "My Colors / Custom Color" (Propcases) mit
 // RAW-Tonkurven (curves.flt) zu waehlbaren Looks.
 
-#define FILMSIM_VERSION "v1.9.22"
+#define FILMSIM_VERSION "v1.9.24"
 
 extern const char* filmsim_menu_enum(int change, int arg);
 extern const char* filmsim_name(void);
@@ -26,7 +26,12 @@ extern const char* filmsim_vignette_enum(int change, int arg);
 extern const char* filmsim_leak_enum(int change, int arg);
 extern const char* filmsim_datestamp_enum(int change, int arg);
 extern const char* filmsim_dr_enum(int change, int arg);
-extern int filmsim_dr_tv96_shift(void);
+extern int filmsim_dr_tv96_shift(int automatic);
+extern void filmsim_dr_curve_hook(int end);
 extern const char* filmsim_cnr_enum(int change, int arg);
+extern const char* filmsim_zoom_enum(int change, int arg);
+extern const char* filmsim_zoom_str(void);
+extern int filmsim_zoom_kbd(void);
+extern void filmsim_zoom_tick(void);
 
 #endif

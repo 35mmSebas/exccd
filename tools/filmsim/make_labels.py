@@ -34,6 +34,7 @@ NCOLORS = 28                     # Hauptfarben je Lasche vor der Palettenzuordnu
 # skalieren, dass die hellsten Felder (98. Perzentil) 255 erreichen.
 import json
 _here = os.path.dirname(os.path.abspath(__file__))
+_cam = os.path.join(_here, "cams", "ixus60_sd600")   # Laschen gibt es bisher nur fuer die IXUS 60
 def _load_palette(fn):
     raw = {int(k, 16): v for k, v in json.load(open(fn))["roh_rgb"].items()}
     blk, wht = raw[0xFF], raw[0x11]
@@ -44,7 +45,7 @@ def _load_palette(fn):
     r = (len(peaks) - 1) * 0.98
     top = peaks[int(r)] + (peaks[min(int(r) + 1, len(peaks) - 1)] - peaks[int(r)]) * (r - int(r))
     return {i: tuple(min(max(c / top * 255, 0.0), 255.0) for c in v) for i, v in d.items()}
-PALETTE = _load_palette(os.path.join(_here, "palette_sd600_foto.json"))
+PALETTE = _load_palette(os.path.join(_cam, "palette_foto.json"))
 
 # Nur Indizes, die auf dem Display nachweislich deckend erscheinen: alle Farben
 # der Laschen aus v1.8.2 plus die CHDK-Grundfarben. Andere Eintraege koennen
@@ -70,7 +71,7 @@ def _opaque(fn):
     d = open(fn, "rb").read()
     full = {k for k in range(16) if d[4 * k] == 0xFF}
     return {i for i in range(256) if (i >> 4) in full and (i & 15) in full}
-OPAQUE = _opaque(os.path.join(_here, "palette_sd600_rec.bin"))
+OPAQUE = _opaque(os.path.join(_cam, "PALREC.BIN"))
 CANDIDATES &= OPAQUE
 
 # Die Palette hat keine neutralen hellen Grautoene (Grau wirkt blaugrau).

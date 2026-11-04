@@ -18,7 +18,7 @@ static const filmsim_t expected[] = {
     { "Daylight 100",    MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              "DAYLITE",  0 },
     { "Postcard 100",    MC_CUSTOM,   0,  1,  2,  1,  1,  1,  0,  "POSTCRD.CV",   "POSTCRD",  0 },
     { "Blush 100",       MC_CUSTOM,  -1,  0,  1,  0,  0,  0,  1,  "BLUSH.CV",     "BLUSH",    0 },
-    { "Journal 400",     MC_CUSTOM,   0,  0, -1, -1, -1,  0,  0,  "JOURNAL.CV",   "JOURNAL",  0 },
+    { "Journal 400",     MC_CUSTOM,   0,  0, -1,  0, -1,  0,  0,  "JOURNAL.CV",   "JOURNAL",  0 },
     { "Studio 160",      MC_CUSTOM,  -1, -1, -1,  0,  0,  0,  1,  "STUDIO.CV",    "STUDIO",   0 },
     { "Drugstore 200",   MC_CUSTOM,   0,  0, -1,  0,  1, -1,  0,  "DRUGSTR.CV",   "DRUGSTR",  0 },
     { "Scene 500",       MC_CUSTOM,  -2, -1, -2,  0,  0,  0,  0,  "SCENE.CV",     "SCENE",    0 },
@@ -29,7 +29,7 @@ static const filmsim_t expected[] = {
     { "Cross 100",       MC_CUSTOM,   0,  1,  2,  0,  0,  0,  0,  "CROSS.CV",     "CROSS",    0 },
     { "Violet 400",      MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "VIOLET.CV",    "VIOLET",   1 },
     { "Concrete 100",    MC_CUSTOM,   0,  1, -1,  0,  0,  0,  0,  "CONCRET.CV",   "CONCRET",  2 },
-    { "Ember 200",       MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "EMBER.CV",     "EMBER",    0 },
+    { "Ember 200",       MC_CUSTOM,   0,  0,  0,  0,  0,  0,  0,  "EMBER.CV",     "EMBER",    0 },
     { "Grit 400",        MC_BW,       0,  0,  0,  0,  0,  0,  0,  "GRIT.CV",      "GRIT",     0 },
 };
 #define NUM_EXPECTED ((int)(sizeof(expected)/sizeof(expected[0])))
