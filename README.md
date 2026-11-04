@@ -80,7 +80,7 @@ tools/filmsim/build.sh                  # every camera in tools/filmsim/cameras.
 tools/filmsim/build.sh ixus60_sd600     # one camera
 ```
 
-Result: `dist/exccd-<version>-<platform>-<sub>-full.zip`. The script runs `make clean`
+Result: `dist/<version>/exccd-<version>-<platform>-<sub>-full.zip`, next to the build logs. The script runs `make clean`
 before and after each camera, because CHDK shares the object files in `core/`, `lib/` and
 `modules/` between all platforms.
 
