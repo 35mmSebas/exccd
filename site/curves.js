@@ -5,8 +5,8 @@
 // p = Kurvenparameter der Kamera aus site.json: { black, white, gamma, wb: [R, G, G, B] }
 // r = Rezept aus make_curves.RECIPES (contrast, lift, shoulder, shadow, highlight, gain, points)
 
-// Faktor je Stufe der WB-Verschiebung (R/B -9..+9 wie bei Fuji). Vorlaeufig,
-// noch nicht gegen Fuji-Aufnahmen kalibriert.
+// Faktor je Stufe der WB-Verschiebung (R/B -9..+9). Vorlaeufig, noch nicht
+// gegen Referenzaufnahmen kalibriert.
 export const WB_STEP = 1.03;
 export const WB_MAX = 9;
 

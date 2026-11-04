@@ -21,7 +21,7 @@ typedef struct {
     signed char contrast, sharpness, saturation, red, green, blue, skin;
     const char *curve;      // Kurvendatei ohne Pfad, 0 = keine
     const char *label;      // Lasche A/CHDK/FILMS/<label>.FLM, 0 = Textkarte
-    int mix;                // RAW-Kanalmischung: 0 = keine, 1 = Lomochrome Purple, 2 = Metropolis
+    int mix;                // RAW-Kanalmischung: 0 = keine, 1 = Violet, 2 = Concrete
 } filmsim_t;
 
 #define FILMS_TXT_MAX       24      // Looks aus der Datei (ohne "Aus")

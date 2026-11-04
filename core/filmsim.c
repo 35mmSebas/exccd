@@ -789,15 +789,15 @@ void filmsim_draw_osd(void)
 //   Zeilensummen = 1, damit Grau grau bleibt.
 //-------------------------------------------------------------------
 #ifdef FS_RAW
-// Faktoren *256. Lomochrome Purple: Gruen -> Violett, Blau -> Gruen/Tuerkis,
+// Faktoren *256. Violet: Gruen -> Violett, Blau -> Gruen/Tuerkis,
 // Gelb -> Pink
-static const short mix_lomo[3][3] = {
+static const short mix_violet[3][3] = {
     { 128, 128,   0 },   // R' = 0.5 R + 0.5 G
     {  51,  77, 128 },   // G' = 0.2 R + 0.3 G + 0.5 B
     {  51, 205,   0 },   // B' = 0.2 R + 0.8 G
 };
-// LomoChrome Metropolis: entsaettigt, Blau/Gruen stark gedaempft, Haut bleibt
-static const short mix_metro[3][3] = {
+// Concrete: entsaettigt, Blau/Gruen stark gedaempft, Haut bleibt
+static const short mix_concrete[3][3] = {
     { 192,  51,  13 },
     {  64, 154,  38 },
     {  51, 102, 103 },
@@ -848,8 +848,8 @@ __attribute__((optimize("O2"))) void filmsim_raw_apply(char *raw)
     const filmsim_t *s = current();
     if (!raw || !filmsim_photo_mode()) return;
     const short (*m)[3];
-    if (s->mix == 1)      m = mix_lomo;
-    else if (s->mix == 2) m = mix_metro;
+    if (s->mix == 1)      m = mix_violet;
+    else if (s->mix == 2) m = mix_concrete;
     else if (s->mycolors == MC_BW && conf.film_bwfilter > 0 && conf.film_bwfilter < 4)
                           m = mix_bw[conf.film_bwfilter];
     else return;

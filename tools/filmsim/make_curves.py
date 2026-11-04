@@ -44,8 +44,8 @@ RECIPES = {
                     gain=(1.10, 1.0, 0.92)),          # leichter Gelbfilter-Effekt
     # Stuetzpunkt-Looks: je Kanal (x, y) im Anzeige-Raum, PCHIP-interpoliert,
     # (0,0) und (1,1) werden ergaenzt
-    # v1.9.24: gemessen, Classic Chrome relativ zu Provia (X-E2, gleiche RAFs,
-    # kalibrierung/fit_relative.py): fast neutral, leichtes S, kein Farbstich
+    # v1.9.24: gegen Referenzaufnahmen gemessen: fast neutral, leichtes S,
+    # kein Farbstich
     "JOURNAL": dict(points=dict(             # Journal: dokumentarisch, gedaempft
         R=((.08, .072), (.25, .226), (.5, .505), (.75, .77),  (.92, .927)),
         G=((.08, .077), (.25, .23),  (.5, .503), (.75, .767), (.92, .925)),
