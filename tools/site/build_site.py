@@ -14,7 +14,7 @@ Download. Dafuer wird das Firmware-ZIP hier zerlegt:
     data/site.json                   Version, Kameras, Looks mit FILMS.TXT-Zeile und
                                      Kurvenrezept (fuer die WB-Verschiebung, site/curves.js)
 
-Die Looks kommen aus CHDK/FILMS/BEISPIEL.TXT (gleich der eingebauten Tabelle),
+Die Looks kommen aus CHDK/FILMS/EXAMPLE.TXT (gleich der eingebauten Tabelle),
 Art/Beschreibung/Akzentfarbe aus tools/filmsim/make_label_art.py.
 """
 
@@ -40,7 +40,7 @@ CURVES_DIR = "CHDK/CURVES/"
 
 
 def parse_films_txt(text):
-    """Zeilen aus BEISPIEL.TXT, Spalten wie in core/filmsim_txt.c."""
+    """Zeilen aus EXAMPLE.TXT, Spalten wie in core/filmsim_txt.c."""
     looks = []
     for line in text.splitlines():
         line = line.strip()
@@ -127,7 +127,7 @@ def main():
 
     with zipfile.ZipFile(args.fw_zip) as fw:
         names = fw.namelist()
-        looks = parse_films_txt(fw.read(FILMS_DIR + "BEISPIEL.TXT").decode("ascii"))
+        looks = parse_films_txt(fw.read(FILMS_DIR + "EXAMPLE.TXT").decode("ascii"))
 
         look_owned = set()
         for look in looks:
@@ -145,9 +145,9 @@ def main():
             stem = os.path.splitext(look["curve"])[0] if look["curve"] else None
             look["recipe"] = make_curves.RECIPES.get(stem) if stem else {}
 
-        # BEISPIEL.TXT nennt alle Looks; die Download-ZIP bekommt stattdessen
+        # EXAMPLE.TXT nennt alle Looks; die Download-ZIP bekommt stattdessen
         # eine FILMS.TXT mit genau den gewaehlten Looks.
-        base = [n for n in names if n not in look_owned and n != FILMS_DIR + "BEISPIEL.TXT"]
+        base = [n for n in names if n not in look_owned and n != FILMS_DIR + "EXAMPLE.TXT"]
         copy_entries(fw, base, os.path.join(cam_dir, "base.zip"))
         base_size = os.path.getsize(os.path.join(cam_dir, "base.zip"))
 

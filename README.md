@@ -1,6 +1,6 @@
 # EXCCD
 
-Film looks for old CCD point-and-shoot cameras, built on [CHDK](https://chdk.fandom.com/).
+Film looks for old Canon point-and-shoot cameras, built on [CHDK](https://chdk.fandom.com/).
 
 EXCCD adds a film selection to the camera: press the **Print** button, flip through the
 film labels and pick a look. Each look combines Canon's own *My Colors* settings with a
@@ -10,7 +10,7 @@ come out of the camera finished.
 Supported camera: **Canon Digital IXUS 60 / PowerShot SD600, firmware 1.00d**.
 More cameras are planned.
 
-> The camera menus are currently in German.
+> The camera menus are in English. For German: *MENU → System → Language... → `german.lng`*.
 
 ## Looks
 
@@ -92,7 +92,7 @@ Tests on the PC, for the `FILMS.TXT` parser and for the raw codec and 12-bit cur
 
 ```sh
 gcc -Wall -Wextra -I core -o test_films_txt tools/filmsim/test_films_txt.c core/filmsim_txt.c
-./test_films_txt CHDK/FILMS/BEISPIEL.TXT
+./test_films_txt CHDK/FILMS/EXAMPLE.TXT
 gcc -Wall -Wextra -I core -DCAM_SENSOR_BITS_PER_PIXEL=10 -o test_raw10 tools/filmsim/test_raw.c && ./test_raw10
 gcc -Wall -Wextra -I core -DCAM_SENSOR_BITS_PER_PIXEL=12 -o test_raw12 tools/filmsim/test_raw.c && ./test_raw12
 ```

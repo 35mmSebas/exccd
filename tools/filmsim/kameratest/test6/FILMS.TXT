@@ -1,7 +1,7 @@
 # Test 6: alle Looks mit Schaerfe -2 (Testlauf, kein Release)
 # Nach A/CHDK/FILMS/FILMS.TXT kopieren. Zum Zuruecksetzen Datei loeschen.
 #
-# Gegenueber BEISPIEL.TXT geaendert:
+# Gegenueber EXAMPLE.TXT geaendert:
 #   - Schaerfe bei allen Custom-Looks auf -2
 #   - Daylight und Tungsten von Modus 0 auf 11 (alle Regler 0, Schaerfe -2),
 #     weil der Regler nur bei Custom Color wirkt

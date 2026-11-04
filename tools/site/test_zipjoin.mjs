@@ -27,7 +27,7 @@ for (const [tag, looks] of [["all", cam.looks], ["two", cam.looks.slice(0, 2)]])
 
   const names = new Set(readZip(zip).map((e) => e.name));
   for (const must of ["DISKBOOT.BIN", "PS.FIR", "CHDK/FILMS/FILMS.TXT"]) check(names.has(must), `${tag}: ${must} fehlt`);
-  check(!names.has("CHDK/FILMS/BEISPIEL.TXT"), `${tag}: BEISPIEL.TXT gehoert nicht in die Download-ZIP`);
+  check(!names.has("CHDK/FILMS/EXAMPLE.TXT"), `${tag}: EXAMPLE.TXT gehoert nicht in die Download-ZIP`);
   for (const l of cam.looks) {
     const want = looks.includes(l);
     check(names.has(`CHDK/FILMS/${l.id}.FLM`) === want, `${tag}: ${l.id}.FLM ${want ? "fehlt" : "zu viel"}`);

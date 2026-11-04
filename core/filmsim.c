@@ -29,6 +29,8 @@
 #include "filmsim.h"
 #include "filmsim_txt.h"
 #include "filmsim_raw.h"
+#include "lang.h"
+#include "gui_lang.h"
 
 //-------------------------------------------------------------------
 // Kameraeinstellungen fuer EXCCD
@@ -88,7 +90,7 @@
 // Eingebaute Tabelle, falls A/CHDK/FILMS/FILMS.TXT fehlt oder unbrauchbar ist
 static const filmsim_t sims_builtin[] = {
     // name              mode        con shp sat  R   G   B  skin  curve           label      mix
-    { "Aus",             MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              "AUS",      0 },
+    { "Off",             MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              "AUS",      0 },
     { "Daylight 100",    MC_OFF,      0,  0,  0,  0,  0,  0,  0,  0,              "DAYLITE",  0 },
     { "Postcard 100",    MC_CUSTOM,   0,  1,  2,  1,  1,  1,  0,  "POSTCRD.CV",   "POSTCRD",  0 },
     { "Blush 100",       MC_CUSTOM,  -1,  0,  1,  0,  0,  0,  1,  "BLUSH.CV",     "BLUSH",    0 },
@@ -112,6 +114,12 @@ static const filmsim_t sims_builtin[] = {
 static const filmsim_t *sims = sims_builtin;
 static int num_sims = NUM_BUILTIN;
 #define NUM_SIMS num_sims
+
+// Anzeigename; "Aus" kommt aus der Sprachdatei (english.lng / german.lng)
+static const char* sim_name(int i)
+{
+    return i == 0 ? lang_str(LANG_EXCCD_OFF) : sims[i].name;
+}
 
 #include "gui_osd.h"
 
@@ -249,7 +257,7 @@ static void films_load(void)
             n = films_txt_parse(buf, len, films_file + 1, films_str, FILMS_TXT_MAX, log, FILMS_LOG_SIZE - 80);
         free(buf);
     } else {
-        strcpy(log, "Datei leer oder groesser als 16 KB\r\n");
+        strcpy(log, "File is empty or larger than 16 KB\r\n");
     }
 
     if (n > 0) {
@@ -257,12 +265,12 @@ static void films_load(void)
         sims = films_file;
         num_sims = n + 1;
     } else {
-        strcat(log, "Keine gueltigen Looks - eingebaute Tabelle aktiv\r\n");
+        strcat(log, "No valid looks - using the built-in table\r\n");
     }
 
     if (log[0]) {
         char hdr[48];
-        sprintf(hdr, "FILMS.TXT: %d Looks geladen\r\n", n);
+        sprintf(hdr, "FILMS.TXT: %d looks loaded\r\n", n);
         int fd = open(FILMS_LOG, O_WRONLY | O_CREAT | O_TRUNC, 0777);
         if (fd >= 0) {
             write(fd, hdr, strlen(hdr));
@@ -284,7 +292,8 @@ static const filmsim_t* current(void)
 
 const char* filmsim_name(void)
 {
-    return current()->name;
+    int i = conf.film_sim;
+    return sim_name(i < 0 || i >= NUM_SIMS ? 0 : i);
 }
 
 static int curve_file_ok = 0;     // Diagnose: Kurvendatei gefunden?
@@ -591,7 +600,7 @@ static int label_draw(void)
 // Ersatz, wenn es keine Lasche gibt: Textkarte im Aufbau der Laschen
 static void card_draw(int i)
 {
-    const char *n = sims[i].name;
+    const char *n = sim_name(i);
     int len = strlen(n);
     int x0 = (camera_screen.width - LABEL_W) / 2, y0 = LABEL_TOP, m = 16, k;
     draw_rectangle(x0, y0, x0 + LABEL_W - 1, y0 + LABEL_H - 1, MAKE_COLOR(EX_BG, EX_RULE),
@@ -610,7 +619,7 @@ static void card_draw(int i)
 // Leiste unter der Lasche: Pfeile grau, Name weiss, aktiver Film mit Quadrat
 static void bar_draw(void)
 {
-    const char *n = sims[sel].name;
+    const char *n = sim_name(sel);
     int len = strlen(n);
     int x0 = (camera_screen.width - LABEL_W) / 2, x1 = x0 + LABEL_W - FONT_WIDTH;
     int x = (camera_screen.width - len * FONT_WIDTH) / 2;
@@ -739,7 +748,8 @@ void filmsim_draw_osd(void)
         && !conf.film_zoom) return;
     strcpy(buf, filmsim_name());
     if (preview_pending) {
-        strcat(buf, " - Ausloeser antippen");
+        strcat(buf, " - ");
+        strcat(buf, lang_str(LANG_EXCCD_HALF_PRESS));
     } else {
         extern const char* filmsim_tv_str(void);
         const char *tv = filmsim_tv_str();
@@ -974,7 +984,7 @@ void filmsim_log_shot(void)
     int fd = open(fn, O_RDWR | O_CREAT, 0777);
     if (fd < 0) return;
     if (is_new) {
-        const char *hdr = "Datei;Film\r\n";
+        const char *hdr = "File;Film\r\n";
         write(fd, hdr, strlen(hdr));
     } else {
         lseek(fd, 0, 2);                          // SEEK_END
@@ -1067,28 +1077,28 @@ void filmsim_double_hook(char *raw)
 // Menue "Doppelbelichtung: Aus / An"
 const char* filmsim_double_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *modes[] = { "Aus", "An" };
+    static const int modes[] = { LANG_EXCCD_OFF, LANG_EXCCD_ON };
     if (change) {
         if (conf.film_double) { conf.film_double = 0; remove(DBL_FILE); }
         else conf.film_double = 1;
     }
-    return modes[conf.film_double ? 1 : 0];
+    return lang_str(modes[conf.film_double ? 1 : 0]);
 }
 
 // Menue "Farbfilter (S/W)": wirkt nur bei Schwarzweissfilmen
 const char* filmsim_bwfilter_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *modes[] = { "Aus", "Gelb", "Orange", "Rot" };
-    if (current()->mycolors != MC_BW) return "nur S/W";
+    static const int modes[] = { LANG_EXCCD_OFF, LANG_EXCCD_YELLOW, LANG_EXCCD_ORANGE, LANG_EXCCD_RED };
+    if (current()->mycolors != MC_BW) return lang_str(LANG_EXCCD_BW_ONLY);
     if (change) conf.film_bwfilter = (conf.film_bwfilter + change + 4) % 4;
-    return modes[conf.film_bwfilter % 4];
+    return lang_str(modes[conf.film_bwfilter % 4]);
 }
 
 const char* filmsim_bwfilter_str(void)
 {
-    static const char *osd[] = { 0, "Gelbfilter", "Orangefilter", "Rotfilter" };
-    if (current()->mycolors != MC_BW) return 0;
-    return osd[conf.film_bwfilter % 4];
+    static const int osd[] = { 0, LANG_EXCCD_OSD_YELLOW, LANG_EXCCD_OSD_ORANGE, LANG_EXCCD_OSD_RED };
+    if (current()->mycolors != MC_BW || !(conf.film_bwfilter % 4)) return 0;
+    return lang_str(osd[conf.film_bwfilter % 4]);
 }
 
 //===================================================================
@@ -1588,13 +1598,13 @@ void filmsim_hotpix_hook(char *raw)
 const char* filmsim_cnr_enum(int change, __attribute__ ((unused))int arg)
 {
     // Anzeige-Reihenfolge Aus, Auto, Leicht, Stark -> gespeicherter Wert
-    static const char *m[] = { "Aus", "Auto", "Leicht", "Stark" };
+    static const int m[] = { LANG_EXCCD_OFF, LANG_EXCCD_AUTO, LANG_EXCCD_LIGHT, LANG_EXCCD_STRONG };
     static const int   val[] = { 0, CNR_AUTO, 1, 2 };
     int i;
     for (i = 0; i < 4 && val[i] != conf.film_cnr; i++);
     if (i == 4) i = 0;
     if (change) { i = (i + change + 4) % 4; conf.film_cnr = val[i]; }
-    return m[i];
+    return lang_str(m[i]);
 }
 
 void filmsim_effects_apply(char *raw)
@@ -1611,33 +1621,33 @@ void filmsim_effects_apply(char *raw)
 // Menue-Eintraege
 const char* filmsim_mist_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *m[] = { "Aus", "1/8", "1/4" };
+    static const int m[] = { LANG_EXCCD_OFF, (int)"1/8", (int)"1/4" };
     if (change) conf.film_mist = (conf.film_mist + change + 3) % 3;
-    return m[conf.film_mist % 3];
+    return lang_str(m[conf.film_mist % 3]);
 }
 const char* filmsim_halation_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *m[] = { "Aus", "An" };
+    static const int m[] = { LANG_EXCCD_OFF, LANG_EXCCD_ON };
     if (change) conf.film_halation = !conf.film_halation;
-    return m[conf.film_halation ? 1 : 0];
+    return lang_str(m[conf.film_halation ? 1 : 0]);
 }
 const char* filmsim_vignette_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *m[] = { "Aus", "Leicht", "Stark" };
+    static const int m[] = { LANG_EXCCD_OFF, LANG_EXCCD_LIGHT, LANG_EXCCD_STRONG };
     if (change) conf.film_vignette = (conf.film_vignette + change + 3) % 3;
-    return m[conf.film_vignette % 3];
+    return lang_str(m[conf.film_vignette % 3]);
 }
 const char* filmsim_leak_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *m[] = { "Aus", "An" };
+    static const int m[] = { LANG_EXCCD_OFF, LANG_EXCCD_ON };
     if (change) conf.film_leak = !conf.film_leak;
-    return m[conf.film_leak ? 1 : 0];
+    return lang_str(m[conf.film_leak ? 1 : 0]);
 }
 const char* filmsim_datestamp_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *m[] = { "Aus", "An" };
+    static const int m[] = { LANG_EXCCD_OFF, LANG_EXCCD_ON };
     if (change) conf.film_datestamp = !conf.film_datestamp;
-    return m[conf.film_datestamp ? 1 : 0];
+    return lang_str(m[conf.film_datestamp ? 1 : 0]);
 }
 int filmsim_effects_active(void)
 {
@@ -1650,12 +1660,12 @@ int filmsim_effects_active(void)
 //-------------------------------------------------------------------
 const char* filmsim_dr_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char *m[] = { "Aus", "+1", "+2" };
+    static const int m[] = { LANG_EXCCD_OFF, (int)"+1", (int)"+2" };
     if (change) {
         conf.film_dr = (conf.film_dr + change + 3) % 3;
         set_curve(current());
     }
-    return m[conf.film_dr % 3];
+    return lang_str(m[conf.film_dr % 3]);
 }
 
 // Belichtungsverschiebung in 1/96 EV (0 = keine), von shooting.c bei jeder

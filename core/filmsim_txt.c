@@ -92,7 +92,7 @@ static void log_add(char **lp, char *lend, int line, const char *msg)
     char *l = *lp;
     if (!l) return;
     do { num[i++] = '0' + n % 10; n /= 10; } while (n && i < 7);
-    for (p = "Zeile "; *p && l < lend; ) *l++ = *p++;
+    for (p = "Line "; *p && l < lend; ) *l++ = *p++;
     while (i > 0 && l < lend) *l++ = num[--i];
     for (p = ": "; *p && l < lend; ) *l++ = *p++;
     for (p = msg; *p && l < lend; ) *l++ = *p++;
@@ -102,8 +102,8 @@ static void log_add(char **lp, char *lend, int line, const char *msg)
 }
 
 static const char *col_names[NUM_COLS] = {
-    "Name", "Modus", "Kontrast", "Schaerfe", "Saettigung", "Rot", "Gruen", "Blau",
-    "Hautton", "Kurve", "Lasche", "Mix"
+    "Name", "Mode", "Contrast", "Sharpness", "Saturation", "Red", "Green", "Blue",
+    "Skin tone", "Curve", "Label", "Mix"
 };
 
 int films_txt_parse(char *buf, int len, filmsim_t *sims, films_txt_str_t *str, int max,
@@ -132,7 +132,7 @@ int films_txt_parse(char *buf, int len, filmsim_t *sims, films_txt_str_t *str, i
         if (!*ln || *ln == '#') continue;
 
         if (count >= max) {
-            log_add(&lp, lend, line, "zu viele Looks, Rest ignoriert");
+            log_add(&lp, lend, line, "too many looks, the rest is ignored");
             break;
         }
 
@@ -146,7 +146,7 @@ int films_txt_parse(char *buf, int len, filmsim_t *sims, films_txt_str_t *str, i
             }
         }
         if (ncol < NUM_COLS - 2 || ncol > NUM_COLS) {
-            log_add(&lp, lend, line, "falsche Spaltenzahl (10 bis 12 erwartet)");
+            log_add(&lp, lend, line, "wrong number of columns (10 to 12 expected)");
             continue;
         }
         for (i = 0; i < ncol; i++) col[i] = trim(col[i]);
@@ -155,19 +155,19 @@ int films_txt_parse(char *buf, int len, filmsim_t *sims, films_txt_str_t *str, i
         films_txt_str_t *t = &str[count];
 
         // Name
-        if (!*col[0]) { log_add(&lp, lend, line, "Name fehlt"); continue; }
+        if (!*col[0]) { log_add(&lp, lend, line, "name missing"); continue; }
         for (k = 0; col[0][k] && k < FILMS_TXT_NAME_MAX; k++) t->name[k] = col[0][k];
         t->name[k] = 0;
-        if (col[0][k]) log_add(&lp, lend, line, "Name auf 20 Zeichen gekuerzt");
+        if (col[0][k]) log_add(&lp, lend, line, "name cut to 20 characters");
 
         // Modus, Regler
-        if (!parse_int(col[1], 0, 11, &v[1])) { log_add(&lp, lend, line, "Modus muss 0..11 sein"); continue; }
+        if (!parse_int(col[1], 0, 11, &v[1])) { log_add(&lp, lend, line, "Mode must be 0..11"); continue; }
         for (i = 2; i <= 8; i++) {
             if (!parse_int(col[i], -2, 2, &v[i])) break;
         }
         if (i <= 8) {
             for (k = 0, q = (char *)col_names[i]; *q; ) msg[k++] = *q++;
-            for (q = " muss -2..+2 sein"; *q; ) msg[k++] = *q++;
+            for (q = " must be -2..+2"; *q; ) msg[k++] = *q++;
             msg[k] = 0;
             log_add(&lp, lend, line, msg);
             continue;
@@ -175,16 +175,16 @@ int films_txt_parse(char *buf, int len, filmsim_t *sims, films_txt_str_t *str, i
 
         // Kurve, Lasche
         k = parse_file(col[9], "CV", 1, 7, t->curve);
-        if (k < 0) { log_add(&lp, lend, line, "Kurve: Name max. 7 Zeichen A-Z 0-9 _, Endung .CV"); continue; }
+        if (k < 0) { log_add(&lp, lend, line, "Curve: name max. 7 characters A-Z 0-9 _, ending .CV"); continue; }
         s->curve = k ? t->curve : 0;
         k = (ncol > 10) ? parse_file(col[10], "FLM", 0, 8, t->label) : 0;
-        if (k < 0) { log_add(&lp, lend, line, "Lasche: Name max. 8 Zeichen A-Z 0-9 _"); continue; }
+        if (k < 0) { log_add(&lp, lend, line, "Label: name max. 8 characters A-Z 0-9 _"); continue; }
         s->label = k ? t->label : 0;
 
         // Mix
         v[11] = 0;
         if (ncol > 11 && *col[11] && !parse_int(col[11], 0, 2, &v[11])) {
-            log_add(&lp, lend, line, "Mix muss 0..2 sein");
+            log_add(&lp, lend, line, "Mix must be 0..2");
             continue;
         }
 

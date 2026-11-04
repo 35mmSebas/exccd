@@ -2226,7 +2226,7 @@ extern CMenu script_submenu;
 // RAW zusaetzlich als DNG speichern (ein Schalter statt RAW-Untermenue)
 static const char* gui_filmsim_raw_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char* modes[] = { "Aus", "DNG" };
+    static const int modes[] = { LANG_EXCCD_OFF, (int)"DNG" };
     if (change) {
         conf.save_raw = !conf.save_raw;
         if (conf.save_raw) {
@@ -2235,7 +2235,7 @@ static const char* gui_filmsim_raw_enum(int change, __attribute__ ((unused))int 
         }
         cb_change_dng();
     }
-    return modes[conf.save_raw ? 1 : 0];
+    return lang_str(modes[conf.save_raw ? 1 : 0]);
 }
 
 // Canon-Bildschirmpalette auf die Karte schreiben (fuer die Laschen-Farben)
@@ -2247,10 +2247,10 @@ static void gui_filmsim_dump_palette(__attribute__ ((unused))int arg)
     if (fd >= 0 && pal && sz > 0) {
         write(fd, pal, sz);
         close(fd);
-        gui_mbox_init((int)"Palette", (int)"Gespeichert", MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
+        gui_mbox_init(LANG_EXCCD_PALETTE, LANG_EXCCD_SAVED, MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
     } else {
         if (fd >= 0) close(fd);
-        gui_mbox_init((int)"Palette", (int)"Fehler beim Speichern", MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
+        gui_mbox_init(LANG_EXCCD_PALETTE, LANG_EXCCD_SAVE_FAILED, MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
     }
 }
 
@@ -2305,7 +2305,8 @@ static const char* gui_filmsim_tv_enum(int change, __attribute__ ((unused))int a
 }
 
 // Zonenfokus: feste Entfernung statt Autofokus
-static const char* filmsim_focus_names[] = { "Auto (AF)", "0,5 m", "1 m", "2 m", "3 m", "5 m", "Unendlich" };
+static const int filmsim_focus_names[] = { (int)"Auto (AF)", LANG_EXCCD_FOCUS_HALF, (int)"1 m", (int)"2 m",
+                                           (int)"3 m", (int)"5 m", LANG_EXCCD_INFINITY };
 static const int   filmsim_focus_mm[]    = { 0, 500, 1000, 2000, 3000, 5000, -1 };
 #define FILMSIM_FOCUS_N ((int)(sizeof(filmsim_focus_mm)/sizeof(filmsim_focus_mm[0])))
 
@@ -2343,24 +2344,24 @@ static const char* gui_filmsim_focus_enum(int change, __attribute__ ((unused))in
         }
         conf.override_disable = 0;
     }
-    return filmsim_focus_names[i];
+    return lang_str(filmsim_focus_names[i]);
 }
 
 // Graufilter (ND) erzwingen
 static const char* gui_filmsim_nd_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char* modes[] = { "Auto", "Rein", "Raus" };
+    static const int modes[] = { LANG_EXCCD_AUTO, LANG_EXCCD_ND_IN, LANG_EXCCD_ND_OUT };
     if (change) {
         conf.nd_filter_state = (conf.nd_filter_state + change + 3) % 3;
         conf.override_disable = 0;
     }
-    return modes[conf.nd_filter_state % 3];
+    return lang_str(modes[conf.nd_filter_state % 3]);
 }
 
 // Blitzstaerke fest
 static const char* gui_filmsim_flash_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const char* modes[] = { "Auto", "Schwach", "Mittel", "Stark" };
+    static const int modes[] = { LANG_EXCCD_AUTO, LANG_EXCCD_FLASH_LOW, LANG_EXCCD_FLASH_MID, LANG_EXCCD_FLASH_HIGH };
     int i = conf.flash_manual_override ? conf.flash_video_override_power + 1 : 0;
     if (change) {
         i = (i + change + 4) % 4;
@@ -2369,24 +2370,24 @@ static const char* gui_filmsim_flash_enum(int change, __attribute__ ((unused))in
         if (i == 0) conf.flash_manual_override = 0;
         else { conf.flash_manual_override = 1; conf.flash_video_override_power = i - 1; }
     }
-    return modes[i];
+    return lang_str(modes[i]);
 }
 
 static CMenuItem effects_submenu_items[] = {
-    MENU_ITEM   (0x5f,(int)"Doppelbelichtung",              MENUITEM_ENUM,      filmsim_double_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Black Mist",                    MENUITEM_ENUM,      filmsim_mist_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Halation",                      MENUITEM_ENUM,      filmsim_halation_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Vignette",                      MENUITEM_ENUM,      filmsim_vignette_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Light Leak",                    MENUITEM_ENUM,      filmsim_leak_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Datumsstempel",                 MENUITEM_ENUM,      filmsim_datestamp_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_DOUBLE,                    MENUITEM_ENUM,      filmsim_double_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_MIST,                      MENUITEM_ENUM,      filmsim_mist_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_HALATION,                  MENUITEM_ENUM,      filmsim_halation_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_VIGNETTE,                  MENUITEM_ENUM,      filmsim_vignette_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_LEAK,                      MENUITEM_ENUM,      filmsim_leak_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_DATESTAMP,                 MENUITEM_ENUM,      filmsim_datestamp_enum, 0 ),
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
     {0}
 };
-static CMenu effects_submenu = {0x5f,(int)"Effekte", effects_submenu_items };
+static CMenu effects_submenu = {0x5f,LANG_EXCCD_EFFECTS, effects_submenu_items };
 
 static CMenuItem system_submenu_items[] = {
-    MENU_ITEM   (0x65,(int)"Farbpalette anzeigen",          MENUITEM_PROC,      gui_menu_run_palette, 0 ),
-    MENU_ITEM   (0x33,(int)"Farbpalette speichern",         MENUITEM_PROC,      gui_filmsim_dump_palette, 0 ),
+    MENU_ITEM   (0x65,LANG_EXCCD_SHOW_PALETTE,              MENUITEM_PROC,      gui_menu_run_palette, 0 ),
+    MENU_ITEM   (0x33,LANG_EXCCD_SAVE_PALETTE,              MENUITEM_PROC,      gui_filmsim_dump_palette, 0 ),
     MENU_ITEM   (0x35,LANG_MENU_VIS_LANG,                   MENUITEM_PROC,      gui_draw_load_lang, 0 ),
     MENU_ITEM   (0x80,LANG_MENU_MISC_BUILD_INFO,            MENUITEM_PROC,      gui_show_build_info, 0 ),
     MENU_ITEM   (0x33,LANG_MENU_DEBUG_MAKE_BOOTABLE,        MENUITEM_PROC,      gui_menuproc_mkbootdisk, 0 ),
@@ -2398,25 +2399,25 @@ static CMenuItem system_submenu_items[] = {
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
     {0}
 };
-static CMenu system_submenu = {0x29,(int)"System", system_submenu_items };
+static CMenu system_submenu = {0x29,LANG_EXCCD_SYSTEM, system_submenu_items };
 
 static CMenuItem root_menu_items[] = {
-    MENU_ITEM   (0x61,(int)"Belichtungszeit",               MENUITEM_ENUM,      gui_filmsim_tv_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Dynamik+",                      MENUITEM_ENUM,      filmsim_dr_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Fokus",                         MENUITEM_ENUM,      gui_filmsim_focus_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Zoom",                          MENUITEM_ENUM,      filmsim_zoom_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Blitz",                         MENUITEM_ENUM,      gui_filmsim_flash_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Graufilter",                    MENUITEM_ENUM,      gui_filmsim_nd_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Anti-Farbrauschen",             MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Farbfilter (S/W)",              MENUITEM_ENUM,      filmsim_bwfilter_enum, 0 ),
-    MENU_ITEM   (0x5f,(int)"Effekte",                       MENUITEM_SUBMENU,   &effects_submenu, 0 ),
-    MENU_ITEM   (0x5c,(int)"RAW speichern",                 MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
-    MENU_ITEM   (0x29,(int)"System",                        MENUITEM_SUBMENU,   &system_submenu, 0 ),
+    MENU_ITEM   (0x61,LANG_EXCCD_SHUTTER,                   MENUITEM_ENUM,      gui_filmsim_tv_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_DYNAMIC,                   MENUITEM_ENUM,      filmsim_dr_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_FOCUS,                     MENUITEM_ENUM,      gui_filmsim_focus_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_ZOOM,                      MENUITEM_ENUM,      filmsim_zoom_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_FLASH,                     MENUITEM_ENUM,      gui_filmsim_flash_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_ND,                        MENUITEM_ENUM,      gui_filmsim_nd_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_CNR,                       MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_BWFILTER,                  MENUITEM_ENUM,      filmsim_bwfilter_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_EFFECTS,                   MENUITEM_SUBMENU,   &effects_submenu, 0 ),
+    MENU_ITEM   (0x5c,LANG_EXCCD_SAVE_RAW,                  MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
+    MENU_ITEM   (0x29,LANG_EXCCD_SYSTEM,                    MENUITEM_SUBMENU,   &system_submenu, 0 ),
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
     {0}
 };
 
-CMenu root_menu = {0x20,(int)"Optionen", root_menu_items };
+CMenu root_menu = {0x20,LANG_EXCCD_OPTIONS, root_menu_items };
 
 // Set visibility of User Menu in root menu based on user menu state
 // Note this hack requires the User Menu entry to be the last one in the root_menu_items array above. 

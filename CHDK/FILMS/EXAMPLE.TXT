@@ -1,29 +1,28 @@
-# Eigene Filmtabelle
-# ------------------
-# Diese Datei nach A/CHDK/FILMS/FILMS.TXT kopieren und anpassen.
-# Sie wird beim Einschalten gelesen. Ohne FILMS.TXT gilt die eingebaute
-# Tabelle (sie entspricht genau dieser Datei).
+# Your own film table
+# --------------------
+# Copy this file to A/CHDK/FILMS/FILMS.TXT and edit it.
+# The camera reads it at power-on. Without FILMS.TXT the built-in
+# table is used (it is exactly this file).
 #
-# Eine Zeile je Look, Spalten mit | getrennt. Zeilen mit # sind Kommentare.
-# "Aus" steht immer an erster Stelle und gehoert nicht in die Datei.
-# Max. 24 Looks.
+# One line per look, columns separated by |. Lines starting with # are comments.
+# "Off" always comes first and does not belong in the file.
+# Max. 24 looks.
 #
-#   Name    max. 20 Zeichen, ohne Umlaute
-#   Modus   Canon My Colors: 0 = Aus, 1 = Lebhaft, 2 = Neutral, 3 = S/W,
-#           4 = Sepia, 5 = Positivfilm, 11 = Custom Color
-#   Kon Sch Sat R G B Haut
-#           Custom-Color-Regler -2..+2 (Kontrast, Schaerfe, Saettigung,
-#           Rot, Gruen, Blau, Hautton), wirken nur bei Modus 11
-#   Kurve   Datei in A/CHDK/CURVES, Name max. 7 Zeichen, - = keine.
-#           Fuer Dynamik+ werden <Name>1.CV und <Name>2.CV benutzt.
-#   Lasche  Bild A/CHDK/FILMS/<Lasche>.FLM, max. 8 Zeichen, - = Textkarte
-#   Mix     RAW-Kanalmischung: 0 = keine, 1 = Lila-Effekt, 2 = Entsaettigt
-#           (Spalte darf fehlen)
+#   Name    max. 20 characters, plain ASCII (no accents or umlauts)
+#   Mode    Canon My Colors: 0 = Off, 1 = Vivid, 2 = Neutral, 3 = B/W,
+#           4 = Sepia, 5 = Positive film, 11 = Custom Color
+#   Con Shp Sat R G B Skin
+#           Custom Color sliders -2..+2 (contrast, sharpness, saturation,
+#           red, green, blue, skin tone), only used with mode 11
+#   Curve   file in A/CHDK/CURVES, name max. 7 characters, - = none.
+#           Dynamic+ uses <name>1.CV and <name>2.CV.
+#   Label   picture A/CHDK/FILMS/<label>.FLM, max. 8 characters, - = text card
+#   Mix     raw channel mix: 0 = none, 1 = purple effect, 2 = desaturated
+#           (column may be left out)
 #
-# Fehlerhafte Zeilen werden uebersprungen und in A/CHDK/FILMS/FILMS.LOG
-# aufgelistet.
+# Lines with errors are skipped and listed in A/CHDK/FILMS/FILMS.LOG.
 #
-# Name             | Modus | Kon | Sch | Sat |  R |  G |  B | Haut | Kurve       | Lasche   | Mix
+# Name             | Mode  | Con | Shp | Sat |  R |  G |  B | Skin | Curve       | Label    | Mix
 Daylight 100       |  0    |  0  |  0  |  0  |  0 |  0 |  0 |  0   | -           | DAYLITE  | 0
 Postcard 100       | 11    |  0  |  1  |  2  |  1 |  1 |  1 |  0   | POSTCRD.CV  | POSTCRD  | 0
 Blush 100          | 11    | -1  |  0  |  1  |  0 |  0 |  0 |  1   | BLUSH.CV    | BLUSH    | 0

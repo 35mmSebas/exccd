@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EXCCD – film looks for an old Canon</title>
-<meta name="description" content="A small CHDK add-on that gives the Canon IXUS 60 / PowerShot SD600 a set of film looks. Pick the looks you want and download a ZIP for the SD card. Free.">
+<title>EXCCD – film looks for old Canon digicams</title>
+<meta name="description" content="A small CHDK add-on that gives old Canon digicams a set of film looks. Pick the looks you want and download a ZIP for the SD card. Free.">
 <meta name="theme-color" content="#000000">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="app.js"></script>
@@ -136,8 +136,8 @@
       </div>
     </figure>
     <div class="claim">
-      <h1>Film looks for an old CCD.</h1>
-      <p class="claim-for">a CHDK add-on for the Canon IXUS 60 / PowerShot SD600</p>
+      <h1>Film looks for old Canon digicams.</h1>
+      <p class="claim-for">a CHDK add-on for Canon point-and-shoots from the 2000s</p>
       <p class="claim-facts" id="facts"></p>
       <a class="button outline" href="#looks">pick your films</a>
       <p class="claim-hint">press <b>print</b> on the camera to flip through the films</p>
@@ -154,8 +154,8 @@
     <section class="why wrap" id="why">
       <h2>Why this exists.</h2>
       <div>
-        <p>This 20-year-old Canon has always been my favorite camera (and I have many)—it’s been with me for so long and holds countlessly cherished memories. Since I shoot a lot of analog film and also use a Fujifilm X-E2, I wanted to give it a fresh set of colors tuned against reference shots to match that specific film science and aesthetic.</p>
-        <p>Instead of keeping the custom matrices and scripts to myself, I cleaned everything up and put it online for anyone who enjoys shooting on old digicams. Have fun with it.</p>
+        <p>Old Canon digicams have a look of their own, and many of them are still lying in drawers, working perfectly. I shoot a lot of analog film and also use a Fujifilm X-E2, so I wanted these cameras to get a fresh set of colours, tuned against reference shots to match that film science and aesthetic.</p>
+        <p>It started with one camera: my 20-year-old IXUS 60, my favorite camera for a long time (and I have many), with countless cherished memories on it. Instead of keeping the custom matrices and scripts to myself, I cleaned everything up, made it work on more models and put it online for anyone who enjoys shooting on old digicams. Have fun with it.</p>
         <p>Also, credit to the CHDK developers—without their open-source work over the years, this wouldn't be possible.</p>
       </div>
     </section>
@@ -170,7 +170,7 @@
         <li>
           <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 6h16l8 8v28H14z"/><path d="M20 6v7M25 6v7M30 6v7"/><path d="M21 30h10"/></svg>
           <h3>Unpack to the SD card</h3>
-          <p>EXCCD runs from the card. Nothing is written to the camera; without the card it is a stock IXUS again.</p>
+          <p>EXCCD runs from the card. Nothing is written to the camera; without the card it is a stock Canon again.</p>
         </li>
         <li>
           <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="36" height="24" rx="3"/><circle cx="24" cy="26" r="7"/><path d="M16 14l3-5h10l3 5"/></svg>
@@ -261,8 +261,8 @@
         <li><h4>Shutter speed</h4><p>Set the exposure time by hand.</p><span class="opts">Auto · 16″ … 1/1000</span></li>
         <li><h4>ND filter</h4><p>Move the built-in ND filter in or out by hand.</p><span class="opts">Auto · In · Out</span></li>
         <li><h4>Flash power</h4><p>A fixed flash strength instead of automatic.</p><span class="opts">Auto · Low · Mid · High</span></li>
-        <li><h4>B&amp;W colour filter</h4><p>Yellow, orange or red filter for the black-and-white look. Darkens blue skies.</p><span class="opts">Off · Y · O · R</span></li>
-        <li><h4>Colour noise filter</h4><p>Smooths out the coloured blotches of the small sensor and leaves the fine luminance noise alone.</p><span class="opts">Off · Normal · Strong</span></li>
+        <li><h4>B&amp;W colour filter</h4><p>Yellow, orange or red filter for the black-and-white look. Darkens blue skies.</p><span class="opts">Off · Yellow · Orange · Red</span></li>
+        <li><h4>Colour noise filter</h4><p>Smooths out the coloured blotches of the small sensor and leaves the fine luminance noise alone.</p><span class="opts">Off · Auto · Light · Strong</span></li>
         <li><h4>Raw + film log</h4><p>Saves a DNG next to each JPEG if you want one. <code>FILMLOG.CSV</code> lists every shot with its film.</p><span class="opts">Off · DNG</span></li>
       </ul>
     </section>
@@ -372,14 +372,14 @@
             <p>EXCCD writes every shot with its look to <code>A/CHDK/FILMLOG.CSV</code> on the card.</p></details>
           <details><summary>Can I add looks later?</summary>
             <p>Yes. Come back, pick a new set and replace the <code>CHDK</code> folder on the card with the new download.</p></details>
-          <details><summary>Why are the menus in German?</summary>
-            <p>I'm German and built this for myself first. The film labels are in English, the option menus are
-              still German. An English version is on my list.</p></details>
+          <details><summary>Which languages are the menus in?</summary>
+            <p>English. German is on the card too: <b>MENU</b> → <i>System</i> → <i>Language...</i> →
+              <code>german.lng</code>. The film labels stay in English.</p></details>
           <details><summary>What about other cameras?</summary>
-            <p>I'd like to bring EXCCD to more CCD compacts. Each one has to be bought, ported and tested, which
-              takes time and some money.</p></details>
+            <p>I'd like to bring EXCCD to more old Canon compacts: CCD models first, later maybe CMOS ones
+              too. Each one has to be bought, ported and tested, which takes time and some money.</p></details>
           <details><summary>So it's a Fuji now?</summary>
-            <p>No. A Canon CCD from 2006 stays a Canon CCD from 2006, and the looks are my own, not copies of
+            <p>No. An old Canon stays an old Canon, and the looks are my own, not copies of
               Fujifilm's film simulations. The JPEGs do come straight out of the camera, though, so feel free
               to call them SOOC.</p></details>
           <details><summary>Is it open source?</summary>
@@ -404,7 +404,7 @@
       Code: GPL v2, built on <a href="https://chdk.fandom.com/">CHDK</a> ·
       Looks: CC BY-SA 4.0</p>
     <p>EXCCD is an independent project, not affiliated with, endorsed by or sponsored by Canon Inc.
-      Canon, IXUS and PowerShot are trademarks of Canon Inc. and are used only to name the supported camera.
+      Canon, IXUS and PowerShot are trademarks of Canon Inc. and are used only to name the supported cameras.
       Not affiliated with Fujifilm either.
       Use at your own risk, without any warranty.</p>
   </div>

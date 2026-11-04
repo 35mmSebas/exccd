@@ -47,7 +47,7 @@ jobs:
       - name: PC-Test FILMS.TXT-Parser
         run: |
           gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
-          "$RUNNER_TEMP/test_films_txt" CHDK/FILMS/BEISPIEL.TXT
+          "$RUNNER_TEMP/test_films_txt" CHDK/FILMS/EXAMPLE.TXT
 
       - name: PC-Test SD-Installer (Bootsektor, Kameraliste)
         run: |

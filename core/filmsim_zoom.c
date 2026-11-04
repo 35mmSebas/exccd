@@ -17,6 +17,8 @@
 #include "lens.h"
 #include "gui.h"
 #include "filmsim.h"
+#include "lang.h"
+#include "gui_lang.h"
 
 #define ZOOM_FREE   0
 #define ZOOM_STEPS  1
@@ -83,14 +85,16 @@ static int fixed_stop(void)
 
 const char* filmsim_zoom_enum(int change, __attribute__ ((unused))int arg)
 {
-    static char buf[16];
+    static char buf[32];
     build_stops();
     int n = ZOOM_FIXED + num_stops;
     if (conf.film_zoom < 0 || conf.film_zoom >= n) conf.film_zoom = 0;
     if (change) conf.film_zoom = (conf.film_zoom + change + n) % n;
-    if (conf.film_zoom == ZOOM_FREE)  return "Frei";
-    if (conf.film_zoom == ZOOM_STEPS) return "Stufen";
-    sprintf(buf, "Fest %d mm", stop_mm[conf.film_zoom - ZOOM_FIXED]);
+    if (conf.film_zoom == ZOOM_FREE)  return lang_str(LANG_EXCCD_ZOOM_FREE);
+    if (conf.film_zoom == ZOOM_STEPS) return lang_str(LANG_EXCCD_ZOOM_STEPS);
+    const char *f = lang_str(LANG_EXCCD_ZOOM_FIXED);
+    if (strlen(f) > 20) f = "%d mm";               // Schutz vor zu langen Texten aus der .lng
+    sprintf(buf, f, stop_mm[conf.film_zoom - ZOOM_FIXED]);
     return buf;
 }
 

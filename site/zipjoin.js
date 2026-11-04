@@ -127,7 +127,7 @@ export function writeZip(entries) {
 
 const sign = (v) => (v > 0 ? `+${v}` : String(v));
 
-// FILMS.TXT im Format von CHDK/FILMS/BEISPIEL.TXT, nur mit den gewaehlten Looks.
+// FILMS.TXT im Format von CHDK/FILMS/EXAMPLE.TXT, nur mit den gewaehlten Looks.
 // look.wb = [R, B] steht nur als Kommentar drin, die Verschiebung steckt in der Kurve.
 export function filmsTxt(looks, version) {
   const widths = [18, 5, 3, 3, 3, 2, 2, 2, 4, 11, 8, 3];
@@ -141,7 +141,7 @@ export function filmsTxt(looks, version) {
     "#",
     ...looks.filter((l) => l.wb).map((l) => `# WB shift ${l.name}: R${sign(l.wb[0])} B${sign(l.wb[1])}`),
     ...(looks.some((l) => l.wb) ? ["#"] : []),
-    "# " + row(["Name", "Modus", "Kon", "Sch", "Sat", "R", "G", "B", "Haut", "Kurve", "Lasche", "Mix"], widths[0] - 2),
+    "# " + row(["Name", "Mode", "Con", "Shp", "Sat", "R", "G", "B", "Skin", "Curve", "Label", "Mix"], widths[0] - 2),
     ...looks.map((l) => row(l.cols)),
     "",
   ];

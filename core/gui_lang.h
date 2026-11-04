@@ -803,7 +803,55 @@
 #define LANG_FIRMWARE_CRC_DUMP_ROM              674
 #define LANG_FIRMWARE_CRC_BOOT_MENU             675
 
-#define GUI_LANG_ITEMS                          675
+// EXCCD (CHDK/LANG/english.lng is built in, german.lng has the German texts)
+#define LANG_EXCCD_OPTIONS                      676
+#define LANG_EXCCD_SHUTTER                      677
+#define LANG_EXCCD_DYNAMIC                      678
+#define LANG_EXCCD_FOCUS                        679
+#define LANG_EXCCD_ZOOM                         680
+#define LANG_EXCCD_FLASH                        681
+#define LANG_EXCCD_ND                           682
+#define LANG_EXCCD_CNR                          683
+#define LANG_EXCCD_BWFILTER                     684
+#define LANG_EXCCD_EFFECTS                      685
+#define LANG_EXCCD_SAVE_RAW                     686
+#define LANG_EXCCD_SYSTEM                       687
+#define LANG_EXCCD_DOUBLE                       688
+#define LANG_EXCCD_MIST                         689
+#define LANG_EXCCD_HALATION                     690
+#define LANG_EXCCD_VIGNETTE                     691
+#define LANG_EXCCD_LEAK                         692
+#define LANG_EXCCD_DATESTAMP                    693
+#define LANG_EXCCD_SHOW_PALETTE                 694
+#define LANG_EXCCD_SAVE_PALETTE                 695
+#define LANG_EXCCD_PALETTE                      696
+#define LANG_EXCCD_SAVED                        697
+#define LANG_EXCCD_SAVE_FAILED                  698
+#define LANG_EXCCD_OFF                          699
+#define LANG_EXCCD_ON                           700
+#define LANG_EXCCD_AUTO                         701
+#define LANG_EXCCD_LIGHT                        702
+#define LANG_EXCCD_STRONG                       703
+#define LANG_EXCCD_ND_IN                        704
+#define LANG_EXCCD_ND_OUT                       705
+#define LANG_EXCCD_FLASH_LOW                    706
+#define LANG_EXCCD_FLASH_MID                    707
+#define LANG_EXCCD_FLASH_HIGH                   708
+#define LANG_EXCCD_YELLOW                       709
+#define LANG_EXCCD_ORANGE                       710
+#define LANG_EXCCD_RED                          711
+#define LANG_EXCCD_BW_ONLY                      712
+#define LANG_EXCCD_OSD_YELLOW                   713
+#define LANG_EXCCD_OSD_ORANGE                   714
+#define LANG_EXCCD_OSD_RED                      715
+#define LANG_EXCCD_FOCUS_HALF                   716
+#define LANG_EXCCD_INFINITY                     717
+#define LANG_EXCCD_ZOOM_FREE                    718
+#define LANG_EXCCD_ZOOM_STEPS                   719
+#define LANG_EXCCD_ZOOM_FIXED                   720
+#define LANG_EXCCD_HALF_PRESS                   721
+
+#define GUI_LANG_ITEMS                          721
 
 //-------------------------------------------------------------------
 extern void gui_lang_init();

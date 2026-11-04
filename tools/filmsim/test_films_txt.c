@@ -2,9 +2,9 @@
  * PC-Test fuer den FILMS.TXT-Parser (core/filmsim_txt.c)
  *
  *   gcc -Wall -Wextra -I core -o test_films_txt tools/filmsim/test_films_txt.c core/filmsim_txt.c
- *   ./test_films_txt CHDK/FILMS/BEISPIEL.TXT
+ *   ./test_films_txt CHDK/FILMS/EXAMPLE.TXT
  *
- * Prueft, dass BEISPIEL.TXT genau die eingebaute Tabelle ergibt, und
+ * Prueft, dass EXAMPLE.TXT genau die eingebaute Tabelle ergibt, und
  * dass fehlerhafte Zeilen sauber uebersprungen werden.
  */
 
@@ -140,7 +140,7 @@ static void test_limits(void)
     int n = parse_str(text, sims, str, FILMS_TXT_MAX, log);
     printf("\nGrenze: %d Looks, Protokoll: %s", n, log);
     CHECK(n == FILMS_TXT_MAX, "%d statt %d Looks", n, FILMS_TXT_MAX);
-    CHECK(strstr(log, "zu viele") != NULL, "keine Meldung bei zu vielen Looks");
+    CHECK(strstr(log, "too many") != NULL, "keine Meldung bei zu vielen Looks");
 
     // kleines Protokoll darf nicht ueberlaufen
     char tiny[8];
@@ -155,7 +155,7 @@ static void test_limits(void)
 
 int main(int argc, char **argv)
 {
-    test_example(argc > 1 ? argv[1] : "CHDK/FILMS/BEISPIEL.TXT");
+    test_example(argc > 1 ? argv[1] : "CHDK/FILMS/EXAMPLE.TXT");
     test_errors();
     test_limits();
     printf("\n%s (%d Fehler)\n", fails ? "FEHLGESCHLAGEN" : "OK", fails);

@@ -17,7 +17,7 @@ const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const state = { site: null, config: null, camera: null, firmwareOk: true, selected: new Set(), amount: 0, wb: new Map() };
 
-// Spalten von FILMS.TXT (siehe CHDK/FILMS/BEISPIEL.TXT)
+// Spalten von FILMS.TXT (siehe CHDK/FILMS/EXAMPLE.TXT)
 const MODES = { 0: "Canon colours", 1: "Vivid", 2: "Neutral", 3: "Black & white", 4: "Sepia", 5: "Positive film", 11: "Custom colour" };
 const SLIDERS = ["Contrast", "Sharpness", "Saturation", "Red", "Green", "Blue", "Skin tone"];
 

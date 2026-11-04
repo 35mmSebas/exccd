@@ -293,7 +293,7 @@ def icon_canister(d, cx, cy, r, c):
 # Looks: Schluessel (8.3), Name, ISO, Filmart, Beschreibung, Motiv, Akzentfarbe
 # ---------------------------------------------------------------------------
 LOOKS = [
-    ("AUS",     "AUS",       None,  "CANON",         "ORIGINAL COLORS",    icon_power,     GREY),
+    ("AUS",     "OFF",       None,  "CANON",         "ORIGINAL COLORS",    icon_power,     GREY),
     ("DAYLITE", "DAYLIGHT",  "100", "COLOR SLIDE",   "NATURAL BALANCE",    icon_sun,       0x62),
     ("POSTCRD", "POSTCARD",  "100", "COLOR SLIDE",   "RICH SATURATION",    icon_stamp,     0xDD),
     ("BLUSH",   "BLUSH",     "100", "COLOR SLIDE",   "SOFT PORTRAIT",      icon_heart,     0x32),
@@ -342,7 +342,7 @@ def draw_label(name, iso, kind, desc, icon, accent, nsize, dsize):
     # Name und ISO
     f = font(BOLD, nsize)
     text_tracked(d, M - 4, 220, name, f, C(WHITE), -2)
-    if iso:                              # "Aus" hat keine ISO-Zahl
+    if iso:                              # "Off" hat keine ISO-Zahl
         f = font(BOLD, 96)
         text_tracked(d, M, 400, iso, f, acc, 0)
         x = M + text_w(d, iso, f, 0) + 22

@@ -10,7 +10,7 @@ This covers the following files:
 |---|---|
 | `CHDK/CURVES/*.CV` | Tone curves of the looks (including the Dynamic+ variants) |
 | `CHDK/FILMS/*.FLM` | Film labels shown in the film selection |
-| `CHDK/FILMS/BEISPIEL.TXT` | Film table (names and settings of the looks) |
+| `CHDK/FILMS/EXAMPLE.TXT` | Film table (names and settings of the looks) |
 | `tools/filmsim/labels_src/*.png` | Source images of the film labels |
 
 Attribution: **EXCCD** – https://github.com/35mmSebas/exccd
