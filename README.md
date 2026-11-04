@@ -107,10 +107,12 @@ Cameras marked `test` are only build artifacts.
 
 The download page is static. `tools/site/build_site.py` splits the firmware ZIP into a base
 ZIP and one small ZIP per look; the browser copies the chosen entries into a new ZIP and adds
-a matching `FILMS.TXT`, without a build per download. To try it locally:
+a matching `FILMS.TXT`, without a build per download. It takes one firmware ZIP per camera
+and shows them in a camera menu; cameras marked `test` appear as beta. CI only passes the
+`stabil` ones. To try it locally:
 
 ```sh
-python tools/site/build_site.py bin/ixus60_sd600-100d-1.6.1-0-full.zip _site
+python tools/site/build_site.py dist/v1.9.25/*.zip _site
 python -m http.server -d _site
 ```
 

@@ -163,8 +163,6 @@ jobs:
             cp "dist/exccd-$VERSION-$cam-full.zip" release/
           done
           ls -l release
-          # build_site.py kann bisher nur eine Kamera (siehe TODO: Webseite fuer weitere Modelle)
-          test "$(ls release | wc -l)" -eq 1 || { echo "::error::Webseite kann bisher genau eine stabile Kamera"; exit 1; }
 
       - name: Download-Webseite bauen und pruefen
         run: |

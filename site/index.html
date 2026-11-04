@@ -38,8 +38,8 @@
         <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="10" width="20" height="24" rx="2"/><path d="M9 10V6h12v4M25 14h10v16H25M29 14v16M5 16h20M5 28h20"/></svg>
         <span>looks</span></a>
       <ul class="nav-sub">
+        <li><a href="#camera-step">camera</a></li>
         <li><a href="#looks-step">films</a></li>
-        <li><a href="#camera-step">firmware</a></li>
         <li><a href="#download-step">download</a></li>
       </ul>
     </div>
@@ -154,7 +154,7 @@
     <section class="why wrap" id="why">
       <h2>Why this exists.</h2>
       <div>
-        <p>Old Canon digicams have a look of their own, and many of them are still lying in drawers, working perfectly. I shoot a lot of analog film and also use a Fujifilm X-E2, so I wanted these cameras to get a fresh set of colours, tuned against reference shots to match that film science and aesthetic.</p>
+        <p>Old Canon digicams have a look of their own, and many of them are still lying in drawers, working perfectly. I shoot a lot of analog film, so I wanted these cameras to get a fresh set of colours, tuned against reference shots.</p>
         <p>It started with one camera: my 20-year-old IXUS 60, my favorite camera for a long time (and I have many), with countless cherished memories on it. Instead of keeping the custom matrices and scripts to myself, I cleaned everything up, made it work on more models and put it online for anyone who enjoys shooting on old digicams. Have fun with it.</p>
         <p>Also, credit to the CHDK developers—without their open-source work over the years, this wouldn't be possible.</p>
       </div>
@@ -183,15 +183,13 @@
     <div class="wrap">
       <section class="support" id="support">
         <div>
-          <p class="eyebrow">Pay what you want</p>
+          <p class="eyebrow">Free and open source</p>
           <h2>It's free.</h2>
         </div>
         <div>
-          <p>EXCCD is free to download and use. If you like it and want to chip in, I'll put the money towards
-            the next camera: buying one second-hand, porting EXCCD and building looks for its sensor.</p>
+          <p>EXCCD is free to download and use. It's a fun project, so there's nothing to pay.</p>
           <p>The code is GPL v2 like CHDK, the looks (curves, labels, film table) are CC BY-SA 4.0.
             Everything is on <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>.</p>
-          <p class="muted">No pressure either way. The download never waits for a payment.</p>
         </div>
       </section>
     </div>
@@ -270,8 +268,34 @@
 
   <section class="view" id="looks" data-view hidden>
     <div class="wrap">
+      <section class="step" id="camera-step">
+        <header class="step-head"><span class="num">01</span><h2>Camera</h2></header>
+        <div class="camera">
+          <fieldset class="cams" id="cams">
+            <legend>Which camera do you have?</legend>
+          </fieldset>
+          <p class="beta-note" id="beta-note" role="status" hidden>Beta: EXCCD is built for this camera, but it hasn't been
+            fully tested on one yet. Expect rough edges, and please tell me how it goes on
+            <a class="repo-link" href="https://github.com/35mmSebas/exccd/issues">GitHub</a>.</p>
+          <fieldset class="seg" id="fw">
+            <legend>Firmware version</legend>
+          </fieldset>
+          <p class="fw-note" id="fw-note" role="status"></p>
+          <details class="help">
+            <summary>How do I find my firmware version?</summary>
+            <ol>
+              <li>Download <a id="vers-link" href="#" download="vers.req">vers.req</a> and copy it to the root of the SD card.</li>
+              <li>Put the card in the camera and switch it on in <b>playback</b> mode.</li>
+              <li>Hold <b>FUNC/SET</b> and press <b>DISP</b>. The camera shows a line like
+                <code id="fw-example">Firmware Ver GM1.00D</code>. The letter at the end is the one that counts.</li>
+              <li>You can delete <code>vers.req</code> from the card afterwards.</li>
+            </ol>
+          </details>
+        </div>
+      </section>
+
       <section class="step" id="looks-step">
-        <header class="step-head"><span class="num">01</span><h2>Looks</h2></header>
+        <header class="step-head"><span class="num">02</span><h2>Looks</h2></header>
         <div class="looks-bar">
           <div class="filters" id="filters" role="group" aria-label="Filter looks"></div>
           <span class="looks-tools">
@@ -284,36 +308,15 @@
         <p class="muted small">Every look comes with two <b>Dynamic+</b> variants (DR+1, DR+2): the camera exposes shorter
           to protect the highlights and the curve lifts the shadows. They are always included.
           The small graph shows each look's tone curve; the dashed line is neutral.
-          The <b>white balance shift</b> works like on Fuji cameras: R from cyan (−) to red (+), B from yellow (−) to blue (+).
+          The <b>white balance shift</b> moves R from cyan (−) to red (+) and B from yellow (−) to blue (+).
           It is built into the look's curve, so the camera needs nothing extra. The sample photos show roughly what it does.</p>
-      </section>
-
-      <section class="step" id="camera-step">
-        <header class="step-head"><span class="num">02</span><h2>Firmware</h2></header>
-        <div class="camera">
-          <div class="camera-name" id="camera-name"></div>
-          <fieldset class="seg" id="fw">
-            <legend>Firmware version</legend>
-          </fieldset>
-          <p class="fw-note" id="fw-note" role="status"></p>
-          <details class="help">
-            <summary>How do I find my firmware version?</summary>
-            <ol>
-              <li>Download <a href="data/vers.req" download>vers.req</a> and copy it to the root of the SD card.</li>
-              <li>Put the card in the camera and switch it on in <b>playback</b> mode.</li>
-              <li>Hold <b>FUNC/SET</b> and press <b>DISP</b>. The camera shows a line like
-                <code>Firmware Ver GM1.00D</code>. The letter at the end is the one that counts.</li>
-              <li>You can delete <code>vers.req</code> from the card afterwards.</li>
-            </ol>
-          </details>
-        </div>
       </section>
 
       <section class="step" id="download-step">
         <header class="step-head"><span class="num">03</span><h2>Download</h2></header>
         <div class="download">
+          <p class="dl-for">For <b id="dl-camera"></b> · <a href="#camera-step">change</a></p>
           <div class="summary" id="summary"></div>
-          <div class="pwyw" id="pwyw"></div>
           <div class="dl-row">
             <button type="button" class="button primary big" id="download">Download ZIP</button>
             <span class="dl-status" id="dl-status" role="status"></span>
@@ -331,7 +334,7 @@
         <ol class="install">
           <li><h3>Format the card in the camera</h3>
             <p>Use the camera's own <i>Format</i> menu. This erases the card, so copy your photos off first.
-              The IXUS 60 starts EXCCD automatically only from cards up to 2 GB.</p></li>
+              <span id="boot-note"></span></p></li>
           <li><h3>Run the installer</h3>
             <p><a class="button outline" href="exccd-installer.exe" download>EXCCD installer for Windows</a></p>
             <p>It finds your download, lists only SD cards, unpacks EXCCD and makes the card bootable.
@@ -339,9 +342,12 @@
               open source but not signed, and it asks for administrator rights to write the card's boot sector.</p>
             <details><summary>Without the installer (macOS, Linux)</summary>
               <p>Delete an old <code>CHDK</code> folder from the card, then unpack the ZIP to the root of the card,
-                so that <code>DISKBOOT.BIN</code> and the <code>CHDK</code> folder sit at the top level. Start EXCCD
-                once per power-on in playback mode with <i>MENU → Firm Update</i>. To start it automatically, run
-                CHDK's <i>Make Card Bootable</i> from the EXCCD menu once.</p></details></li>
+                so that <code>DISKBOOT.BIN</code> and the <code>CHDK</code> folder sit at the top level.</p>
+              <p id="manual-firm-update">Start EXCCD once per power-on in playback mode with <i>MENU → Firm Update</i>.
+                To start it automatically, run CHDK's <i>Make Card Bootable</i> from the EXCCD menu once.</p>
+              <p id="manual-bootable" hidden>This camera can only start EXCCD from a bootable card, so the card has to
+                be made bootable once, for example with the tools described in CHDK's guide
+                <a href="https://chdk.fandom.com/wiki/Prepare_your_SD_card">Prepare your SD card</a>.</p></details></li>
           <li><h3>Lock the card</h3>
             <p>Slide the card's write-protect switch to <b>LOCK</b> and put it in the camera. That's what makes
               EXCCD start on its own. The camera still saves photos.</p></li>
@@ -377,11 +383,7 @@
               <code>german.lng</code>. The film labels stay in English.</p></details>
           <details><summary>What about other cameras?</summary>
             <p>I'd like to bring EXCCD to more old Canon compacts: CCD models first, later maybe CMOS ones
-              too. Each one has to be bought, ported and tested, which takes time and some money.</p></details>
-          <details><summary>So it's a Fuji now?</summary>
-            <p>No. An old Canon stays an old Canon, and the looks are my own, not copies of
-              Fujifilm's film simulations. The JPEGs do come straight out of the camera, though, so feel free
-              to call them SOOC.</p></details>
+              too. Each one has to be ported and tested on a real camera, so it takes a while.</p></details>
           <details><summary>Is it open source?</summary>
             <p>Yes. The code is GPL v2 like CHDK, the looks (curves, labels, film table) are CC BY-SA 4.0.
               Everything is on <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>.</p></details>
@@ -405,7 +407,6 @@
       Looks: CC BY-SA 4.0</p>
     <p>EXCCD is an independent project, not affiliated with, endorsed by or sponsored by Canon Inc.
       Canon, IXUS and PowerShot are trademarks of Canon Inc. and are used only to name the supported cameras.
-      Not affiliated with Fujifilm either.
       Use at your own risk, without any warranty.</p>
   </div>
 </footer>

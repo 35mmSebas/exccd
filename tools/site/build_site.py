@@ -2,14 +2,19 @@
 """
 Baut die Download-Webseite (GitHub Pages) aus einem fertigen Firmware-ZIP.
 
-    python tools/site/build_site.py <exccd-...-full.zip> <ausgabe> [--version vX.Y.Z]
+    python tools/site/build_site.py <exccd-...-full.zip>... <ausgabe> [--version vX.Y.Z]
+
+Ein Firmware-ZIP je Kamera; welche Kamera, steht im Dateinamen
+(<plattform>-<sub> wie in tools/filmsim/cameras.txt). Die Seite zeigt die
+Kameras in einem Auswahlmenue, Kameras mit Status "test" als Beta.
 
 Die Seite setzt die ZIP fuer die SD-Karte im Browser zusammen, ohne Build pro
-Download. Dafuer wird das Firmware-ZIP hier zerlegt:
+Download. Dafuer wird jedes Firmware-ZIP hier zerlegt:
 
     data/<kamera>/base.zip           alles ausser den Look-Dateien
     data/<kamera>/looks/<ID>.zip     je Look: Kurve + DR-Varianten, Lasche (.FLM)
     data/<kamera>/looks/<ID>.png     Laschen-Vorschau
+    data/<kamera>/vers.req           zum Pruefen der Firmware-Version
     data/samples/<ID>-*.jpg          Beispielfotos aus site/samples (falls vorhanden)
     data/site.json                   Version, Kameras, Looks mit FILMS.TXT-Zeile und
                                      Kurvenrezept (fuer die WB-Verschiebung, site/curves.js)
@@ -26,13 +31,23 @@ sys.path.insert(0, os.path.join(ROOT, "tools", "filmsim"))
 import make_label_art  # noqa: E402
 import make_curves  # noqa: E402
 
-# Bisher nur eine Kamera. Weitere Modelle bekommen hier einen Eintrag und ein
-# eigenes Firmware-ZIP (siehe TODO Phase 5).
-CAMERA = {
-    "id": "ixus60_sd600-100d",
-    "name": "Canon Digital IXUS 60 / PowerShot SD600",
-    "firmware": "1.00d",
-    "other_firmware": ["1.00a"],
+CAMERAS_TXT = os.path.join(ROOT, "tools", "filmsim", "cameras.txt")
+
+# Was die Seite je Kamera zusaetzlich zu cameras.txt braucht. Neue Kameras
+# bekommen hier einen Eintrag.
+#   other_firmware: bekannte Versionen, die (noch) nicht unterstuetzt werden
+#   boot: Dateisystem fuer den Autostart (fat16 = nur Karten bis 2 GB),
+#         gleiche Regeln wie tools/installer/core.c
+#   firm_update: Start per MENU -> Firm Update moeglich (PS.FIR im ZIP)
+CAMERA_META = {
+    "ixus60_sd600": {"name": "Canon Digital IXUS 60 / PowerShot SD600",
+                     "other_firmware": ["1.00a"], "boot": "fat16", "firm_update": True},
+    "ixus132_elph115": {"name": "Canon IXUS 132 / PowerShot ELPH 115 IS",
+                        "other_firmware": [], "boot": "fat32", "firm_update": False},
+    "ixus145_elph135": {"name": "Canon IXUS 145 / PowerShot ELPH 135",
+                        "other_firmware": [], "boot": "fat32", "firm_update": False},
+    "sx110is": {"name": "Canon PowerShot SX110 IS",
+                "other_firmware": [], "boot": "fat16", "firm_update": False},
 }
 
 FILMS_DIR = "CHDK/FILMS/"
@@ -100,33 +115,40 @@ def label_meta():
     return meta
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("fw_zip")
-    ap.add_argument("out")
-    ap.add_argument("--version", help="Release-Version, sonst aus core/filmsim.h")
-    args = ap.parse_args()
+def read_cameras():
+    """cameras.txt: plattform, sub, status, name (Reihenfolge bleibt)."""
+    cams = []
+    for line in open(CAMERAS_TXT, encoding="utf-8"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        plat, sub, status, name = line.split(None, 3)
+        cams.append({"platform": plat, "sub": sub, "status": status, "short": name})
+    return cams
 
-    version = args.version
-    if not version:
-        h = open(os.path.join(ROOT, "core", "filmsim.h"), encoding="ascii").read()
-        version = re.search(r'#define FILMSIM_VERSION "(.*)"', h).group(1)
 
-    site_src = os.path.join(ROOT, "site")
-    # Nur den Inhalt leeren: unter Windows laesst sich ein Ordner, in dem gerade
-    # ein Webserver oder eine Shell steht, nicht loeschen
-    if os.path.exists(args.out):
-        for name in os.listdir(args.out):
-            path = os.path.join(args.out, name)
-            shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
-    shutil.copytree(site_src, args.out, ignore=shutil.ignore_patterns("samples", "README.md"), dirs_exist_ok=True)
+def match_camera(cams, zip_path):
+    base = os.path.basename(zip_path)
+    hits = [c for c in cams if "%s-%s" % (c["platform"], c["sub"]) in base]
+    if len(hits) != 1:
+        sys.exit("%s: keine eindeutige Kamera aus cameras.txt im Dateinamen" % base)
+    return hits[0]
 
-    cam_dir = os.path.join(args.out, "data", CAMERA["id"])
+
+def build_camera(cam, fw_zip, out, site_src, meta):
+    """Ein Firmware-ZIP zerlegen, liefert den Eintrag fuer site.json."""
+    plat, sub = cam["platform"], cam["sub"]
+    extra = CAMERA_META.get(plat)
+    if not extra:
+        sys.exit("Keine Seiten-Daten in CAMERA_META fuer " + plat)
+    cam_id = "%s-%s" % (plat, sub)
+    cam_dir = os.path.join(out, "data", cam_id)
     os.makedirs(os.path.join(cam_dir, "looks"))
-    meta = label_meta()
 
-    with zipfile.ZipFile(args.fw_zip) as fw:
+    with zipfile.ZipFile(fw_zip) as fw:
         names = fw.namelist()
+        if extra["firm_update"] != ("PS.FIR" in names):
+            sys.exit("%s: firm_update in CAMERA_META passt nicht zu PS.FIR im ZIP" % cam_id)
         looks = parse_films_txt(fw.read(FILMS_DIR + "EXAMPLE.TXT").decode("ascii"))
 
         look_owned = set()
@@ -134,7 +156,7 @@ def main():
             files = look_files(look)
             missing = [f for f in files if f not in names]
             if missing:
-                sys.exit("%s: fehlt im Firmware-ZIP: %s" % (look["name"], ", ".join(missing)))
+                sys.exit("%s, %s: fehlt im Firmware-ZIP: %s" % (cam_id, look["name"], ", ".join(missing)))
             look_owned.update(files)
             zpath = os.path.join(cam_dir, "looks", look["id"] + ".zip")
             copy_entries(fw, files, zpath)
@@ -152,10 +174,10 @@ def main():
         base_size = os.path.getsize(os.path.join(cam_dir, "base.zip"))
 
         # Einzeln ladbar, um vorab die Firmware-Version der Kamera zu pruefen
-        with open(os.path.join(args.out, "data", "vers.req"), "wb") as f:
+        with open(os.path.join(cam_dir, "vers.req"), "wb") as f:
             f.write(fw.read("vers.req"))
 
-    samples_out = os.path.join(args.out, "data", "samples")
+    samples_out = os.path.join(out, "data", "samples")
     for look in looks:
         m = meta.get(look["id"])
         if not m:
@@ -172,11 +194,49 @@ def main():
 
     curve = {"black": make_curves.BLACK, "white": make_curves.WHITE,
              "gamma": make_curves.GAMMA, "wb": list(make_curves.WB)}
-    site = {"version": version, "cameras": [dict(CAMERA, base_size=base_size, curve=curve, looks=looks)]}
+    print("%s: %d Looks, Basis %d Dateien" % (cam_id, len(looks), len(base)))
+    return {"id": cam_id, "name": extra["name"], "short": cam["short"], "status": cam["status"],
+            "firmware": "%s.%s" % (sub[0], sub[1:]), "other_firmware": extra["other_firmware"],
+            "boot": extra["boot"], "firm_update": extra["firm_update"],
+            "base_size": base_size, "curve": curve, "looks": looks}
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("fw_zip", nargs="+", help="Firmware-ZIPs, eines je Kamera")
+    ap.add_argument("out")
+    ap.add_argument("--version", help="Release-Version, sonst aus core/filmsim.h")
+    args = ap.parse_args()
+
+    version = args.version
+    if not version:
+        h = open(os.path.join(ROOT, "core", "filmsim.h"), encoding="ascii").read()
+        version = re.search(r'#define FILMSIM_VERSION "(.*)"', h).group(1)
+
+    cams = read_cameras()
+    picked = [(match_camera(cams, z), z) for z in args.fw_zip]
+    plats = [c["platform"] for c, _ in picked]
+    if len(set(plats)) != len(plats):
+        sys.exit("Je Kamera nur ein Firmware-ZIP")
+    # Reihenfolge wie cameras.txt, stabile Kameras zuerst (die erste ist die Vorauswahl)
+    picked.sort(key=lambda cz: (cz[0]["status"] != "stabil", cams.index(cz[0])))
+
+    site_src = os.path.join(ROOT, "site")
+    # Nur den Inhalt leeren: unter Windows laesst sich ein Ordner, in dem gerade
+    # ein Webserver oder eine Shell steht, nicht loeschen
+    if os.path.exists(args.out):
+        for name in os.listdir(args.out):
+            path = os.path.join(args.out, name)
+            shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
+    shutil.copytree(site_src, args.out, ignore=shutil.ignore_patterns("samples", "README.md"), dirs_exist_ok=True)
+
+    meta = label_meta()
+    site = {"version": version,
+            "cameras": [build_camera(c, z, args.out, site_src, meta) for c, z in picked]}
     with open(os.path.join(args.out, "data", "site.json"), "w", encoding="utf-8") as f:
         json.dump(site, f, indent=1)
 
-    print("%s: %d Looks, Basis %d Dateien -> %s" % (version, len(looks), len(base), args.out))
+    print("%s: %d Kamera(s) -> %s" % (version, len(site["cameras"]), args.out))
 
 
 if __name__ == "__main__":

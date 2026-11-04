@@ -15,7 +15,8 @@ const svg = (tag, attrs = {}) => {
 };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const state = { site: null, config: null, camera: null, firmwareOk: true, selected: new Set(), amount: 0, wb: new Map() };
+const state = { site: null, config: null, camera: null, firmwareOk: true, selected: new Set(), knownLooks: new Set(),
+  wb: new Map() };
 
 // Spalten von FILMS.TXT (siehe CHDK/FILMS/EXAMPLE.TXT)
 const MODES = { 0: "Canon colours", 1: "Vivid", 2: "Neutral", 3: "Black & white", 4: "Sepia", 5: "Positive film", 11: "Custom colour" };
@@ -66,10 +67,53 @@ function renderHero() {
 
 // --- Schritt 1: Kamera ---------------------------------------------------
 
+const CAM_KEY = "exccd-camera";
+
+// Vorauswahl: ?camera=<id> (zum Verlinken), sonst die zuletzt gewaehlte, sonst die erste (stabile)
+function initialCamera() {
+  const cams = state.site.cameras;
+  let want = new URLSearchParams(location.search).get("camera");
+  try { want ??= localStorage.getItem(CAM_KEY); } catch { /* ohne Speicher */ }
+  return cams.find((c) => c.id === want) ?? cams[0];
+}
+
+function renderCameras() {
+  const box = $("cams");
+  for (const cam of state.site.cameras) {
+    const input = el("input", { type: "radio", name: "camera", value: cam.id, checked: cam === state.camera });
+    input.addEventListener("change", () => setCamera(cam));
+    const beta = cam.status !== "stabil";
+    box.append(el("label", { className: "cam-opt" }, input,
+      el("span", { className: "cam-opt-box" },
+        el("span", { className: "cam-opt-name", textContent: cam.name.replace(/^Canon /, "") }),
+        el("span", { className: "cam-opt-meta" },
+          `Firmware ${cam.firmware}`,
+          ...(beta ? [el("span", { className: "badge", textContent: "Beta" })] : [])))));
+  }
+}
+
+function setCamera(cam) {
+  state.camera = cam;
+  try { localStorage.setItem(CAM_KEY, cam.id); } catch { /* ohne Speicher */ }
+  // Auswahl und WB-Verschiebung gelten je Look-ID weiter; neue Looks sind angewaehlt
+  const known = new Set(state.knownLooks);
+  for (const l of cam.looks) if (!known.has(l.id)) { state.selected.add(l.id); state.knownLooks.add(l.id); }
+  renderCamera();
+  renderLooks();
+  update();
+}
+
 function renderCamera() {
   const cam = state.camera;
-  $("camera-name").textContent = cam.name;
+  $("beta-note").hidden = cam.status === "stabil";
+  $("vers-link").href = `data/${cam.id}/vers.req`;
+  $("fw-example").textContent = `Firmware Ver GM${cam.firmware.toUpperCase()}`;
+  $("fw-note").textContent = "";
+  state.firmwareOk = true;
+  renderInstall();
+
   const fw = $("fw");
+  fw.replaceChildren(fw.querySelector("legend"));
   const options = [[cam.firmware, true], ...cam.other_firmware.map((v) => [v, false]), ["Other", false]];
   for (const [v, ok] of options) {
     const input = el("input", { type: "radio", name: "fw", value: v, checked: ok });
@@ -84,6 +128,16 @@ function renderCamera() {
     });
     fw.append(el("label", { className: "seg-opt" }, input, el("span", { textContent: v })));
   }
+}
+
+// Installationshinweise je Kamera (Boot-Regeln wie tools/installer/core.c)
+function renderInstall() {
+  const cam = state.camera;
+  $("boot-note").textContent = cam.boot === "fat16"
+    ? `The ${cam.short} starts EXCCD automatically only from cards up to 2 GB.`
+    : `The ${cam.short} starts EXCCD automatically from cards up to 32 GB (FAT32); larger exFAT cards don't work.`;
+  $("manual-firm-update").hidden = !cam.firm_update;
+  $("manual-bootable").hidden = cam.firm_update;
 }
 
 // --- Schritt 2: Looks ----------------------------------------------------
@@ -119,7 +173,7 @@ function chips(look) {
   return el("div", { className: "chips" }, ...out);
 }
 
-// --- WB-Verschiebung je Look (R/B wie bei Fuji), steckt in der Kurve ----
+// --- WB-Verschiebung je Look (R/B), steckt in der Kurve -----------------
 
 // S/W-Looks nicht: dort wirkte die Verschiebung wie ein Farbfilter
 const canShift = (look) => look.recipe != null && Number(look.cols[1]) !== 3;
@@ -185,13 +239,15 @@ function wbPanel(look, card) {
 
 function renderLooks() {
   const box = $("looks-grid");
+  box.replaceChildren();
+  $("filters").replaceChildren();
+  $("wb-defs").replaceChildren();
   state.camera.looks.forEach((look) => {
-    const input = el("input", { type: "checkbox", checked: true, value: look.id });
+    const input = el("input", { type: "checkbox", checked: state.selected.has(look.id), value: look.id });
     input.addEventListener("change", () => {
       input.checked ? state.selected.add(look.id) : state.selected.delete(look.id);
       update();
     });
-    state.selected.add(look.id);
 
     // Beispielfotos zuerst, die Lasche dahinter
     const media = el("div", { className: "look-media" }, ...look.samples.map((src) =>
@@ -216,6 +272,7 @@ function renderLooks() {
     card.dataset.kind = look.kind;
     card.style.setProperty("--accent", look.accent);
     box.append(card);
+    if (isShifted(shiftOf(look))) restoreShift(look, card);
   });
 
   const kinds = ["All", ...new Set(state.camera.looks.map((l) => l.kind))];
@@ -227,8 +284,16 @@ function renderLooks() {
     });
     $("filters").append(b);
   }
-  $("all").addEventListener("click", () => setAll(true));
-  $("none").addEventListener("click", () => setAll(false));
+}
+
+// Nach einem Kamerawechsel: Regler und Vorschau auf die gespeicherte Verschiebung setzen
+function restoreShift(look, card) {
+  const shift = shiftOf(look);
+  card.querySelectorAll(".wb-row").forEach((row, idx) => {
+    row.querySelector("input").value = shift[idx];
+    row.querySelector("output").textContent = signed(shift[idx]);
+  });
+  applyShift(look, card);
 }
 
 function setAll(on) {
@@ -240,27 +305,6 @@ function setAll(on) {
 }
 
 // --- Schritt 3: Download -------------------------------------------------
-
-function renderSupport() {
-  const s = state.config.support;
-  const box = $("pwyw");
-  box.append(el("p", {},
-    "It's free. If you want to chip in, around ",
-    el("b", { textContent: `${s.suggested} ${s.currency}` }),
-    " is a nice amount. It goes towards the next camera."));
-  if (!s.url) {
-    box.append(el("p", { className: "muted small", textContent: "Donations aren't set up yet, so for now it's simply free." }));
-    return;
-  }
-  state.amount = s.suggested;
-  const row = el("div", { className: "seg amounts", role: "radiogroup", ariaLabel: "Amount" });
-  for (const a of s.amounts) {
-    const input = el("input", { type: "radio", name: "amount", value: a, checked: a === s.suggested });
-    input.addEventListener("change", () => { state.amount = a; update(); });
-    row.append(el("label", { className: "seg-opt" }, input, el("span", { textContent: `${a} ${s.currency}` })));
-  }
-  box.append(row);
-}
 
 function selectedLooks() {
   return state.camera.looks.filter((l) => state.selected.has(l.id));
@@ -285,9 +329,8 @@ function update() {
 
   const btn = $("download");
   btn.disabled = n === 0 || !state.firmwareOk;
+  $("dl-camera").textContent = state.camera.name;
   $("dl-status").textContent = !state.firmwareOk ? "Not available for this firmware." : n === 0 ? "Pick at least one look." : "";
-  const s = state.config.support;
-  btn.textContent = s.url && state.amount > 0 ? `Pay ${state.amount} ${s.currency} & download` : "Download ZIP";
   $("dock-text").textContent = n ? `${n} look${n === 1 ? "" : "s"} selected` : "No looks selected";
 }
 
@@ -295,9 +338,6 @@ async function download() {
   const btn = $("download");
   const status = $("dl-status");
   const cam = state.camera;
-  const s = state.config.support;
-  // Zahlungsseite sofort im Klick oeffnen, sonst blockiert der Popup-Blocker
-  if (s.url && state.amount > 0) window.open(s.url, "_blank", "noopener");
   btn.disabled = true;
   status.textContent = "Building ZIP …";
   try {
@@ -370,13 +410,16 @@ async function main() {
     $("dl-status").textContent = `Could not load the site data (${err.message}).`;
     return;
   }
-  state.camera = state.site.cameras[0];
+  state.camera = initialCamera();
+  for (const l of state.camera.looks) { state.selected.add(l.id); state.knownLooks.add(l.id); }
   $("version").textContent = state.site.version;
-  for (const a of document.querySelectorAll(".repo-link")) a.href = state.config.repo;
+  for (const a of document.querySelectorAll(".repo-link")) a.href = a.href.endsWith("/issues") ? `${state.config.repo}/issues` : state.config.repo;
   renderHero();
+  renderCameras();
   renderCamera();
   renderLooks();
-  renderSupport();
+  $("all").addEventListener("click", () => setAll(true));
+  $("none").addEventListener("click", () => setAll(false));
   $("download").addEventListener("click", download);
   watchDock();
   update();

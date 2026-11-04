@@ -146,7 +146,26 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .step-head .num { font-size: .85rem; color: var(--muted); letter-spacing: .1em; }
 .step-head h2 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); letter-spacing: -.015em; }
 
-.camera-name { font-size: 1.35rem; font-weight: 400; margin-bottom: 18px; }
+/* Kameraauswahl: eine Karte je Modell, wie die Firmware-Knoepfe, nur groesser */
+.cams { border: 0; padding: 0; margin: 0 0 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.cams legend { color: var(--muted); font-size: .85rem; margin-bottom: 10px; padding: 0; }
+.cam-opt { position: relative; cursor: pointer; display: flex; }
+.cam-opt input { position: absolute; opacity: 0; }
+.cam-opt-box { flex: 1; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--line-2); border-radius: 6px;
+               padding: 14px 16px; background: var(--panel); }
+.cam-opt-name { font-size: 1.05rem; line-height: 1.25; }
+.cam-opt-meta { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .8rem; }
+.cam-opt:hover .cam-opt-box { border-color: var(--muted); }
+.cam-opt input:checked + .cam-opt-box { border-color: var(--text); background: var(--text); color: var(--bg); }
+.cam-opt input:checked + .cam-opt-box .cam-opt-meta { color: #4a4a4d; }
+.cam-opt input:focus-visible + .cam-opt-box { outline: 2px solid var(--accent); outline-offset: 2px; }
+.badge { border: 1px solid var(--warn); color: var(--warn); border-radius: 3px; padding: 0 6px; font-size: .7rem;
+         letter-spacing: .1em; text-transform: uppercase; }
+.cam-opt input:checked + .cam-opt-box .badge { border-color: #a35a12; color: #a35a12; }
+.beta-note { color: var(--warn); max-width: 680px; margin: 0 0 22px; }
+.beta-note a { color: inherit; }
+.dl-for { grid-column: 1 / -1; margin: 0; color: var(--muted); }
+.dl-for b { color: var(--text); font-weight: 400; }
 .seg { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .seg legend { color: var(--muted); font-size: .85rem; margin-bottom: 10px; padding: 0; }
 .seg-opt { position: relative; cursor: pointer; }
@@ -227,8 +246,6 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .picked { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
 .picked li { font-size: .92rem; display: flex; align-items: center; gap: 8px; }
 .picked li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
-.pwyw p { margin: 0 0 12px; }
-.amounts { margin-bottom: 4px; }
 .dl-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 .dl-status { color: var(--muted); }
 @media (max-width: 800px) { .download { grid-template-columns: 1fr; } .summary { grid-row: auto; } }
