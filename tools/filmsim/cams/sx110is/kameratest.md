@@ -56,6 +56,7 @@ Ein Motiv mit Himmel, Grün, Haut und einer weißen Fläche, Stativ oder aufgest
 - [ ] **Weißabgleich:** CHDK RAW/DNG einschalten, Look *Aus*, weißes Papier im Tageslicht formatfüllend
       → die DNG-Datei. Daraus kalibriere ich die Kanalmischung und die Effekte (bisher Werte der IXUS 60).
 - [ ] Alle Testfotos plus `A/CHDK/FILMLOG.CSV`
+- [ ] `A/CHDK/FILMTIME.CSV`: Vor dem Test eine leere Datei mit diesem Namen auf die Karte legen, dann steht darin die Rechenzeit je Foto in ms
 - [ ] Batterie-Prozent mit frischen und mit fast leeren Zellen
 - [ ] Display-Fotos, wenn etwas komisch aussieht
 

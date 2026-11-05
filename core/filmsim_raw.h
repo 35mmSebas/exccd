@@ -66,6 +66,53 @@ static inline __attribute__((always_inline)) void enc8(unsigned char *a, const i
 #endif
 static inline __attribute__((always_inline)) int clip10(int x) { return x < 0 ? 0 : (x > 1023 ? 1023 : x); }
 
+// Kanalmischung eines 2x2-Blocks (R G / G B), siehe filmsim_raw_apply.
+//   Faktoren *256, Zeilensummen = 256, damit Grau grau bleibt.
+//   Violet: Gruen -> Violett, Blau -> Gruen/Tuerkis, Gelb -> Pink
+//   Concrete: entsaettigt, Blau/Gruen stark gedaempft, Haut bleibt
+static const short mix_violet[3][3] = {
+    { 128, 128,   0 },   // R' = 0.5 R + 0.5 G
+    {  51,  77, 128 },   // G' = 0.2 R + 0.3 G + 0.5 B
+    {  51, 205,   0 },   // B' = 0.2 R + 0.8 G
+};
+static const short mix_concrete[3][3] = {
+    { 192,  51,  13 },
+    {  64, 154,  38 },
+    {  51, 102, 103 },
+};
+
+// Kehrwert des Weissabgleichs fuer mix_block: Rohwert = (n * inv + 32768) >> 16
+#define FS_WBINV(wb) ((1 << 24) / (wb))
+
+// Gerundet statt abgeschnitten: Abschneiden senkt R und B staerker als G, das
+// gibt einen Gruenstich in den Schatten. G wird als Summe beider Gruenpixel
+// gerechnet (gg = 2 * Mittel), damit das Halbieren keinen Fehler einbringt.
+static inline __attribute__((always_inline)) void mix_block(const short (*m)[3], int *p, int *q, int k, int blk,
+                                                            int wb_r, int wb_b, int inv_r, int inv_b)
+{
+    // Canon markiert defekte Sensorpixel in den Rohdaten mit 0 und ersetzt sie
+    // erst bei der JPEG-Erzeugung. Wuerden wir den Block mischen, waere die
+    // Markierung weg -> schwarzer Punkt. Solche Bloecke bleiben unveraendert.
+    if (!p[k] || !p[k+1] || !q[k] || !q[k+1]) return;
+    int r  = ((p[k]   - blk) * wb_r + 128) >> 8;
+    int g1 =   p[k+1] - blk;
+    int g2 =   q[k]   - blk;
+    int b  = ((q[k+1] - blk) * wb_b + 128) >> 8;
+    int gg = g1 + g2;
+    int nr = (2 * m[0][0] * r + m[0][1] * gg + 2 * m[0][2] * b + 256) >> 9;
+    int dg = (2 * m[1][0] * r + (m[1][1] - 256) * gg + 2 * m[1][2] * b + 256) >> 9;   // Gruen-Struktur erhalten
+    int nb = (2 * m[2][0] * r + m[2][1] * gg + 2 * m[2][2] * b + 256) >> 9;
+    p[k]   = clip10(((nr * inv_r + 32768) >> 16) + blk);
+    p[k+1] = clip10(g1 + dg + blk);
+    q[k]   = clip10(g2 + dg + blk);
+    q[k+1] = clip10(((nb * inv_b + 32768) >> 16) + blk);
+    // keine neuen "Defekt"-Markierungen erzeugen
+    if (!p[k]) p[k] = 1;
+    if (!p[k+1]) p[k+1] = 1;
+    if (!q[k]) q[k] = 1;
+    if (!q[k+1]) q[k+1] = 1;
+}
+
 // Heisse Pixel
 //   Canon ersetzt defekte Pixel erst bei der JPEG-Erzeugung, und nur die aus
 //   seiner Werksliste (in den Rohdaten mit 0 markiert). Andere heisse Pixel
@@ -88,65 +135,116 @@ static inline __attribute__((always_inline)) int hp_raised(int m, int a, int b)
     return m - HP_BLK > r + (r >> 1) + HP_MIN;
 }
 
-static void hp_row(const unsigned char *a, int groups, short *out)
+// Ab diesem Wert gilt ein Nachbar als hell genug: Dann ist v kein heisser Pixel.
+#define HP_LIM(v) ((((v) - HP_BLK - HP_MIN) >> 1) + HP_BLK)
+
+// Nur fuer die seltenen Verdachtsfaelle: bewusst nicht eingebettet, spart Code
+__attribute__((noinline))
+static int hp_get(const unsigned char *raw, int rowlen, int x, int y)
 {
-    int g, k, v[8];
-    for (g = 0; g < groups; g++, a += CAM_SENSOR_BITS_PER_PIXEL, out += 8) {
-        dec8(a, v);
-        for (k = 0; k < 8; k++) out[k] = v[k];
+    int v[8];
+    dec8(raw + y * rowlen + (x >> 3) * CAM_SENSOR_BITS_PER_PIXEL, v);
+    return v[x & 7];
+}
+
+// Vollstaendige Pruefung eines Verdachtsfalls. Rueckgabe: Ersatzwert oder -1.
+__attribute__((noinline))
+static int hp_check(const unsigned char *raw, int rowlen, int x, int y, int v)
+{
+    static const short recip[5] = { 0, 256, 128, 85, 64 };
+#define HP_PX(dx, dy) hp_get(raw, rowlen, x + (dx), y + (dy))
+    int lim = HP_LIM(v);
+    int cl = HP_PX(-2, 0), cr = HP_PX(2, 0), un = HP_PX(0, -2), dn = HP_PX(0, 2);
+    if (cl >= lim || cr >= lim || un >= lim || dn >= lim) return -1;
+    if (HP_PX(-2, -2) >= lim || HP_PX(2, -2) >= lim || HP_PX(-2, 2) >= lim || HP_PX(2, 2) >= lim) return -1;
+    // echter Lichtpunkt? Direkte Nachbarn mit ihren eigenen Nachbarn quer dazu vergleichen
+    if (hp_raised(HP_PX(-1, 0), HP_PX(-1, -2), HP_PX(-1, 2)) || hp_raised(HP_PX(1, 0), HP_PX(1, -2), HP_PX(1, 2)) ||
+        hp_raised(HP_PX(0, -1), HP_PX(-2, -1), HP_PX(2, -1)) || hp_raised(HP_PX(0, 1), HP_PX(-2, 1), HP_PX(2, 1)))
+        return -1;
+#undef HP_PX
+    // Mittelwert der direkten Nachbarn, Defekt-Markierungen (0) auslassen
+    int s = 0, k = 0;
+    if (cl) { s += cl; k++; }
+    if (cr) { s += cr; k++; }
+    if (un) { s += un; k++; }
+    if (dn) { s += dn; k++; }
+    if (!k) return -1;
+    s = (s * recip[k]) >> 8;
+    return s ? s : 1;
+}
+
+// Gemerkte Ersetzungen einer Zeile schreiben (je Eintrag: x, Wert)
+static void hp_flush(unsigned char *raw, int rowlen, int y, const short *q, int cnt)
+{
+    int i;
+    for (i = 0; i < cnt; i++) {
+        unsigned char *a = raw + y * rowlen + (q[2 * i] >> 3) * CAM_SENSOR_BITS_PER_PIXEL;
+        int p[8];
+        dec8(a, p);
+        p[q[2 * i] & 7] = q[2 * i + 1];
+        enc8(a, p);
     }
 }
 
-// ring: 5 * (rowpix / 8) * 8 shorts. Rueckgabe: Anzahl ersetzter Pixel.
+// Puffer fuer die Ersetzungen von 3 Zeilen. Gleichfarbige ersetzte Pixel liegen nie
+// im Abstand 2 (jeder muesste mehr als doppelt so hell sein wie der andere), also
+// hoechstens rowpix/2 + 2 Eintraege je Zeile zu je 2 shorts.
+#define HP_BUF_SHORTS(rowpix) (3 * ((rowpix) + 4))
+
+// Vortest je 8-Pixel-Gruppe, ohne Zeilenpuffer: Je zwei gleichfarbige Pixel im
+// Abstand 2 werden verglichen. Ist der hellere nicht deutlich heller als der
+// dunklere, scheiden beide aus; sonst kann nur der hellere heiss sein. Nur diese
+// seltenen Faelle lesen die Nachbarzeilen. Ersetzungen werden erst geschrieben,
+// wenn keine spaetere Pruefung die Zeile mehr liest: Alle Vergleiche sehen so die
+// Originalwerte. Rueckgabe: Anzahl ersetzter Pixel.
 __attribute__((optimize("O2")))
-static int hotpix_fix(unsigned char *raw, int rows, int rowpix, int rowlen, short *ring)
+static int hotpix_fix(unsigned char *raw, int rows, int rowpix, int rowlen, short *buf)
 {
-    static const short recip[5] = { 0, 256, 128, 85, 64 };
-    int groups = rowpix / 8, w = groups * 8, y, x, n = 0;
-#define HP_ROW(r) (ring + ((r) % 5) * w)
-    for (y = 0; y < 4 && y < rows; y++) hp_row(raw + y * rowlen, groups, HP_ROW(y));
+    int groups = rowpix / 8, w = groups * 8, cap = rowpix + 4, y, g, n = 0;
+    int cnt[3] = { 0, 0, 0 };
     for (y = 2; y < rows - 2; y++) {
-        hp_row(raw + (y + 2) * rowlen, groups, HP_ROW(y + 2));
-        const short *u = HP_ROW(y - 2), *c = HP_ROW(y), *d = HP_ROW(y + 2);
-        for (x = 2; x < w - 2; x++) {
-            int v = c[x];
-            if (v <= HP_BLK + HP_MIN) continue;
-            int lim = ((v - HP_BLK - HP_MIN) >> 1) + HP_BLK;
-            if (c[x-2] >= lim || c[x+2] >= lim || u[x] >= lim || d[x] >= lim) continue;
-            if (u[x-2] >= lim || u[x+2] >= lim || d[x-2] >= lim || d[x+2] >= lim) continue;
-            // echter Lichtpunkt? Direkte Nachbarn mit ihren eigenen Nachbarn quer dazu vergleichen
-            const short *u1 = HP_ROW(y - 1), *d1 = HP_ROW(y + 1);
-            if (hp_raised(c[x-1], u[x-1], d[x-1]) || hp_raised(c[x+1], u[x+1], d[x+1]) ||
-                hp_raised(u1[x], u1[x-2], u1[x+2]) || hp_raised(d1[x], d1[x-2], d1[x+2])) continue;
-            // Mittelwert der direkten Nachbarn, Defekt-Markierungen (0) auslassen
-            int s = 0, k = 0;
-            if (c[x-2]) { s += c[x-2]; k++; }
-            if (c[x+2]) { s += c[x+2]; k++; }
-            if (u[x])   { s += u[x];   k++; }
-            if (d[x])   { s += d[x];   k++; }
-            if (!k) continue;
-            s = (s * recip[k]) >> 8;
-            unsigned char *a = raw + y * rowlen + (x >> 3) * CAM_SENSOR_BITS_PER_PIXEL;
-            int p[8];
-            dec8(a, p);
-            p[x & 7] = s ? s : 1;
-            enc8(a, p);
-            n++;
+        int slot = y % 3;
+        short *q = buf + slot * cap;
+        hp_flush(raw, rowlen, y - 3, q, cnt[slot]);      // Zeile y - 3 wird nicht mehr gelesen
+        int c = 0;
+        const unsigned char *a = raw + y * rowlen;
+        for (g = 0; g < groups; g++, a += CAM_SENSOR_BITS_PER_PIXEL) {
+            int v[8];
+            dec8(a, v);
+#define HP_PAIR(i, j) do { \
+                int hi = v[i], lo = v[j], x = g * 8 + (i); \
+                if (hi < lo) { hi = v[j]; lo = v[i]; x = g * 8 + (j); } \
+                if (hi > HP_BLK + HP_MIN && lo < HP_LIM(hi) && x >= 2 && x < w - 2) { \
+                    int s = hp_check(raw, rowlen, x, y, hi); \
+                    if (s >= 0 && c < cap / 2) { q[2 * c] = (short)x; q[2 * c + 1] = (short)s; c++; n++; } \
+                } \
+            } while (0)
+            HP_PAIR(0, 2);
+            HP_PAIR(1, 3);
+            HP_PAIR(4, 6);
+            HP_PAIR(5, 7);
+#undef HP_PAIR
         }
+        cnt[slot] = c;
     }
-#undef HP_ROW
+    for (; y < rows + 1; y++)                            // die letzten drei Zeilen
+        if (y >= 5) hp_flush(raw, rowlen, y - 3, buf + (y % 3) * cap, cnt[y % 3]);
     return n;
 }
 
 #if CAM_SENSOR_BITS_PER_PIXEL == 12
 #define CV_N 1024
 
-// .CV (4 x 1024 Werte, 10 Bit) -> Tabelle mit 4 x 4096 Eintraegen
+// .CV (4 x 1024 Werte, 10 Bit: R, G, G, B) -> Tabelle mit 3 x 4096 Eintraegen
+// in der Reihenfolge R, G, B. Beide G-Kurven sind gleich (make_curves.py prueft
+// das), die zweite wird nicht gelesen. Eine R-Zeile nutzt die Tabellen R + G,
+// eine B-Zeile G + B: ce = lut + (B-Zeile ? 4096 : 0), co = ce + 4096.
 static void curve_lut_build(const unsigned short *cv, unsigned short *lut)
 {
+    static const unsigned char src[3] = { 0, 1, 3 };
     int c, v;
-    for (c = 0; c < 4; c++) {
-        const unsigned short *k = cv + c * CV_N;
+    for (c = 0; c < 3; c++) {
+        const unsigned short *k = cv + src[c] * CV_N;
         unsigned short *t = lut + c * 4096;
         for (v = 0; v < 4096; v++) {
             int i = v >> 2, f = v & 3;
@@ -175,6 +273,28 @@ static inline __attribute__((always_inline)) void curve_row12(unsigned char *a, 
         a[2] = w2 >> 4;
         a[5] = (w2 << 4) | (w3 >> 8);
         a[4] = w3;
+    }
+}
+
+// Dasselbe wortweise: 8 Pixel = 12 Byte = 3 Worte, deutlich weniger Speicherzugriffe.
+// a muss auf 4 Byte ausgerichtet sein, Little Endian (alle CHDK-Kameras).
+static inline __attribute__((always_inline)) void curve_row12_w(unsigned int *a, int groups,
+                                                                const unsigned short *ce, const unsigned short *co)
+{
+    int g;
+    for (g = 0; g < groups; g++, a += 3) {
+        unsigned int w0 = a[0], w1 = a[1], w2 = a[2];
+        unsigned int v0 = ce[(w0 & 0xffff) >> 4];
+        unsigned int v1 = co[((w0 & 0x0f) << 8) | (w0 >> 24)];
+        unsigned int v2 = ce[((w0 >> 12) & 0xff0) | ((w1 & 0xffff) >> 12)];
+        unsigned int v3 = co[w1 & 0xfff];
+        unsigned int v4 = ce[w1 >> 20];
+        unsigned int v5 = co[((w1 >> 8) & 0xf00) | ((w2 >> 8) & 0xff)];
+        unsigned int v6 = ce[((w2 & 0xff) << 4) | (w2 >> 28)];
+        unsigned int v7 = co[(w2 >> 16) & 0xfff];
+        a[0] = (v0 << 4) | (v1 >> 8) | ((v2 >> 4) << 16) | ((v1 & 0xff) << 24);
+        a[1] = ((v2 & 0x0f) << 12) | v3 | (((v4 << 4) | (v5 >> 8)) << 16);
+        a[2] = ((v5 & 0xff) << 8) | (v6 >> 4) | ((((v6 & 0x0f) << 12) | v7) << 16);
     }
 }
 #endif

@@ -10,7 +10,8 @@
 //   - enc8 mit neuen Werten schreibt jeden Pixel wie set_raw_pixel
 //     (12 Bit: untere zwei Bit des Originals bleiben, 0 bleibt 0)
 //   - 12 Bit: Kurventabelle (Stuetzstellen exakt, Identitaet bis 4095, 0 bleibt 0)
-//     und curve_row12 gleich Tabellenzugriff je Pixel
+//     und curve_row12 gleich Tabellenzugriff je Pixel, curve_row12_w byte-gleich dazu
+//   - mix_block: Grau bleibt ohne Rundungsstich, Defekt-Bloecke bleiben unveraendert
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,24 +123,27 @@ static void test_codec(void)
 }
 
 #if BPP == 12
-static unsigned short cv[4 * CV_N], lut[4 * 4096];
+static unsigned short cv[4 * CV_N], lut[3 * 4096];
 
 static void test_curves(void)
 {
+    static const int src[3] = { 0, 1, 3 };
+    static unsigned char bufw[sizeof buf] __attribute__((aligned(4)));
     int c, i, x, y;
 
-    // Kurve 0: Identitaet, 1..3: verschiedene Steigungen, ab und zu ueber 1023
+    // Kurve 0: Identitaet, 1 und 3: verschiedene Steigungen, ab und zu ueber 1023.
+    // Kurve 2 ist die zweite G-Kurve und darf nicht gelesen werden.
     for (c = 0; c < 4; c++)
         for (i = 0; i < CV_N; i++)
-            cv[c * CV_N + i] = c == 0 ? i : (unsigned short)(i * (c + 2) / 4);
+            cv[c * CV_N + i] = c == 0 ? i : (c == 2 ? 7 : (unsigned short)(i * (c + 2) / 4));
     curve_lut_build(cv, lut);
 
     for (i = 1; i < 4096; i++)
         CHECK(lut[i] == i, "Identitaet: lut[%d] = %d", i, lut[i]);
-    for (c = 0; c < 4; c++) {
+    for (c = 0; c < 3; c++) {
         CHECK(lut[c * 4096] == 0, "Kurve %d: 0 bleibt nicht 0", c);
         for (i = 1; i < CV_N; i++) {
-            int k = cv[c * CV_N + i] > 1023 ? 1023 : cv[c * CV_N + i];
+            int k = cv[src[c] * CV_N + i] > 1023 ? 1023 : cv[src[c] * CV_N + i];
             int o = 4 * k > 4095 ? 4095 : (4 * k < 1 ? 1 : 4 * k);
             CHECK(lut[c * 4096 + 4 * i] == o, "Kurve %d Stuetzstelle %d: %d statt %d", c, i, lut[c * 4096 + 4 * i], o);
         }
@@ -147,26 +151,77 @@ static void test_curves(void)
             CHECK(lut[c * 4096 + i] >= 1 && lut[c * 4096 + i] <= 4095, "Kurve %d: lut[%d] = %d", c, i, lut[c * 4096 + i]);
     }
 
-    // curve_row12 = Tabellenzugriff je Pixel (gerade Spalte ce, ungerade co)
+    // curve_row12 = Tabellenzugriff je Pixel (gerade Spalte ce, ungerade co),
+    // Tabellen R + G in der R-Zeile, G + B in der B-Zeile
     memcpy(buf, orig, sizeof buf);
     for (y = 0; y < ROWS; y++) {
-        const unsigned short *ce = lut + ((y & 1) << 1) * 4096;
+        const unsigned short *ce = lut + (y & 1) * 4096;
         curve_row12(buf + y * ROWLEN, ROWPIX / 4, ce, ce + 4096);
     }
     for (y = 0; y < ROWS; y++)
         for (x = 0; x < ROWPIX; x++) {
-            int ch = ((y & 1) << 1) | (x & 1);
+            int ch = (y & 1) + (x & 1);
             unsigned e = lut[ch * 4096 + get_px(orig, x, y)];
             CHECK(get_px(buf, x, y) == e, "curve_row12 x%d y%d: %u statt %u", x, y, get_px(buf, x, y), e);
         }
+
+    // curve_row12_w: byte-gleich zu curve_row12
+    memcpy(bufw, orig, sizeof bufw);
+    for (y = 0; y < ROWS; y++) {
+        const unsigned short *ce = lut + (y & 1) * 4096;
+        curve_row12_w((unsigned int *)(void *)(bufw + y * ROWLEN), ROWPIX / 8, ce, ce + 4096);
+    }
+    CHECK(memcmp(bufw, buf, sizeof buf) == 0, "curve_row12_w schreibt andere Bytes als curve_row12");
 }
 #endif
+
+// --- Kanalmischung -----------------------------------------------------------
+// Grau darf keinen Stich durch die Rundung bekommen: abgeglichene Abweichung je
+// Kanal, gemittelt ueber verrauschte Bloecke, gegen die exakte Mischung derselben
+// Rohwerte. Dazu Defekt-Markierungen.
+static void test_mix(void)
+{
+    enum { WR = 486, WB = 371, BK = 31, N = 200000 };
+    static const short (*const ms[2])[3] = { mix_violet, mix_concrete };
+    static const int lv[] = { 8, 32, 128, 400 };
+    int mi, li, i;
+    for (mi = 0; mi < 2; mi++)
+        for (li = 0; li < 4; li++) {
+            long sr = 0, sg = 0, sb = 0;
+            for (i = 0; i < N; i++) {
+                int p[2], q[2];
+                // Dreiecksrauschen +-3 um den Grauwert, gerundet
+                #define NZ ((rand() % 7) + (rand() % 7) - 6)
+                p[0] = BK + (lv[li] * 256 + WR / 2) / WR + NZ;
+                p[1] = BK + lv[li] + NZ;
+                q[0] = BK + lv[li] + NZ;
+                q[1] = BK + (lv[li] * 256 + WB / 2) / WB + NZ;
+                #undef NZ
+                mix_block(ms[mi], p, q, 0, BK, WR, WB, FS_WBINV(WR), FS_WBINV(WB));
+                sr += p[0] - BK; sg += p[1] - BK; sb += q[1] - BK;
+            }
+            double dr = (double)sr / N * WR / 256 - lv[li], dg = (double)sg / N - lv[li], db = (double)sb / N * WB / 256 - lv[li];
+            // Die Rohwerte sind selbst auf ganze Zahlen gerundet, darum nicht gegen lv pruefen
+            double r0 = (double)((lv[li] * 256 + WR / 2) / WR) * WR / 256, b0 = (double)((lv[li] * 256 + WB / 2) / WB) * WB / 256;
+            double er = (ms[mi][0][0] * r0 + ms[mi][0][1] * lv[li] + ms[mi][0][2] * b0) / 256 - lv[li];
+            double eb = (ms[mi][2][0] * r0 + ms[mi][2][1] * lv[li] + ms[mi][2][2] * b0) / 256 - lv[li];
+            double eg = (ms[mi][1][0] * r0 + ms[mi][1][1] * lv[li] + ms[mi][1][2] * b0) / 256 - lv[li];
+            CHECK(dr - er > -0.6 && dr - er < 0.6 && dg - eg > -0.2 && dg - eg < 0.2 && db - eb > -0.6 && db - eb < 0.6,
+                  "mix %d Grau %d: Bias R %+.2f G %+.2f B %+.2f", mi, lv[li], dr - er, dg - eg, db - eb);
+        }
+    // Defekt-Markierung: Block bleibt unveraendert
+    {
+        int p[2] = { 0, 200 }, q[2] = { 200, 200 };
+        mix_block(mix_violet, p, q, 0, BK, WR, WB, FS_WBINV(WR), FS_WBINV(WB));
+        CHECK(p[0] == 0 && p[1] == 200 && q[0] == 200 && q[1] == 200, "mix: Defekt-Block veraendert");
+    }
+}
 
 // --- heisse Pixel ------------------------------------------------------------
 #define HROWS 16
 static unsigned char hbuf[HROWS * ROWLEN];
 static int hin[HROWS][ROWPIX];
-static short hring[5 * ROWPIX];
+static short hring[HP_BUF_SHORTS(ROWPIX)];
 
 // Grundbild: links dunkel, rechts hell, Farben wie unter Tageslicht, leichtes Rauschen
 static int hflat(int x, int y)
@@ -207,6 +262,66 @@ static void test_hotpix(void)
         }
 }
 
+// Unabhaengige Referenz: die Regel direkt auf dem Originalbild. Der Filter muss
+// bei jedem Bild dieselben Pixel gleich ersetzen.
+static int ref_raised(int m, int a, int b)
+{
+    int r = (a > b ? a : b) - HP_BLK;
+    if (r < 0) r = 0;
+    return m - HP_BLK > r + (r >> 1) + HP_MIN;
+}
+
+static void test_hotpix_ref(void)
+{
+    static const short recip[5] = { 0, 256, 128, 85, 64 };
+    static int im[HROWS][ROWPIX], ex[HROWS][ROWPIX];
+    int run, x, y, total = 0;
+    for (run = 0; run < 400; run++) {
+        // abwechselnd dunkel/hell/gemischt, wenige bis sehr viele heisse Pixel, Defekte, Weiss
+        int base = run % 4 == 0 ? 36 : (run % 4 == 1 ? 60 : (run % 4 == 2 ? 300 : 0));
+        int hot = (run % 5 == 4) ? 3 : 40 >> (run % 5);
+        for (y = 0; y < HROWS; y++)
+            for (x = 0; x < ROWPIX; x++) {
+                int b = base ? base : (rand() % 2 ? 40 : 500);
+                int v = b + rand() % 7 - 3;
+                if (rand() % 100 < hot) v = 100 + rand() % 924;
+                if (rand() % 500 == 0) v = 0;
+                if (rand() % 500 == 0) v = 1023;
+                im[y][x] = v;
+                ex[y][x] = v;
+                set_px(hbuf, x, y, (unsigned short)(v << (BPP - 10)));
+            }
+        int nref = 0;
+        for (y = 2; y < HROWS - 2; y++)
+            for (x = 2; x < ROWPIX - 2; x++) {
+                int v = im[y][x], lim, s = 0, k = 0;
+                if (v <= HP_BLK + HP_MIN) continue;
+                lim = ((v - HP_BLK - HP_MIN) >> 1) + HP_BLK;
+                if (im[y][x-2] >= lim || im[y][x+2] >= lim || im[y-2][x] >= lim || im[y+2][x] >= lim) continue;
+                if (im[y-2][x-2] >= lim || im[y-2][x+2] >= lim || im[y+2][x-2] >= lim || im[y+2][x+2] >= lim) continue;
+                if (ref_raised(im[y][x-1], im[y-2][x-1], im[y+2][x-1]) || ref_raised(im[y][x+1], im[y-2][x+1], im[y+2][x+1]) ||
+                    ref_raised(im[y-1][x], im[y-1][x-2], im[y-1][x+2]) || ref_raised(im[y+1][x], im[y+1][x-2], im[y+1][x+2])) continue;
+                if (im[y][x-2]) { s += im[y][x-2]; k++; }
+                if (im[y][x+2]) { s += im[y][x+2]; k++; }
+                if (im[y-2][x]) { s += im[y-2][x]; k++; }
+                if (im[y+2][x]) { s += im[y+2][x]; k++; }
+                if (!k) continue;
+                s = (s * recip[k]) >> 8;
+                ex[y][x] = s ? s : 1;
+                nref++;
+            }
+        int n = hotpix_fix(hbuf, HROWS, ROWPIX, ROWLEN, hring);
+        total += n;
+        CHECK(n == nref, "hotpix Referenz, Lauf %d: %d statt %d ersetzt", run, n, nref);
+        for (y = 0; y < HROWS; y++)
+            for (x = 0; x < ROWPIX; x++) {
+                int v = (int)(get_px(hbuf, x, y) >> (BPP - 10));
+                CHECK(v == ex[y][x], "hotpix Referenz, Lauf %d x%d y%d: %d statt %d", run, x, y, v, ex[y][x]);
+            }
+    }
+    CHECK(total > 400, "hotpix Referenz: nur %d Ersetzungen, Test zu schwach", total);
+}
+
 int main(void)
 {
     unsigned i;
@@ -218,6 +333,8 @@ int main(void)
 
     test_codec();
     test_hotpix();
+    test_hotpix_ref();
+    test_mix();
 #if BPP == 12
     test_curves();
 #endif

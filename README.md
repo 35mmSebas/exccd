@@ -97,6 +97,9 @@ gcc -Wall -Wextra -I core -DCAM_SENSOR_BITS_PER_PIXEL=10 -o test_raw10 tools/fil
 gcc -Wall -Wextra -I core -DCAM_SENSOR_BITS_PER_PIXEL=12 -o test_raw12 tools/filmsim/test_raw.c && ./test_raw12
 ```
 
+To measure the processing time per shot on a camera, put an empty file `A/CHDK/FILMTIME.CSV` on the
+card. EXCCD then adds one line per shot with the time of each step in ms; without the file nothing is written.
+
 When a core change must not touch another camera, `tools/filmsim/compare_build.sh <git-ref> <platform>`
 builds both states with the same version and timestamp and compares `main.bin` and every object file.
 
@@ -112,7 +115,7 @@ and shows them in a camera menu; cameras marked `test` appear as beta. CI only p
 `stabil` ones. To try it locally:
 
 ```sh
-python tools/site/build_site.py dist/v1.9.25/*.zip _site
+python tools/site/build_site.py dist/v1.9.27/*.zip _site
 python -m http.server -d _site
 ```
 

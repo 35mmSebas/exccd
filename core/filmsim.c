@@ -339,7 +339,7 @@ static int canon_props_match(const filmsim_t *s)
 //   curves.flt kann nur 10 Bit (CHDK schaltet OPT_CURVES bei 12 Bit ab).
 //   Die .CV-Dateien bleiben dieselben (4 x 1024 Werte, 10 Bit: R, G der
 //   R-Zeile, G der B-Zeile, B). Beim Laden entsteht daraus eine Tabelle
-//   mit 4 x 4096 Eintraegen, linear zwischen den 10-Bit-Stuetzstellen
+//   mit 3 x 4096 Eintraegen (R, G, B), linear zwischen den 10-Bit-Stuetzstellen
 //   interpoliert (Schwarz 127 / Weiss 4095 liegen exakt auf 31 / 1023).
 //   Das Anwenden ist dann nur noch ein Tabellenzugriff je Pixel.
 //-------------------------------------------------------------------
@@ -364,7 +364,7 @@ static int curve_lut_load(const char *fn)
         ok = read(fd, cv, 4 * CV_N * sizeof(unsigned short)) == 4 * CV_N * (int)sizeof(unsigned short);
         close(fd);
     }
-    if (ok) curve_lut = malloc(4 * 4096 * sizeof(unsigned short));
+    if (ok) curve_lut = malloc(3 * 4096 * sizeof(unsigned short));
     if (curve_lut) curve_lut_build(cv, curve_lut);
     free(cv);
     return curve_lut != 0;
@@ -374,13 +374,17 @@ static int curve_lut_load(const char *fn)
 __attribute__((optimize("O2"))) void filmsim_curve_apply(char *raw)
 {
     if (!curve_lut || !raw) return;
-    int rows = camera_sensor.raw_rows, quads = camera_sensor.raw_rowpix / 4;
+    int rows = camera_sensor.raw_rows, rowpix = camera_sensor.raw_rowpix;
     int rowlen = camera_sensor.raw_rowlen, y;
+    // Wortweise nur bei ausgerichteten Zeilen aus ganzen 8-Pixel-Gruppen
+    int words = !(((unsigned int)raw | (unsigned int)rowlen) & 3) && !(rowpix & 7);
     for (y = 0; y < rows; y++) {
-        // R-Zeile: Kurve 0 (gerade Spalten, R) / 1 (G), B-Zeile: 2 (G) / 3 (B)
-        const unsigned short *ce = curve_lut + (((y ^ FS_ROW0) & 1) << 1) * 4096;
+        // R-Zeile: Tabelle R (gerade Spalten) / G, B-Zeile: G / B
+        const unsigned short *ce = curve_lut + ((y ^ FS_ROW0) & 1) * 4096;
         const unsigned short *co = ce + 4096;
-        curve_row12((unsigned char *)raw + y * rowlen, quads, ce, co);
+        unsigned char *a = (unsigned char *)raw + y * rowlen;
+        if (words) curve_row12_w((unsigned int *)a, rowpix / 8, ce, co);
+        else       curve_row12(a, rowpix / 4, ce, co);
     }
 }
 #endif
@@ -789,19 +793,7 @@ void filmsim_draw_osd(void)
 //   Zeilensummen = 1, damit Grau grau bleibt.
 //-------------------------------------------------------------------
 #ifdef FS_RAW
-// Faktoren *256. Violet: Gruen -> Violett, Blau -> Gruen/Tuerkis,
-// Gelb -> Pink
-static const short mix_violet[3][3] = {
-    { 128, 128,   0 },   // R' = 0.5 R + 0.5 G
-    {  51,  77, 128 },   // G' = 0.2 R + 0.3 G + 0.5 B
-    {  51, 205,   0 },   // B' = 0.2 R + 0.8 G
-};
-// Concrete: entsaettigt, Blau/Gruen stark gedaempft, Haut bleibt
-static const short mix_concrete[3][3] = {
-    { 192,  51,  13 },
-    {  64, 154,  38 },
-    {  51, 102, 103 },
-};
+// Violet und Concrete: mix_violet / mix_concrete in filmsim_raw.h
 // Farbfilter fuer Schwarzweiss: alle drei Kanaele = gewichtete Helligkeit
 static const short mix_bw[4][3][3] = {
     {{0}},                                                          // kein Filter
@@ -857,39 +849,14 @@ __attribute__((optimize("O2"))) void filmsim_raw_apply(char *raw)
     int groups = camera_sensor.raw_rowpix / 8;
     int rowlen = camera_sensor.raw_rowlen;
     int y, g, k;
-    wbdiv_init();
     for (y = 0; y < rows; y += 2) {
         unsigned char *a0 = (unsigned char *)raw + (y + FS_ROW0) * rowlen;   // R G R G
         unsigned char *a1 = a0 + rowlen;                         // G B G B
         for (g = 0; g < groups; g++, a0 += FS_GRP, a1 += FS_GRP) {
             int p[8], q[8];
             dec8(a0, p); dec8(a1, q);
-            for (k = 0; k < 8; k += 2) {
-                // Canon markiert defekte Sensorpixel in den Rohdaten mit 0 und
-                // ersetzt sie erst bei der JPEG-Erzeugung. Wuerden wir den
-                // Block mischen, waere die Markierung weg -> schwarzer Punkt.
-                // Solche Bloecke bleiben deshalb unveraendert.
-                if (!p[k] || !p[k+1] || !q[k] || !q[k+1]) continue;
-                // auf Weissabgleich normieren (Schwarzwert abziehen)
-                int r  = ((p[k]   - BLK) * WB_R) >> 8;
-                int g1 =   p[k+1] - BLK;
-                int g2 =   q[k]   - BLK;
-                int b  = ((q[k+1] - BLK) * WB_B) >> 8;
-                int gg = (g1 + g2) >> 1;
-                int nr = (m[0][0] * r + m[0][1] * gg + m[0][2] * b) >> 8;
-                int ng = (m[1][0] * r + m[1][1] * gg + m[1][2] * b) >> 8;
-                int nb = (m[2][0] * r + m[2][1] * gg + m[2][2] * b) >> 8;
-                int dg = ng - gg;                                // Gruen-Struktur erhalten
-                p[k]   = clip10(div_wb_r(nr) + BLK);
-                p[k+1] = clip10(g1 + dg + BLK);
-                q[k]   = clip10(g2 + dg + BLK);
-                q[k+1] = clip10(div_wb_b(nb) + BLK);
-                // keine neuen "Defekt"-Markierungen erzeugen
-                if (!p[k]) p[k] = 1;
-                if (!p[k+1]) p[k+1] = 1;
-                if (!q[k]) q[k] = 1;
-                if (!q[k+1]) q[k+1] = 1;
-            }
+            for (k = 0; k < 8; k += 2)
+                mix_block(m, p, q, k, BLK, WB_R, WB_B, FS_WBINV(WB_R), FS_WBINV(WB_B));
             enc8(a0, p); enc8(a1, q);
         }
     }
@@ -971,16 +938,24 @@ int filmsim_draw_splash(void)
 //-------------------------------------------------------------------
 #include "file_counter.h"
 
-void filmsim_log_shot(void)
+// "100CANON/IMG_0123.JPG;Postcard 100" fuer das aktuelle Foto
+static void shot_line(char *line)
 {
-    char dir[32], line[80];
-    const char *fn = "A/CHDK/FILMLOG.CSV";
-    struct stat st;
-    int is_new = (stat(fn, &st) != 0);
+    char dir[32];
     get_target_dir_name(dir);                     // "A/DCIM/100CANON"
     const char *d = strrchr(dir, '/');
     d = d ? d + 1 : dir;
-    sprintf(line, "%s/IMG_%04d.JPG;%s\r\n", d, (int)get_target_file_num(), filmsim_name());
+    sprintf(line, "%s/IMG_%04d.JPG;%s", d, (int)get_target_file_num(), filmsim_name());
+}
+
+void filmsim_log_shot(void)
+{
+    char line[80];
+    const char *fn = "A/CHDK/FILMLOG.CSV";
+    struct stat st;
+    int is_new = (stat(fn, &st) != 0);
+    shot_line(line);
+    strcat(line, "\r\n");
     int fd = open(fn, O_RDWR | O_CREAT, 0777);
     if (fd < 0) return;
     if (is_new) {
@@ -989,6 +964,48 @@ void filmsim_log_shot(void)
     } else {
         lseek(fd, 0, 2);                          // SEEK_END
     }
+    write(fd, line, strlen(line));
+    close(fd);
+}
+
+//-------------------------------------------------------------------
+// Zeitmessung: Rechenzeit der EXCCD-Schritte je Foto in ms
+//   Nur wenn A/CHDK/FILMTIME.CSV auf der Karte liegt (leere Datei anlegen).
+//   Ohne Datei kostet es einen stat() je Foto und schreibt nichts.
+//   raw.c ruft filmsim_time_mark(0..FS_T_STEPS) zwischen den Schritten auf.
+//-------------------------------------------------------------------
+#define FILMTIME_CSV "A/CHDK/FILMTIME.CSV"
+#define FS_T_STEPS 6                    // Hotpixel, Doppelb., Farbrauschen, Kurve, Mischung, Effekte
+static int time_on = 0;
+static int time_ms[FS_T_STEPS + 1];
+
+void filmsim_time_mark(int i)
+{
+    if (i == 0) {
+        struct stat st;
+        time_on = (stat(FILMTIME_CSV, &st) == 0);
+    }
+    if (time_on && i >= 0 && i <= FS_T_STEPS) time_ms[i] = get_tick_count();
+}
+
+void filmsim_time_log(void)
+{
+    char line[128];
+    struct stat st;
+    int i;
+    if (!time_on || stat(FILMTIME_CSV, &st) != 0) return;
+    int fd = open(FILMTIME_CSV, O_RDWR, 0777);
+    if (fd < 0) return;
+    if (st.st_size == 0) {
+        const char *hdr = "File;Film;Hotpixel;Double;ColorNR;Curve;Mix;Effects;Total\r\n";
+        write(fd, hdr, strlen(hdr));
+    } else {
+        lseek(fd, 0, 2);                          // SEEK_END
+    }
+    shot_line(line);
+    for (i = 1; i <= FS_T_STEPS; i++)
+        sprintf(line + strlen(line), ";%d", time_ms[i] - time_ms[i - 1]);
+    sprintf(line + strlen(line), ";%d\r\n", time_ms[FS_T_STEPS] - time_ms[0]);
     write(fd, line, strlen(line));
     close(fd);
 }
@@ -1583,13 +1600,17 @@ void filmsim_hotpix_hook(char *raw)
 #ifdef FS_RAW
     extern int filmsim_effects_active(void);
     if (!raw || !filmsim_photo_mode()) return;
-    if (!conf.film_sim && !conf.film_dr && !cnr_level() && !conf.film_double && !filmsim_effects_active())
+    // Daylight 100 hat keine Kurve und keine Mischung: Das Rohbild bleibt wie bei "Aus"
+    const filmsim_t *s = current();
+    int bw_filter = s->mycolors == MC_BW && conf.film_bwfilter > 0 && conf.film_bwfilter < 4;
+    if (!s->curve && !s->mix && !bw_filter && !conf.film_dr && !cnr_level() && !conf.film_double
+        && !filmsim_effects_active())
         return;
-    short *ring = malloc(5 * (camera_sensor.raw_rowpix / 8) * 8 * sizeof(short));
-    if (!ring) return;
+    short *buf = malloc(HP_BUF_SHORTS(camera_sensor.raw_rowpix) * sizeof(short));
+    if (!buf) return;
     hotpix_fix((unsigned char *)raw, camera_sensor.raw_rows, camera_sensor.raw_rowpix,
-               camera_sensor.raw_rowlen, ring);
-    free(ring);
+               camera_sensor.raw_rowlen, buf);
+    free(buf);
 #else
     (void)raw;
 #endif

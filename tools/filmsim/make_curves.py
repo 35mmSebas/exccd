@@ -175,6 +175,7 @@ def test_curves():
 def write(name, r, outdir, G=1):
     curves = test_curves() if name == "TEST" else [channel_curve(c, r, G) for c in range(4)]
     assert curves[0][0] <= 1023
+    assert curves[1] == curves[2]      # 12 Bit: curve_lut_build teilt sich die G-Tabelle
     data = b"".join(struct.pack("<1024H", *c) for c in curves)
     assert len(data) == 8192
     with open(os.path.join(outdir, name + ".CV"), "wb") as f:

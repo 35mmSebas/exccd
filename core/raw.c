@@ -280,17 +280,25 @@ void raw_process(void)
         }
     }
 
+    // Filmsim: Zeitmessung der folgenden Schritte (A/CHDK/FILMTIME.CSV)
+    extern void filmsim_time_mark(int i);
+    extern void filmsim_time_log(void);
+    filmsim_time_mark(0);
+
     // Filmsim: heisse Pixel entfernen (vor allem anderen, sonst werden sie verstaerkt)
     extern void filmsim_hotpix_hook(char *raw);
     filmsim_hotpix_hook(rawadr);
+    filmsim_time_mark(1);
 
     // Filmsim: Doppelbelichtung (vor Kurven, damit der Look nur einmal wirkt)
     extern void filmsim_double_hook(char *raw);
     filmsim_double_hook(rawadr);
+    filmsim_time_mark(2);
 
     // Filmsim: Farbrauschen glaetten (vor Kurven, im linearen Rohbild)
     extern void filmsim_cnr_hook(char *raw);
     filmsim_cnr_hook(rawadr);
+    filmsim_time_mark(3);
 
     // Filmsim: ohne knappere Belichtung (Blitz, Tv-Override) keine Dynamik+-Kurve
     extern void filmsim_dr_curve_hook(int end);
@@ -305,18 +313,22 @@ void raw_process(void)
     extern void filmsim_curve_apply(char *raw);
     filmsim_curve_apply(rawadr);
 #endif
+    filmsim_time_mark(4);
 
     // Filmsim: Kanalmischung fuer Spezialfilme (nach den Kurven, vor dem JPEG)
     extern void filmsim_raw_apply(char *raw);
     filmsim_raw_apply(rawadr);
+    filmsim_time_mark(5);
 
     // Filmsim: Kreativeffekte (Mist, Halation, Vignette, Light Leak, Datum)
     extern void filmsim_effects_apply(char *raw);
     filmsim_effects_apply(rawadr);
+    filmsim_time_mark(6);
 
     // Filmsim: Film zum Foto ins Logbuch schreiben
     extern void filmsim_log_shot(void);
     filmsim_log_shot();
+    filmsim_time_log();
 
     filmsim_dr_curve_hook(1);
 }
