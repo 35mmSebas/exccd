@@ -49,7 +49,7 @@ as (R, G, B), ±0.03 = clearly visible. Point-curve looks are drawn freely per c
 | Cross        | points     | hard     | –    | –        | blue                    | yellow-green            | cross processing |
 | Violet       | recipe     |  0.15    | 0.02 | 0.10     | +0.006 / −0.004 / +0.010| +0.006 / 0 / +0.004     | + Mix 1: purple colour swap |
 | Concrete     | recipe     |  0.28    | 0.02 | 0.10     | 0 / 0 / +0.004          | +0.004 / +0.002 / 0     | + Mix 2: desaturated, hard |
-| Ember        | points     | medium   | –    | –        | warm                    | peach                   | copper-warm, muted blue |
+| Ember        | points     | medium   | –    | –        | red                     | orange to peach         | red to orange gradient, muted blue |
 | Grit (B/W)   | recipe     |  0.38    | 0.00 | 0.04     | Gain 1.20 / 1.0 / 0.80  |                         | B/W, hard, orange filter |
 
 Daylight 100 and Off have no film curve (only the Dynamic+ curves, if switched on).
@@ -61,3 +61,4 @@ Daylight 100 and Off have no film curve (only the Dynamic+ curves, if switched o
 | Postcard, Journal, Drugstore | v1.9.21 | shadows opened up, Canon contrast +1 removed |
 | Journal | v1.9.24 | curve measured against reference shots |
 | Ember | v1.9.24 | toned down a lot (pictures were completely red) |
+| Ember | 2026-11-07 | shadows and midtones less red, green rises earlier for a red to orange gradient |

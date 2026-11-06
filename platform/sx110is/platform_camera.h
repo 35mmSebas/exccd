@@ -81,6 +81,11 @@
 
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
-    // Noch keine Laschen (Palette fehlt) und kein eigener Weissabgleich:
-    // Textkarten in CHDK-Farben, WB-Gains der IXUS 60.
-    // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.
+    #define FILMSIM_WB_R                470     // R 1,84, aus DNG von weissem Papier (Tageslicht)
+    #define FILMSIM_WB_B                441     // B 1,72
+    #define FILMSIM_LABELS              1       // Laschen aus tools/filmsim/cams/sx110is
+    #define FILMSIM_COLOR_BG            0xFF    // Schwarz
+    #define FILMSIM_COLOR_GREY          0xA3    // neutrales Grau
+    #define FILMSIM_COLOR_RULE          0xFA    // dunkles Grau
+    // Testkamera mit defektem Power-Schalter: ALT-Taste 3 s halten schaltet aus.
+    #define FILMSIM_POWEROFF_HOLD_MS    3000

@@ -71,10 +71,12 @@ RECIPES = {
     "GRIT":    dict(contrast=0.38, lift=0.00, shoulder=0.04,
                     gain=(1.20, 1.0, 0.80)),          # Orangefilter-Effekt, haerter als Silver
     # v1.9.24: Ember deutlich zurueckgenommen (auf der Kamera war das ganze Bild rot)
-    "EMBER":   dict(points=dict(             # Ember: kupfern-warm, Blau gedaempft, Himmel pfirsich
-        R=((.08, .12),  (.25, .35),  (.5, .615), (.75, .83),  (.92, .945)),
-        G=((.08, .058), (.25, .19),  (.5, .42),  (.75, .675), (.92, .867)),
-        B=((.08, .041), (.25, .14),  (.5, .327), (.75, .553), (.92, .746)))),
+    # 07.11.2026: Schatten und Mitten waren auf der SX110 noch fast reines Rot (Farbton 2-10 Grad,
+    # Saettigung .87). Gruen laeuft jetzt frueher zu Rot auf: Verlauf von Rot ueber Orange zu Pfirsich
+    "EMBER":   dict(points=dict(             # Ember: rot, in den Lichtern orange bis pfirsich, Blau gedaempft
+        R=((.08, .105), (.25, .31),  (.5, .575), (.75, .80),  (.92, .935)),
+        G=((.08, .068), (.25, .215), (.5, .47),  (.75, .72),  (.92, .89)),
+        B=((.08, .055), (.25, .17),  (.5, .39),  (.75, .63),  (.92, .80)))),
     "TUNGSTN": dict(points=dict(             # Tungsten: kuehl, Teal-Schatten, warme Spitzlichter
         R=((.08, .07),  (.25, .22),  (.5, .48),  (.75, .77),  (.92, .93)),
         G=((.08, .085), (.25, .245), (.5, .50),  (.75, .755), (.92, .92)),

@@ -246,7 +246,8 @@ void raw_process(void)
         return;
     }
 
-    if (conf.bad_pixel_removal) patch_bad_pixels();
+    // Filmsim: A/CHDK/badpixel.txt wirkt immer, das RAW-Untermenue ist nicht erreichbar
+    patch_bad_pixels();
 
     // Filmsim: defekte Sensorspalten aus A/CHDK/BADCOLS.TXT (vor DNG und JPEG)
     extern void filmsim_badcols_apply(void);
@@ -420,7 +421,7 @@ void patch_bad_pixel(unsigned int x,unsigned  int y) {
     int i,j;
     int val;
     if ((x>=2) && (x<camera_sensor.raw_rowpix-2) && (y>=2) && (y<camera_sensor.raw_rows-2)) {
-        if ((conf.bad_pixel_removal==1) || (conf.save_raw && conf.dng_raw)) {  // interpolation or DNG saving
+        if ((conf.bad_pixel_removal!=2) || (conf.save_raw && conf.dng_raw)) {  // interpolation or DNG saving
             for (i=-2; i<=2; i+=2)
                 for (j=-2; j<=2; j+=2)
                     if ((i!=0) && (j!=0)) {

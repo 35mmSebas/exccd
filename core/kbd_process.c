@@ -9,6 +9,10 @@
 #include "usb_remote.h"
 #include "clock.h"
 #include "debug_led.h"
+#ifdef FILMSIM_POWEROFF_HOLD_MS
+#include "levent.h"
+#include "shutdown.h"
+#endif
 
 //-------------------------------------------------------------------
 // Keyboard auto repeat
@@ -83,12 +87,57 @@ void exit_alt_on_release()
     exit_alt_pending = 1;
 }
 
+#ifdef FILMSIM_POWEROFF_HOLD_MS
+// Filmsim: Ausschalten per langem Druck auf die ALT-Taste, fuer Kameras ohne
+// funktionierenden Power-Schalter. Geht auch im Wiedergabemodus. Weicher Weg
+// ueber die Firmware, damit das Objektiv einfaehrt; meldet sie sich danach
+// noch, folgt einmal der Power-Tastendruck als Event.
+static void filmsim_poweroff_hold()
+{
+    static int down_since = 0, retry_at = 0, done = 0;
+    int now = get_tick_count();
+
+    if (done)
+        return;
+
+    if (retry_at)
+    {
+        if (now >= retry_at)
+        {
+            unsigned press = levent_id_for_name("PressPowerButton");
+            unsigned unpress = levent_id_for_name("UnpressPowerButton");
+            if (press)
+                PostLogicalEventForNotPowerType(press, 0);
+            if (unpress)
+                PostLogicalEventForNotPowerType(unpress, 0);
+            done = 1;
+        }
+        return;
+    }
+
+    if (!kbd_is_key_pressed(conf.alt_mode_button))
+        down_since = 0;
+    else if (!down_since)
+        down_since = now;
+    else if (now - down_since >= FILMSIM_POWEROFF_HOLD_MS)
+    {
+        debug_led(1);   // Rueckmeldung: Taste kann los
+        camera_shutdown_in_a_second();
+        retry_at = now + 5000;
+    }
+}
+#endif
+
 //-------------------------------------------------------------------
 // Core keyboard handler
 
 long kbd_process()
 {
     static int key_pressed;
+
+#ifdef FILMSIM_POWEROFF_HOLD_MS
+    filmsim_poweroff_hold();
+#endif
 
     if( usb_HPtimer_handle==0) usb_remote_key();
 

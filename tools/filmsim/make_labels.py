@@ -26,7 +26,6 @@ from PIL import Image
 # Zielbereich fuer die Lasche (Bitmap-Pixel) - Rest ist Namensleiste unten
 AREA_W, AREA_H = 360, 196
 PIXEL_ASPECT = 320 / 360
-NCOLORS = 28                     # Hauptfarben je Lasche vor der Palettenzuordnung
 
 import json
 _here = os.path.dirname(os.path.abspath(__file__))
@@ -108,6 +107,16 @@ if CAM == "ixus60_sd600":
     # Die Palette hat keine neutralen hellen Grautoene (Grau wirkt blaugrau).
     # Unbunte Motivfarben deshalb fest auf diese drei Stufen legen.
     GREYS = ((0xFA, 28), (0x3F, 48), (0x1F, 66))     # (Index, Helligkeit L*)
+elif os.path.getsize(os.path.join(_cam, "PALREC.BIN")) == 64:
+    # 16 Grundfarben zu je V, U, Y, Alpha 0..3 (z. B. SX110). Ein Farbindex 0xXY
+    # mischt die Grundfarben X und Y; am Palettenfoto der IXUS 60 geprueft
+    # (Korrelation 0,90..0,96). Nur Mischungen aus zwei deckenden Grundfarben.
+    _d = open(os.path.join(_cam, "PALREC.BIN"), "rb").read()
+    _base = [_ayuv_rgb(struct.unpack_from("<I", _d, 4 * k)[0]) for k in range(16)]
+    PALETTE = {i: tuple((_base[i >> 4][0][c] + _base[i & 15][0][c]) / 2 for c in range(3))
+               for i in range(256)}
+    CANDIDATES = {i for i in range(1, 256) if _base[i >> 4][1] == 3 and _base[i & 15][1] == 3}
+    GREYS = None                 # echte neutrale Grautoene vorhanden
 else:
     PALETTE, _opq = _load_palrec_ayuv(os.path.join(_cam, "PALREC.BIN"))
     # deckende Eintraege; ohne 0x5E..0x72 (21 x dasselbe Grau, Verwendung durch
@@ -151,7 +160,7 @@ def nearest(rgb, pal):
 # (die EXCCD-Laschen aus make_label_art.py brauchen keine)
 OVERRIDES = {}
 
-def convert(src, pal, area_h=None):
+def fit(src, area_h=None):
     im = Image.open(src).convert("RGBA")
     bg = Image.new("RGBA", im.size, (0, 0, 0, 255))
     im = Image.alpha_composite(bg, im).convert("RGB")
@@ -161,14 +170,34 @@ def convert(src, pal, area_h=None):
     w_sq, h = im.width * s, int(round(im.height * s))
     w = int(round(w_sq / PIXEL_ASPECT))           # horizontal strecken
     # Startbildschirm: harte Kanten (kein Mischen zu Zwischenfarben)
-    im = im.resize((w, h), Image.BOX if area_h else Image.LANCZOS)
-    # erst auf wenige Hauptfarben reduzieren (saubere Flaechen statt Rauschen),
-    # dann jede Hauptfarbe auf die naechste Kamerafarbe abbilden
-    q = im.quantize(colors=NCOLORS, method=Image.Quantize.MAXCOVERAGE, dither=Image.Dither.NONE)
-    qpal = q.getpalette()
-    cmap = {i: nearest(tuple(qpal[3*i:3*i+3]), pal) for i in range(NCOLORS)}
-    px = q.load()
-    idx = [[cmap[px[x, y]] for x in range(w)] for y in range(h)]
+    return im.resize((w, h), Image.BOX if area_h else Image.LANCZOS)
+
+# Rahmen und Linien der Laschen. Beim Verkleinern mischen sich duenne Linien mit
+# dem Schwarz daneben; auch diese Mischung soll dieselbe Kamerafarbe bekommen.
+FRAME_RGB = (50, 69, 98)
+def frame_colour(c):
+    s = c[2] / FRAME_RGB[2]
+    if 0.25 <= s <= 1.1 and all(abs(c[k] - FRAME_RGB[k] * s) <= 8 for k in range(2)):
+        return FRAME_RGB
+    return c
+
+# Jedes Pixel direkt auf die naechste Kamerafarbe: Dieselbe Quellfarbe ergibt so in
+# allen Laschen denselben Index. Eine vorgeschaltete Farbreduktion je Lasche machte
+# den Rahmen mal blau, mal grau; eine gemeinsame verfaelschte die Akzentfarben.
+def convert(src, pal, area_h=None):
+    im = fit(src, area_h)
+    w, h = im.size
+    px = im.load()
+    cache = {}
+    idx = []
+    for y in range(h):
+        row = []
+        for x in range(w):
+            c = px[x, y]
+            if c not in cache:
+                cache[c] = nearest(frame_colour(c), pal)
+            row.append(cache[c])
+        idx.append(row)
     return w, h, idx
 
 def encode(w, h, idx):

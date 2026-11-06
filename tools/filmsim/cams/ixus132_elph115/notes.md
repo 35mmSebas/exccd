@@ -19,6 +19,8 @@ nicht ins ZIP. Spalten finden: Dunkelbild als DNG, Spaltenmedian gegen x-2/x+2.
 Auf der Kamera bestaetigt (2026-11-01): Strich in JPEG und Wiedergabe weg, im Livebild bleibt er.
 
 Offen: My Colors bleibt bei Postcard 100 auf "aus" (Propcase 187 pruefen, System -> Debug).
+Die SX110 zeigte dasselbe im Menue und nutzte im Foto trotzdem Custom Color: Zuerst die
+MakerNote eines Postcard-JPEGs pruefen, siehe `cams/sx110is/notes.md`.
 
 - Firmware nur 1.00b, DryOS R52, propset 6. Identische Firmware wie die IXUS 135 / ELPH 120
   (die hat zusaetzlich WLAN), ein Port fuer beide waere fast nur ein weiterer Eintrag

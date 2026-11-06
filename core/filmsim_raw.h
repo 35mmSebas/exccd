@@ -124,8 +124,13 @@ static inline __attribute__((always_inline)) void mix_block(const short (*m)[3],
 //   Nachbarn ersetzt. Echte Lichtpunkte sind durch das Objektiv breiter als
 //   ein Pixel: Sie heben auch die direkt angrenzenden (andersfarbigen) Pixel
 //   ueber deren eigene Umgebung - dann bleibt der Pixel, wie er ist.
+//   Ausnahme: Gruppen defekter Pixel (2-3 nebeneinander, gemessen an der SX110).
+//   Dort sind nur Nachbarn auf einer oder zwei Seiten hell, bei einem echten
+//   hellen Lichtpunkt auch die gegenueberliegenden. Ab HP_STRONG ueber Schwarz
+//   zaehlt deshalb nur noch ein Anstieg an mindestens 3 von 4 Nachbarn als Licht.
 #define HP_BLK 31
 #define HP_MIN 16                       // 10-Bit-Skala
+#define HP_STRONG 256
 
 // m deutlich heller (1,5-fach ueber Schwarz) als die gleichfarbigen Pixel a und b?
 static inline __attribute__((always_inline)) int hp_raised(int m, int a, int b)
@@ -158,9 +163,17 @@ static int hp_check(const unsigned char *raw, int rowlen, int x, int y, int v)
     if (cl >= lim || cr >= lim || un >= lim || dn >= lim) return -1;
     if (HP_PX(-2, -2) >= lim || HP_PX(2, -2) >= lim || HP_PX(-2, 2) >= lim || HP_PX(2, 2) >= lim) return -1;
     // echter Lichtpunkt? Direkte Nachbarn mit ihren eigenen Nachbarn quer dazu vergleichen
-    if (hp_raised(HP_PX(-1, 0), HP_PX(-1, -2), HP_PX(-1, 2)) || hp_raised(HP_PX(1, 0), HP_PX(1, -2), HP_PX(1, 2)) ||
-        hp_raised(HP_PX(0, -1), HP_PX(-2, -1), HP_PX(2, -1)) || hp_raised(HP_PX(0, 1), HP_PX(-2, 1), HP_PX(2, 1)))
-        return -1;
+    int nl = HP_PX(-1, 0), nr = HP_PX(1, 0), nu = HP_PX(0, -1), nd = HP_PX(0, 1);
+    int raised = hp_raised(nl, HP_PX(-1, -2), HP_PX(-1, 2)) + hp_raised(nr, HP_PX(1, -2), HP_PX(1, 2)) +
+                 hp_raised(nu, HP_PX(-2, -1), HP_PX(2, -1)) + hp_raised(nd, HP_PX(-2, 1), HP_PX(2, 1));
+    if (raised) {
+        int peak = v;
+        if (nl > peak) peak = nl;
+        if (nr > peak) peak = nr;
+        if (nu > peak) peak = nu;
+        if (nd > peak) peak = nd;
+        if (raised >= 3 || peak - HP_BLK < HP_STRONG) return -1;
+    }
 #undef HP_PX
     // Mittelwert der direkten Nachbarn, Defekt-Markierungen (0) auslassen
     int s = 0, k = 0;

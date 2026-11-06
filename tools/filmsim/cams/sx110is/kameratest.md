@@ -1,8 +1,11 @@
-# Kameratest PowerShot SX110 IS – EXCCD v1.9.23
+# Kameratest PowerShot SX110 IS – EXCCD v1.9.27
 
-Datei: `exccd-v1.9.23-sx110is-100b-full.zip`
+Datei: `dist/v1.9.27/exccd-v1.9.27-sx110is-100b-labels-full.zip`
 
-Es ist der erste Start von EXCCD auf dieser Kamera. Bisher ist nur der Build am PC geprüft.
+Bisher auf der Kamera bestätigt: CHDK startet, Ausschalten per ALT-Taste. Alles andere ist nur am PC geprüft.
+
+Die Testkamera hat einen defekten Power-Schalter: **Einschalten mit der Play-Taste, Ausschalten mit Print 3 s halten.**
+Der Zoom ist laut, funktioniert aber. Das liegt an der Kamera, nicht an EXCCD.
 
 ## Vorher (5 Minuten)
 
@@ -20,7 +23,7 @@ Es ist der erste Start von EXCCD auf dieser Kamera. Bisher ist nur der Build am 
 - [ ] Kamera startet mit CHDK, EXCCD-Menüs sind schwarz mit weißem Cursor
 - [ ] **ALT-Taste ist die Print-Taste** (wie bei der IXUS 60).
       Klappt das schlecht: CHDK-Menü → Einstellungen → ALT-Taste auf Face.
-- [ ] Filmauswahl: Statt der Laschen erscheinen **Textkarten** (mit Absicht, die Laschen brauchen erst die Palette der SX110, siehe unten).
+- [ ] Filmauswahl: **Laschen** erscheinen, Farben deckend und nicht durchscheinend (gerechnet aus der Palette, noch nie auf dem Display gesehen).
       Blättern, mit FUNC/SET übernehmen
 - [ ] Oben rechts nur Batterie + Prozent, sitzt sauber. Verschwindet bei Halbdruck, MENU und FUNC.SET.
       **Prozentwert notieren** (bei frischen Zellen sollte er nahe 100 sein)
@@ -29,10 +32,7 @@ Es ist der erste Start von EXCCD auf dieser Kamera. Bisher ist nur der Build am 
 
 ## My Colors
 
-- [ ] Look **Postcard 100** wählen → Canon FUNC-Menü öffnen: Steht My Colors auf **Custom Color**?
-      Zeigt Custom Color Werte (Kontrast, Schärfe, Sättigung, R/G/B, Haut)?
-      **Wichtig:** Kennt die SX110 kein Custom Color, wirken nur die Kurven, dann bitte melden.
-- [ ] Silver 400 → My Colors = S/W
+- [x] Custom Color und S/W wirken laut Canon-Daten im JPEG (06.11.2026). Das FUNC-Menü zeigt trotzdem „aus“, das ist nur die Anzeige.
 
 ## Fotos (wichtigster Teil)
 
@@ -49,10 +49,16 @@ Ein Motiv mit Himmel, Grün, Haut und einer weißen Fläche, Stativ oder aufgest
 - [ ] Doppelbelichtung (2 Bilder; die Kamera schreibt dabei rund 15 MB auf die Karte, das dauert)
 - [ ] Gefühlte Wartezeit nach dem Auslösen notieren (9 MP statt 6 MP)
 
+## Weiße Punkte in Schwarzweiß-Bildern
+
+Feste defekte Pixel der Testkamera, in allen Fotos an denselben Stellen (05.11.2026).
+
+- [ ] **Zwei Dunkelbilder als DNG:** Speichern als DNG einschalten, Look *Aus*, Moduswahlrad M, ISO 400, 1 s
+      (länger nicht, sonst zieht Canon selbst ein Dunkelbild ab). Dunkler Raum, schwarzer Stoff vor dem Objektiv.
+      Daraus entsteht eine Liste der defekten Pixel dieser Kamera.
+
 ## Für mich zum Nacharbeiten mitbringen
 
-- [ ] **Palette:** Im Aufnahmemodus Optionen (MENU in der Filmauswahl) → System → *Farbpalette speichern*
-      → `A/CHDK/PALREC.BIN`. Damit baue ich die richtigen Laschen für die SX110.
 - [ ] **Weißabgleich:** CHDK RAW/DNG einschalten, Look *Aus*, weißes Papier im Tageslicht formatfüllend
       → die DNG-Datei. Daraus kalibriere ich die Kanalmischung und die Effekte (bisher Werte der IXUS 60).
 - [ ] Alle Testfotos plus `A/CHDK/FILMLOG.CSV`

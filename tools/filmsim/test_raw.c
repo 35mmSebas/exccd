@@ -233,7 +233,8 @@ static int hflat(int x, int y)
 
 static void test_hotpix(void)
 {
-    static const int hot[][2] = { {10, 5}, {11, 8}, {50, 6}, {14, 11} };
+    static const int hot[][2] = { {10, 5}, {11, 8}, {50, 6}, {14, 11},
+                                  {4, 3}, {5, 3}, {26, 4}, {27, 4}, {27, 5} };
     const int nhot = sizeof hot / sizeof hot[0];
     int x, y, i;
     for (y = 0; y < HROWS; y++)
@@ -241,6 +242,9 @@ static void test_hotpix(void)
     hin[5][10] = 400; hin[8][11] = 250;                // dunkel: R, G
     hin[6][50] = 1023;                                 // hell, voll gesaettigt
     hin[9][14] = 0; hin[11][14] = 300;                 // Defekt-Markierung + heisser Nachbar
+    hin[3][4] = 1023; hin[3][5] = 800;                 // defekte Gruppe: zwei nebeneinander
+    hin[4][26] = 1023; hin[4][27] = 150; hin[5][27] = 700; // Gruppe als L, mit schwachem Pixel
+    hin[13][6] = 120; hin[13][7] = 110;                // schwache Gruppe: bleibt (koennte Licht sein)
     for (y = 10; y <= 12; y++)                         // echter Lichtpunkt 3 x 3
         for (x = 20; x <= 22; x++) hin[y][x] = 600;
     for (i = 0; i <= 8; i++) hin[2 + i][40 + i] = 900; // Diagonale, 1 Pixel breit
@@ -299,8 +303,14 @@ static void test_hotpix_ref(void)
                 lim = ((v - HP_BLK - HP_MIN) >> 1) + HP_BLK;
                 if (im[y][x-2] >= lim || im[y][x+2] >= lim || im[y-2][x] >= lim || im[y+2][x] >= lim) continue;
                 if (im[y-2][x-2] >= lim || im[y-2][x+2] >= lim || im[y+2][x-2] >= lim || im[y+2][x+2] >= lim) continue;
-                if (ref_raised(im[y][x-1], im[y-2][x-1], im[y+2][x-1]) || ref_raised(im[y][x+1], im[y-2][x+1], im[y+2][x+1]) ||
-                    ref_raised(im[y-1][x], im[y-1][x-2], im[y-1][x+2]) || ref_raised(im[y+1][x], im[y+1][x-2], im[y+1][x+2])) continue;
+                int up = ref_raised(im[y][x-1], im[y-2][x-1], im[y+2][x-1]) + ref_raised(im[y][x+1], im[y-2][x+1], im[y+2][x+1]) +
+                         ref_raised(im[y-1][x], im[y-1][x-2], im[y-1][x+2]) + ref_raised(im[y+1][x], im[y+1][x-2], im[y+1][x+2]);
+                int pk = v;
+                if (im[y][x-1] > pk) pk = im[y][x-1];
+                if (im[y][x+1] > pk) pk = im[y][x+1];
+                if (im[y-1][x] > pk) pk = im[y-1][x];
+                if (im[y+1][x] > pk) pk = im[y+1][x];
+                if (up && (up >= 3 || pk - HP_BLK < HP_STRONG)) continue;
                 if (im[y][x-2]) { s += im[y][x-2]; k++; }
                 if (im[y][x+2]) { s += im[y][x+2]; k++; }
                 if (im[y-2][x]) { s += im[y-2][x]; k++; }
