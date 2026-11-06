@@ -4,6 +4,8 @@ Rechnet Looks am PC nach, um sie vor dem Kameratest zu beurteilen.
 
   simulate_looks.py sheet <foto> <ziel.jpg> [LABEL ...]    Kontaktabzug
   simulate_looks.py sample <foto> <ordner> LABEL [...]     einzelne Bilder (1200 px)
+  simulate_looks.py raw <sim_raw> <foto> <ziel.png> <korn 0,1 %> <rahmen 0/1/2> [breite]
+                                                           RAW-Effekte (sim_raw.c, Code der Kamera)
 
 <foto> ist ein Bild mit Daylight 100 (Canons neutrales Bild). Kurven kommen aus
 make_curves.RECIPES, die Tabelle aus CHDK/FILMS/EXAMPLE.TXT, die Matrizen aus
@@ -140,8 +142,48 @@ def samples(photo, dst, ids):
         print("->", path)
 
 
+def raw_effects(tool, photo, dst, pct10, style, width=2816):
+    """Bild -> Bayer (10 Bit, WB der IXUS 60 zurueckgerechnet) -> sim_raw -> einfaches Entwickeln."""
+    import subprocess, tempfile
+    x = load(photo, width)
+    h, w = x.shape[:2]
+    h, w = h & ~1, w & ~7
+    x = x[:h, :w]
+    wb = np.array([486, 256, 371]) / 256
+    lin = x ** G / wb
+    raw = np.zeros((h, w), np.uint16)
+    v = np.round(31 + lin * 992).astype(np.uint16)
+    raw[0::2, 0::2] = v[0::2, 0::2, 0]
+    raw[0::2, 1::2] = v[0::2, 1::2, 1]
+    raw[1::2, 0::2] = v[1::2, 0::2, 1]
+    raw[1::2, 1::2] = v[1::2, 1::2, 2]
+    with tempfile.TemporaryDirectory() as t:
+        a, b = os.path.join(t, "a.bin"), os.path.join(t, "b.bin")
+        raw.tofile(a)
+        subprocess.check_call([tool, a, b, str(h), str(w), str(pct10), str(style)])
+        out = np.fromfile(b, np.uint16).reshape(h, w).astype(np.float64)
+    # Bilinear entwickeln: Canon macht das feiner, fuer Korn und Rahmen reicht es
+    def fill(mask):
+        k = np.array([[.25, .5, .25], [.5, 1, .5], [.25, .5, .25]])
+        pad = np.pad(out * mask, 1, mode="reflect")
+        m = np.pad(mask.astype(np.float64), 1, mode="reflect")
+        def conv(p):
+            r = sum(k[i, j] * p[i:i + h, j:j + w] for i in range(3) for j in range(3))
+            return r
+        return conv(pad) / np.maximum(conv(m), 1e-6)
+    R = np.zeros((h, w), bool); R[0::2, 0::2] = True
+    B = np.zeros((h, w), bool); B[1::2, 1::2] = True
+    GG = ~(R | B)
+    rgb = np.stack([fill(R), fill(GG), fill(B)], 2)
+    rgb = np.clip((rgb - 31) / 992 * wb, 0, 1) ** (1 / G)
+    to_image(rgb).save(dst)
+
+
 if __name__ == "__main__":
-    if sys.argv[1] == "sheet":
+    if sys.argv[1] == "raw":
+        raw_effects(sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), int(sys.argv[6]),
+                    int(sys.argv[7]) if len(sys.argv) > 7 else 2816)
+    elif sys.argv[1] == "sheet":
         sheet(sys.argv[2], sys.argv[3], sys.argv[4:])
     else:
         samples(sys.argv[2], sys.argv[3], sys.argv[4:])

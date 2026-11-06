@@ -1,12 +1,13 @@
 # Looks – overview
 
-As of v1.9.25 (sources: `sims_builtin[]` in `core/filmsim.c`, `CHDK/FILMS/EXAMPLE.TXT`,
+As of v1.10.0 (sources: `sims_builtin[]` in `core/filmsim.c`, `CHDK/FILMS/EXAMPLE.TXT`,
 `RECIPES` in `tools/filmsim/make_curves.py`). Please update this file when they change.
 
 ## 1. Camera settings (FILMS.TXT)
 
-My Colors: 0 = Off, 3 = B/W, 11 = Custom Color. The sliders Con … Skin (−2..+2) only work
-**with mode 11**. Mix: 0 = none, 1 = purple effect (colour swap), 2 = desaturated.
+My Colors: 0 = Off, 3 = B/W, 4 = Sepia, 11 = Custom Color. The sliders Con … Skin (−2..+2) only work
+**with mode 11**. Mix: 0 = none, 1 = purple effect (colour swap), 2 = desaturated, 3 = turquoise effect
+(blue to gold), 4 = infrared effect (green to red), 5 = blue tone (monochrome blue).
 
 | # | Look          | My Colors | Con | Sharp.  | Sat.  | R  | G  | B  | Skin | Curve      | Mix | Label   |
 |---|---------------|-----------|----:|--------:|------:|---:|---:|---:|-----:|------------|----:|---------|
@@ -27,6 +28,16 @@ My Colors: 0 = Off, 3 = B/W, 11 = Custom Color. The sliders Con … Skin (−2..
 |14 | Concrete 100  | Custom    |  0  |  +1     |  −1   | 0  | 0  | 0  |  0   | CONCRET.CV | 2   | CONCRET |
 |15 | Ember 200     | Custom    |  0  |   0     |   0   | 0  | 0  | 0  |  0   | EMBER.CV   | 0   | EMBER   |
 |16 | Grit 400      | B/W       |  –  |   –     |   –   | –  | –  | –  |  –   | GRIT.CV    | 0   | GRIT    |
+|17 | Summer 200    | Custom    |  0  |   0     |  +1   | 0  | 0  | 0  | +1   | SUMMER.CV  | 0   | SUMMER  |
+|18 | Chrome 64     | Custom    |  0  |  +1     |  +1   | +1 | 0  | 0  |  0   | CHROME.CV  | 0   | CHROME  |
+|19 | Bypass 400    | Custom    |  0  |  +1     |  −2   | 0  | 0  | 0  |  0   | BYPASS.CV  | 0   | BYPASS  |
+|20 | Noir 3200     | B/W       |  –  |   –     |   –   | –  | –  | –  |  –   | NOIR.CV    | 0   | NOIR    |
+|21 | Turquoise 400 | Custom    |  0  |   0     |  +1   | 0  | 0  | 0  |  0   | TURQUOI.CV | 3   | TURQUOI |
+|22 | Infra 200     | Custom    |  0  |   0     |  +1   | 0  | 0  | 0  |  0   | INFRA.CV   | 4   | INFRA   |
+|23 | Tintype 50    | Sepia     |  –  |   –     |   –   | –  | –  | –  |  –   | TINTYPE.CV | 0   | TINTYPE |
+|24 | Cyano 25      | Custom    |  0  |   0     |   0   | 0  | 0  | 0  |  0   | CYANO.CV   | 5   | CYANO   |
+|25 | Instant 600   | Custom    | −1  |  −1     |  −1   | 0  | 0  | 0  |  0   | INSTANT.CV | 0   | INSTANT |
+|26 | Pastel 400    | Custom    | −1  |  −1     |  −1   | 0  | 0  | 0  | +1   | PASTEL.CV  | 0   | PASTEL  |
 
 ## 2. Tone curves (make_curves.py)
 
@@ -51,6 +62,16 @@ as (R, G, B), ±0.03 = clearly visible. Point-curve looks are drawn freely per c
 | Concrete     | recipe     |  0.28    | 0.02 | 0.10     | 0 / 0 / +0.004          | +0.004 / +0.002 / 0     | + Mix 2: desaturated, hard |
 | Ember        | points     | medium   | –    | –        | red                     | orange to peach         | red to orange gradient, muted blue |
 | Grit (B/W)   | recipe     |  0.38    | 0.00 | 0.04     | Gain 1.20 / 1.0 / 0.80  |                         | B/W, hard, orange filter |
+| Summer       | points     | soft     | –    | –        | warm                    | golden                  | golden, warm negative |
+| Chrome       | points     | medium   | –    | –        | deep                    | warm                    | dense slide film, strong reds |
+| Bypass       | recipe     |  0.42    | 0.01 | 0.02     | −0.004 / 0 / +0.006     | +0.002 / +0.002 / 0     | silver retained: hard, almost no colour |
+| Noir (B/W)   | recipe     |  0.55    | 0.035| 0.02     | Gain 1.05 / 1.0 / 0.95  |                         | B/W, pushed: very hard, grey blacks |
+| Turquoise    | recipe     |  0.14    | 0.02 | 0.10     | −0.006 / +0.004 / +0.008| +0.006 / +0.002 / −0.004| + Mix 3: golden skies, teal foliage |
+| Infra        | recipe     |  0.16    | 0.01 | 0.08     | +0.004 / −0.004 / +0.006| +0.004 / 0 / 0          | + Mix 4: red foliage, deep blue skies |
+| Tintype      | recipe     |  0.42    | 0.00 | 0.04     | –                       | –                       | hard, with Canon's sepia mode |
+| Cyano        | recipe     |  0.30    | 0.02 | 0.06     | –                       | –                       | + Mix 5: monochrome blue print |
+| Instant      | recipe     |  0.12    | 0.07 | 0.22     | −0.008 / +0.004 / +0.016| +0.012 / +0.008 / −0.014| faded blacks, creamy highlights |
+| Pastel       | points     | flat     | –    | –        | lifted                  | soft                    | airy, slightly overexposed |
 
 Daylight 100 and Off have no film curve (only the Dynamic+ curves, if switched on).
 

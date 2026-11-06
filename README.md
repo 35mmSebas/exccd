@@ -62,12 +62,18 @@ card the camera is unchanged.
 | Button | In shooting mode |
 |---|---|
 | **Print** | Open the film selection with the active look, press again to close without changes |
-| Left/right, up/down | Flip through the looks |
+| Left/right | Flip through the looks |
+| Up/down | Jump five looks |
 | **FUNC/SET** | Apply the look and close |
 | **MENU** | Options (raw, Dynamic+, system) |
 
 The name of the active look is shown at the bottom of the screen. For every photo,
 `A/CHDK/FILMLOG.CSV` records which look was active.
+
+**Film roll** (Options): load 12, 24 or 36 exposures. The status line counts them and the
+look stays locked until the roll is full, as with a real film. To get out early, set
+Film roll to Off. **Surprise film**: every full roll (without a roll: every photo) puts a
+random look in the camera.
 
 ## Building
 

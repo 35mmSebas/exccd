@@ -332,6 +332,97 @@ static void test_hotpix_ref(void)
     CHECK(total > 400, "hotpix Referenz: nur %d Ersetzungen, Test zu schwach", total);
 }
 
+// --- Filmkorn --------------------------------------------------------------
+#define get_px_rows get_px
+#define set_px_rows set_px
+#define GROWS 256
+static unsigned char gbuf[GROWS * ROWLEN] __attribute__((aligned(4)));
+
+static void test_grain(void)
+{
+    static short amp[GRAIN_AMP_N], up[ROWPIX];
+    const int ir = 65536 / 486, ib = 65536 / 371;
+    int x, y, level;
+    grain_amp_build(amp, 20);                // 2 %
+    CHECK(amp[0] == 0 && amp[31] == 0 && amp[1023] == 0, "Korn in Schwarz/Weiss: %d %d %d", amp[0], amp[31], amp[1023]);
+    // Flaechen verschiedener Helligkeit: Mittelwert bleibt, Korn ist einfarbig und passt zur Staerke
+    static const int levels[] = { 60, 150, 300, 500, 800 };
+    double sd_mid = 0;
+    for (level = 0; level < 5; level++) {
+        int gv = levels[level], rv = 31 + (gv - 31) * 256 / 486, bv = 31 + (gv - 31) * 256 / 371;
+        for (y = 0; y < GROWS; y++)
+            for (x = 0; x < ROWPIX; x++)
+                set_px_rows(gbuf, x, y, (unsigned short)(((y & 1) ? ((x & 1) ? bv : gv) : ((x & 1) ? gv : rv)) << (BPP - 10)));
+        grain_apply(gbuf, GROWS, ROWPIX, ROWLEN, 0, ir, ib, amp, up, 4711);
+        double sum = 0, sq = 0, cross = 0;
+        int n = 0;
+        for (y = 0; y + 1 < GROWS; y += 2)
+            for (x = 0; x + 1 < ROWPIX; x += 2) {
+                int g1 = (int)(get_px_rows(gbuf, x + 1, y) >> (BPP - 10)) - gv;
+                int g2 = (int)(get_px_rows(gbuf, x, y + 1) >> (BPP - 10)) - gv;
+                int r = (int)(get_px_rows(gbuf, x, y) >> (BPP - 10)) - rv;
+                CHECK(g1 == g2, "Korn: beide Gruenpixel gleich, %d != %d", g1, g2);
+                // Rot folgt Gruen (gleiche Richtung, nach Weissabgleich gleich gross)
+                CHECK(g1 * r >= 0 || abs(g1) <= 2, "Korn: Rot gegenlaeufig %d %d", g1, r);
+                sum += g1; sq += g1 * g1; n++;
+                if (x + 3 < ROWPIX)
+                    cross += g1 * ((int)(get_px_rows(gbuf, x + 3, y) >> (BPP - 10)) - gv);
+            }
+        double mean = sum / n, sd = sq / n;
+        { double t = sd; double r = t > 0 ? t : 1; int i; for (i = 0; i < 30; i++) r = 0.5 * (r + t / r); sd = r; }
+        double corr = cross / n / (sd * sd + 1e-9);
+        printf("  Korn: G=%d Mittel %+.2f, Streuung %.1f, Nachbar-Korrelation %.2f\n", gv, mean, sd, corr);
+        CHECK(mean > -1.0 && mean < 1.0, "Korn: Mittelwert verschoben %.2f bei %d", mean, gv);
+        CHECK(sd > 0.5, "Korn: zu schwach %.2f bei %d", sd, gv);
+        CHECK(corr > 0.25, "Korn: keine Klumpen, Korrelation %.2f", corr);
+        if (gv == 300) sd_mid = sd;
+    }
+    // Soll bei G=300 (Anzeige .55): 2 % sind etwa 0,02 * knots/.01/16 Rohwerte
+    int k = grain_knots[300 >> 5];
+    double soll = k / 16.0 * 2.0;
+    CHECK(sd_mid > soll * 0.6 && sd_mid < soll * 1.4, "Korn: Staerke %.1f statt etwa %.1f", sd_mid, soll);
+
+    // Defekt-Markierungen bleiben, nichts wird neu 0, gleicher Startwert = gleiches Bild
+    for (y = 0; y < GROWS; y++)
+        for (x = 0; x < ROWPIX; x++) set_px_rows(gbuf, x, y, (unsigned short)(40 << (BPP - 10)));
+    set_px_rows(gbuf, 6, 8, 0);
+    grain_apply(gbuf, GROWS, ROWPIX, ROWLEN, 0, ir, ib, amp, up, 7);
+    for (y = 0; y < GROWS; y++)
+        for (x = 0; x < ROWPIX; x++) {
+            unsigned v = get_px_rows(gbuf, x, y);
+            if (x == 6 && y == 8) CHECK(v == 0, "Korn: Defekt-Markierung weg");
+            else CHECK(v != 0, "Korn: neue 0 bei x%d y%d", x, y);
+        }
+}
+
+// --- Filmrahmen ------------------------------------------------------------
+static void test_frame(void)
+{
+    static const short black[4] = { 31, 31, 31, 31 }, hole[4] = { 300, 500, 500, 350 }, ink[4] = { 400, 200, 200, 40 };
+    int x, y, st;
+    for (st = FRAME_THIN; st <= FRAME_FILM; st++) {
+        // Ausschnitt mit Abstand zum Rand: darf nichts ausserhalb anfassen
+        int jx = 8, jy = 4, jw = 48, jh = GROWS - 8;
+        int bv = frame_border_v(st, jh), bh = frame_border_h(jh);
+        for (y = 0; y < GROWS; y++)
+            for (x = 0; x < ROWPIX; x++) set_px_rows(gbuf, x, y, (unsigned short)(600 << (BPP - 10)));
+        set_px_rows(gbuf, jx + 2, jy + 1, 0);
+        frame_draw(gbuf, ROWLEN, 0, jx, jy, jw, jh, st, black, hole, ink, "A1", "12A");
+        for (y = 0; y < GROWS; y++)
+            for (x = 0; x < ROWPIX; x++) {
+                int v = (int)(get_px_rows(gbuf, x, y) >> (BPP - 10));
+                int in_img = x >= jx && x < jx + jw && y >= jy && y < jy + jh;
+                int in_pic = x >= jx + bh && x < jx + jw - bh && y >= jy + bv && y < jy + jh - bv;
+                if (!in_img || in_pic) CHECK(v == 600, "Rahmen %d: x%d y%d veraendert (%d)", st, x, y, v);
+                else if (x == jx + 2 && y == jy + 1) CHECK(v == 0, "Rahmen: Defekt-Markierung weg");
+                else CHECK(v != 600, "Rahmen %d: x%d y%d nicht gefuellt", st, x, y);
+            }
+    }
+    // Schrift: jedes Zeichen hat Tinte, unbekannte Zeichen ruecken nur weiter
+    CHECK(frame_glyph('a') == frame_glyph('A') && frame_glyph('9') == 35 && frame_glyph('#') == -1, "frame_glyph");
+    CHECK(sizeof frame_font / sizeof frame_font[0] == 38, "Schrifttabelle");
+}
+
 int main(void)
 {
     unsigned i;
@@ -345,6 +436,8 @@ int main(void)
     test_hotpix();
     test_hotpix_ref();
     test_mix();
+    test_grain();
+    test_frame();
 #if BPP == 12
     test_curves();
 #endif

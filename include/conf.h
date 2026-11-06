@@ -468,7 +468,7 @@ typedef struct
     int check_firmware_crc;
 
     int film_sim;               // Filmsimulation (Index in core/filmsim.c)
-    int film_grain;             // Koernung: 0 aus, 1 an (ISO 800)
+    int film_grain;             // Filmkorn: 0 aus, 1 auto (nach Filmempfindlichkeit), 2 fein, 3 mittel, 4 grob
     int film_iso_prev;          // ISO-Einstellung vor der Koernung, -1 = keine
     int film_double;            // Doppelbelichtung: 0 aus, 1 Bild 1 erwartet, 2 Bild 2 erwartet
     int film_bwfilter;          // Farbfilter fuer S/W: 0 aus, 1 gelb, 2 orange, 3 rot
@@ -481,6 +481,11 @@ typedef struct
     int film_cnr;               // Farbrauschen-Filter: 0 aus, 1 normal, 2 stark  // Check firmware CRC on startup. 0 = no. 1 = Check and set to 0. 2 = always
     int exccd_ui;               // Stufe der uebernommenen EXCCD-Optik (2 = v1.9.20), kleiner -> einmalige Umstellung beim Start
     int film_zoom;              // Zoom: 0 frei, 1 Stufen, 2+k fest auf Stufe k (core/filmsim_zoom.c)
+    int film_frame;             // Filmrahmen: 0 aus, 1 schmal, 2 Negativ mit Perforation
+    int film_roll;              // Filmrolle: 0 aus, 1 = 12, 2 = 24, 3 = 36 Aufnahmen
+    int film_roll_used;         // davon belichtet
+    int film_surprise;          // Ueberraschungsfilm: 0/1
+    char film_name[24];         // Name des gewaehlten Looks, "" = Aus. Geht vor film_sim
 
 } Conf;
 

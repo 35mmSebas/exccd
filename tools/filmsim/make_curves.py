@@ -190,6 +190,17 @@ def channel_curve(ch, r, G=1):
             out[i] = out[i - 1]
     return out
 
+def grain_knots():
+    """Tabelle grain_knots in core/filmsim_raw.h: Rohwerte * 16, die im fertigen Bild
+    (Gamma) 1 % Korn ergeben, alle 32 Rohwerte. Am staerksten in den Mitten."""
+    out = []
+    for i in range(33):
+        lin = min(max(i * 32 - BLACK, 0) / (WHITE - BLACK), 1)
+        t = lin ** (1 / GAMMA)
+        w = 1.6 * t ** .5 * (1 - t ** 3)
+        out.append(round((WHITE - BLACK) * GAMMA * t ** 1.2 * w * 0.01 * 16))
+    return out
+
 def test_curves():
     # Diagnose-Kurve: Rot stark angehoben, Blau abgesenkt -> unuebersehbarer Rotstich
     def mk(f):

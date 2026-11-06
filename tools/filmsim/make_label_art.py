@@ -428,9 +428,9 @@ LOOKS = [
     ("BYPASS",  "BYPASS",    "400", "CINEMA",        "SILVER RETAINED",    icon_half,      GREY),
     ("NOIR",    "NOIR",      "3200", "BLACK & WHITE", "HARD PUSHED",       icon_blinds,    WHITE),
     ("TURQUOI", "TURQUOISE", "400", "COLOR NEG",     "GOLDEN SKIES",       icon_waves,     0xCD),
-    ("INFRA",   "INFRA",     "200", "FALSE COLOR",   "RED FOLIAGE",        icon_leaf,      0x2E),
-    ("TINTYPE", "TINTYPE",   "50",  "WET PLATE",     "WARM METAL",         icon_plate,     0x6F),
-    ("CYANO",   "CYANO",     "25",  "CYANOTYPE" ,    "SUN PRINT",          icon_fern,      0xDF),
+    ("INFRA",   "INFRA",     "200", "COLOR NEG",     "RED FOLIAGE",        icon_leaf,      0x2E),
+    ("TINTYPE", "TINTYPE",   "50",  "ALT PROCESS",   "WARM METAL",         icon_plate,     0x6F),
+    ("CYANO",   "CYANO",     "25",  "ALT PROCESS",   "SUN PRINT",          icon_fern,      0xDF),
     ("INSTANT", "INSTANT",   "600", "INSTANT",       "CREAMY FADE",        icon_instant,   0xEC),
     ("PASTEL",  "PASTEL",    "400", "COLOR NEG",     "AIRY SOFT",          icon_cloud,     0x3C),
 ]

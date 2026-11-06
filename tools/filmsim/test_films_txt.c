@@ -31,6 +31,16 @@ static const filmsim_t expected[] = {
     { "Concrete 100",    MC_CUSTOM,   0,  1, -1,  0,  0,  0,  0,  "CONCRET.CV",   "CONCRET",  2 },
     { "Ember 200",       MC_CUSTOM,   0,  0,  0,  0,  0,  0,  0,  "EMBER.CV",     "EMBER",    0 },
     { "Grit 400",        MC_BW,       0,  0,  0,  0,  0,  0,  0,  "GRIT.CV",      "GRIT",     0 },
+    { "Summer 200",      MC_CUSTOM,   0,  0,  1,  0,  0,  0,  1,  "SUMMER.CV",    "SUMMER",   0 },
+    { "Chrome 64",       MC_CUSTOM,   0,  1,  1,  1,  0,  0,  0,  "CHROME.CV",    "CHROME",   0 },
+    { "Bypass 400",      MC_CUSTOM,   0,  1, -2,  0,  0,  0,  0,  "BYPASS.CV",    "BYPASS",   0 },
+    { "Noir 3200",       MC_BW,       0,  0,  0,  0,  0,  0,  0,  "NOIR.CV",      "NOIR",     0 },
+    { "Turquoise 400",   MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "TURQUOI.CV",   "TURQUOI",  3 },
+    { "Infra 200",       MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "INFRA.CV",     "INFRA",    4 },
+    { "Tintype 50",      MC_SEPIA,    0,  0,  0,  0,  0,  0,  0,  "TINTYPE.CV",   "TINTYPE",  0 },
+    { "Cyano 25",        MC_CUSTOM,   0,  0,  0,  0,  0,  0,  0,  "CYANO.CV",     "CYANO",    5 },
+    { "Instant 600",     MC_CUSTOM,  -1, -1, -1,  0,  0,  0,  0,  "INSTANT.CV",   "INSTANT",  0 },
+    { "Pastel 400",      MC_CUSTOM,  -1, -1, -1,  0,  0,  0,  1,  "PASTEL.CV",    "PASTEL",   0 },
 };
 #define NUM_EXPECTED ((int)(sizeof(expected)/sizeof(expected[0])))
 
