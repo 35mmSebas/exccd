@@ -963,18 +963,22 @@ static const short mix_bw[4][3][3] = {
 // wie die Division (gleiche Formel), das Ergebnis ist bitgleich.
 #define WBDIV_MIN  (-1024)
 #define WBDIV_MAX  4095
-static short wbdiv_r[WBDIV_MAX - WBDIV_MIN + 1];
-static short wbdiv_b[WBDIV_MAX - WBDIV_MIN + 1];
-static int wbdiv_ready = 0;
-static void wbdiv_init(void)
+// 20 KB: erst anlegen, wenn der Farbrauschfilter sie braucht, und dann behalten.
+// Fest im Kern wuerden sie gegen das Groessenlimit der Kamera zaehlen.
+static short *wbdiv_r = 0, *wbdiv_b = 0;
+static int wbdiv_init(void)
 {
-    int n;
-    if (wbdiv_ready) return;
+    int n, size = (WBDIV_MAX - WBDIV_MIN + 1) * sizeof(short);
+    if (wbdiv_r) return 1;
+    short *t = malloc(2 * size);
+    if (!t) return 0;
+    wbdiv_b = t + (WBDIV_MAX - WBDIV_MIN + 1);
     for (n = WBDIV_MIN; n <= WBDIV_MAX; n++) {
-        wbdiv_r[n - WBDIV_MIN] = (short)((n << 8) / WB_R);
+        t[n - WBDIV_MIN] = (short)((n << 8) / WB_R);
         wbdiv_b[n - WBDIV_MIN] = (short)((n << 8) / WB_B);
     }
-    wbdiv_ready = 1;
+    wbdiv_r = t;
+    return 1;
 }
 static inline __attribute__((always_inline)) int div_wb_r(int n)
 {
@@ -1733,6 +1737,7 @@ static void filmsim_cnr_apply(char *raw)
     int nb = (camera_sensor.raw_rowpix / 8) * 4;     // Bloecke pro Zeile
     int nbr = (camera_sensor.raw_rows - FS_ROW0) / 2; // Blockzeilen
     int rowlen = camera_sensor.raw_rowlen;
+    if (!wbdiv_init()) return;
     short *ring_r = malloc(RB * nb * sizeof(short));
     short *ring_b = malloc(RB * nb * sizeof(short));
     short *ring_l = malloc(RB * nb * sizeof(short));
@@ -1743,7 +1748,6 @@ static void filmsim_cnr_apply(char *raw)
     const int dmax = (R == 2) ? 170 : 250;           // ab dieser Farbabweichung: Kante, nicht Rauschen
     const int invd = 65536 / dmax;
     if (!cnr_recip[12]) { int t; for (t = 1; t < 512; t++) cnr_recip[t] = 65536 / t; }
-    wbdiv_init();
     int inv = 65536 / (RB * RB);
     int computed = 0, j, i, d;
 
