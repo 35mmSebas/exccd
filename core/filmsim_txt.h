@@ -21,10 +21,10 @@ typedef struct {
     signed char contrast, sharpness, saturation, red, green, blue, skin;
     const char *curve;      // Kurvendatei ohne Pfad, 0 = keine
     const char *label;      // Lasche A/CHDK/FILMS/<label>.FLM, 0 = Textkarte
-    int mix;                // RAW-Kanalmischung: 0 = keine, 1 = Violet, 2 = Concrete
+    int mix;                // RAW-Kanalmischung: 0 = keine, 1 Violet, 2 Concrete, 3 Turquoise, 4 Infra, 5 Cyano
 } filmsim_t;
 
-#define FILMS_TXT_MAX       24      // Looks aus der Datei (ohne "Aus")
+#define FILMS_TXT_MAX       32      // Looks aus der Datei (ohne "Aus")
 #define FILMS_TXT_NAME_MAX  20      // passt in Statuszeile und Filmauswahl
 #define FILMS_TXT_FILE_MAX  16384   // groessere Dateien werden ignoriert
 

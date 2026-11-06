@@ -108,7 +108,7 @@ static void test_errors(void)
         "Kurve lang | 11 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | ABCDEFGH.CV | - | 0\r\n"
         "Kurve Endung | 11 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | ABC.TXT | - | 0\r\n"
         "Lasche lang | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | - | ABCDEFGHI | 0\r\n"
-        "Mix | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | - | - | 3\r\n"
+        "Mix | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | - | - | 6\r\n"
         " | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | - | - | 0\r\n"
         "Ein sehr langer Lookname ueber 20 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | - | - | 0\r\n"  // 4
         "Letzte Zeile ohne Umbruch | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | - | - |";           // 5, Mix leer
@@ -134,7 +134,7 @@ static void test_limits(void)
 {
     filmsim_t sims[FILMS_TXT_MAX];
     films_txt_str_t str[FILMS_TXT_MAX];
-    char log[1024], text[4096] = "";
+    char log[1024], text[8192] = "";
     for (int i = 0; i < FILMS_TXT_MAX + 3; i++)
         sprintf(text + strlen(text), "Look %d | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | - | - | 0\n", i);
     int n = parse_str(text, sims, str, FILMS_TXT_MAX, log);

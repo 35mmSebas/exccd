@@ -85,6 +85,31 @@ RECIPES = {
         R=((.08, .04),  (.25, .17),  (.5, .49),  (.75, .82),  (.92, .95)),
         G=((.08, .06),  (.25, .21),  (.5, .53),  (.75, .84),  (.92, .96)),
         B=((.08, .12),  (.25, .27),  (.5, .45),  (.75, .66),  (.92, .82)))),
+    # v1.10: dritte Runde Looks
+    "SUMMER":  dict(points=dict(             # Summer: golden, warme Lichter, weich gehobene Mitten
+        R=((.08, .09),  (.25, .275), (.5, .545), (.75, .79),  (.92, .935)),
+        G=((.08, .08),  (.25, .245), (.5, .51),  (.75, .757), (.92, .92)),
+        B=((.08, .068), (.25, .20),  (.5, .435), (.75, .685), (.92, .865)))),
+    "CHROME":  dict(points=dict(             # Chrome: tiefe Schatten, kraeftige Rottoene, dichte Mitten
+        R=((.08, .058), (.25, .215), (.5, .52),  (.75, .80),  (.92, .94)),
+        G=((.08, .05),  (.25, .198), (.5, .49),  (.75, .775), (.92, .925)),
+        B=((.08, .058), (.25, .205), (.5, .475), (.75, .75),  (.92, .905)))),
+    "BYPASS":  dict(contrast=0.42, lift=0.01, shoulder=0.02,
+                    shadow=(-0.004, 0.00, 0.006), highlight=(0.002, 0.002, 0.00)),
+    "NOIR":    dict(contrast=0.55, lift=0.035, shoulder=0.02,
+                    gain=(1.05, 1.0, 0.95)),   # gepusht: harte Mitten, grauer Schwarzpunkt
+    "TURQUOI": dict(contrast=0.14, lift=0.02, shoulder=0.10,
+                    shadow=(-0.006, 0.004, 0.008), highlight=(0.006, 0.002, -0.004)),
+    "INFRA":   dict(contrast=0.16, lift=0.01, shoulder=0.08,
+                    shadow=(0.004, -0.004, 0.006), highlight=(0.004, 0.00, 0.00)),
+    "TINTYPE": dict(contrast=0.42, lift=0.00, shoulder=0.04),   # Sepia macht Canon (Modus 4)
+    "CYANO":   dict(contrast=0.30, lift=0.02, shoulder=0.06),   # Blauton macht Mix 5
+    "INSTANT": dict(contrast=0.12, lift=0.07, shoulder=0.22,
+                    shadow=(-0.008, 0.004, 0.016), highlight=(0.012, 0.008, -0.014)),
+    "PASTEL":  dict(points=dict(             # Pastel: reichlich belichtet, flach, luftig, leicht minzig
+        R=((.08, .12),  (.25, .31),  (.5, .57),  (.75, .795), (.92, .925)),
+        G=((.08, .125), (.25, .32),  (.5, .585), (.75, .805), (.92, .93)),
+        B=((.08, .135), (.25, .325), (.5, .58),  (.75, .795), (.92, .92)))),
 }
 
 def pchip(pts):

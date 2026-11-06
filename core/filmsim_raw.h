@@ -7,28 +7,34 @@
 //
 // dec8/enc8: 8 Pixel einer Zeile <-> int[8] auf der 10-Bit-Skala.
 
+// Beide lesen und schreiben halbwortweise (16 Bit, Little Endian) statt byteweise:
+// halb so viele Speicherzugriffe, das Ergebnis ist bitgleich (test_raw.c prueft es
+// gegen get_raw_pixel/set_raw_pixel). Voraussetzung: gerade Adressen, also ein
+// gerades raw_rowlen. Das gilt fuer alle Kameras von EXCCD (filmsim.c prueft es
+// beim Bauen, sonst gaebe es auf dem ARM falsche Werte statt eines Fehlers).
 #if CAM_SENSOR_BITS_PER_PIXEL == 12
 // 4 Pixel in 6 Byte (Anordnung wie get_raw_pixel/set_raw_pixel in raw.c)
 static inline __attribute__((always_inline)) void dec4_12(const unsigned char *a, int *v)
 {
-    v[0] = ((a[1] << 4) | (a[0] >> 4)) >> 2;
-    v[1] = (((a[0] & 0x0f) << 8) | a[3]) >> 2;
-    v[2] = ((a[2] << 4) | (a[5] >> 4)) >> 2;
-    v[3] = (((a[5] & 0x0f) << 8) | a[4]) >> 2;
+    const unsigned short *h = (const unsigned short *)a;
+    unsigned h0 = h[0], h1 = h[1], h2 = h[2];
+    v[0] = h0 >> 6;
+    v[1] = (((h0 & 0x0f) << 8) | (h1 >> 8)) >> 2;
+    v[2] = (((h1 & 0xff) << 4) | (h2 >> 12)) >> 2;
+    v[3] = (h2 & 0xfff) >> 2;
 }
 static inline __attribute__((always_inline)) void enc4_12(unsigned char *a, const int *v)
 {
     // untere zwei Bit aus dem Original uebernehmen (0 bleibt 0: Defekt-Markierung)
-    int w0 = v[0] ? (v[0] << 2) | ((a[0] >> 4) & 3) : 0;
-    int w1 = v[1] ? (v[1] << 2) | (a[3] & 3) : 0;
-    int w2 = v[2] ? (v[2] << 2) | ((a[5] >> 4) & 3) : 0;
-    int w3 = v[3] ? (v[3] << 2) | (a[4] & 3) : 0;
-    a[1] = w0 >> 4;
-    a[0] = (w0 << 4) | ((w1 >> 8) & 0x0f);
-    a[3] = w1;
-    a[2] = w2 >> 4;
-    a[5] = (w2 << 4) | ((w3 >> 8) & 0x0f);
-    a[4] = w3;
+    unsigned short *h = (unsigned short *)a;
+    unsigned h0 = h[0], h1 = h[1], h2 = h[2];
+    unsigned w0 = v[0] ? (v[0] << 2) | ((h0 >> 4) & 3) : 0;
+    unsigned w1 = v[1] ? (v[1] << 2) | ((h1 >> 8) & 3) : 0;
+    unsigned w2 = v[2] ? (v[2] << 2) | ((h2 >> 12) & 3) : 0;
+    unsigned w3 = v[3] ? (v[3] << 2) | (h2 & 3) : 0;
+    h[0] = (unsigned short)((w0 << 4) | (w1 >> 8));
+    h[1] = (unsigned short)((w1 << 8) | (w2 >> 4));
+    h[2] = (unsigned short)((w2 << 12) | w3);
 }
 static inline __attribute__((always_inline)) void dec8(const unsigned char *a, int *v)
 {
@@ -41,27 +47,25 @@ static inline __attribute__((always_inline)) void enc8(unsigned char *a, const i
 #else
 static inline __attribute__((always_inline)) void dec8(const unsigned char *a, int *v)
 {
-    v[0] = (a[1] << 2) | (a[0] >> 6);
-    v[1] = ((a[0] & 0x3f) << 4) | (a[3] >> 4);
-    v[2] = ((a[3] & 0x0f) << 6) | (a[2] >> 2);
-    v[3] = ((a[2] & 0x03) << 8) | a[5];
-    v[4] = (a[4] << 2) | (a[7] >> 6);
-    v[5] = ((a[7] & 0x3f) << 4) | (a[6] >> 4);
-    v[6] = ((a[6] & 0x0f) << 6) | (a[9] >> 2);
-    v[7] = ((a[9] & 0x03) << 8) | a[8];
+    const unsigned short *h = (const unsigned short *)a;
+    unsigned h0 = h[0], h1 = h[1], h2 = h[2], h3 = h[3], h4 = h[4];
+    v[0] = h0 >> 6;
+    v[1] = ((h0 & 0x3f) << 4) | (h1 >> 12);
+    v[2] = (h1 >> 2) & 0x3ff;
+    v[3] = ((h1 & 3) << 8) | (h2 >> 8);
+    v[4] = ((h2 & 0xff) << 2) | (h3 >> 14);
+    v[5] = (h3 >> 4) & 0x3ff;
+    v[6] = ((h3 & 0x0f) << 6) | (h4 >> 10);
+    v[7] = h4 & 0x3ff;
 }
 static inline __attribute__((always_inline)) void enc8(unsigned char *a, const int *v)
 {
-    a[1] = v[0] >> 2;
-    a[0] = (v[0] << 6) | (v[1] >> 4);
-    a[3] = (v[1] << 4) | (v[2] >> 6);
-    a[2] = (v[2] << 2) | (v[3] >> 8);
-    a[5] = v[3];
-    a[4] = v[4] >> 2;
-    a[7] = (v[4] << 6) | (v[5] >> 4);
-    a[6] = (v[5] << 4) | (v[6] >> 6);
-    a[9] = (v[6] << 2) | (v[7] >> 8);
-    a[8] = v[7];
+    unsigned short *h = (unsigned short *)a;
+    h[0] = (unsigned short)((v[0] << 6) | (v[1] >> 4));
+    h[1] = (unsigned short)((v[1] << 12) | (v[2] << 2) | (v[3] >> 8));
+    h[2] = (unsigned short)((v[3] << 8) | (v[4] >> 2));
+    h[3] = (unsigned short)((v[4] << 14) | (v[5] << 4) | (v[6] >> 6));
+    h[4] = (unsigned short)((v[6] << 10) | v[7]);
 }
 #endif
 static inline __attribute__((always_inline)) int clip10(int x) { return x < 0 ? 0 : (x > 1023 ? 1023 : x); }
@@ -79,6 +83,25 @@ static const short mix_concrete[3][3] = {
     { 192,  51,  13 },
     {  64, 154,  38 },
     {  51, 102, 103 },
+};
+// Turquoise: Himmel -> Gold/Pfirsich, Gruen -> Tuerkis, Haut -> kuehl
+static const short mix_turquoise[3][3] = {
+    {  38,  38, 180 },
+    {  51, 154,  51 },
+    { 141,  90,  25 },
+};
+// Infra: wie Falschfarben-Infrarotfilm: Gruen -> Rot, Rot -> Gelb, Himmel tiefblau
+static const short mix_infra[3][3] = {
+    { 108, 136,  12 },
+    { 154,  64,  38 },
+    {  13,  38, 205 },
+};
+// Cyano: einfarbig Blau wie eine Cyanotypie. Die Zeilensummen sind hier bewusst
+// nicht 256: Grau wird blau, das ist der Look.
+static const short mix_cyano[3][3] = {
+    {  46,  90,  16 },
+    {  69, 134,  23 },
+    {  84, 166,  28 },
 };
 
 // Kehrwert des Weissabgleichs fuer mix_block: Rohwert = (n * inv + 32768) >> 16

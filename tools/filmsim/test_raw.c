@@ -23,7 +23,7 @@
 #define ROWLEN  (ROWPIX * BPP / 8)
 #define ROWS    4
 
-static unsigned char buf[ROWS * ROWLEN], orig[ROWS * ROWLEN];
+static unsigned char buf[ROWS * ROWLEN] __attribute__((aligned(4))), orig[ROWS * ROWLEN] __attribute__((aligned(4)));
 static int err = 0;
 
 #define CHECK(c, ...) do { if (!(c)) { if (++err <= 10) { printf(__VA_ARGS__); printf("\n"); } } } while (0)
@@ -82,7 +82,7 @@ static void set_px(unsigned char *raw, unsigned x, unsigned y, unsigned short va
 
 static void test_codec(void)
 {
-    unsigned char ref[sizeof buf];
+    static unsigned char ref[sizeof buf] __attribute__((aligned(4)));
     int x, y, k;
 
     // dec8 = get_raw_pixel, enc8 unveraendert = keine Aenderung
@@ -219,7 +219,7 @@ static void test_mix(void)
 
 // --- heisse Pixel ------------------------------------------------------------
 #define HROWS 16
-static unsigned char hbuf[HROWS * ROWLEN];
+static unsigned char hbuf[HROWS * ROWLEN] __attribute__((aligned(4)));
 static int hin[HROWS][ROWPIX];
 static short hring[HP_BUF_SHORTS(ROWPIX)];
 

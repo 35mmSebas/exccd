@@ -83,6 +83,11 @@
 #endif
 #endif
 
+// dec8/enc8 lesen halbwortweise, das braucht gerade Zeilenlaengen
+#if defined(FS_RAW) && ((CAM_RAW_ROWPIX * CAM_SENSOR_BITS_PER_PIXEL / 8) & 1)
+#error "Filmsim: ungerade Zeilenlaenge im Rohbild (filmsim_raw.h)"
+#endif
+
 #ifndef PROPCASE_MY_COLORS
     #error "Filmsimulation braucht PROPCASE_MY_COLORS (propset)"
 #endif
@@ -107,6 +112,16 @@ static const filmsim_t sims_builtin[] = {
     { "Concrete 100",    MC_CUSTOM,   0,  1, -1,  0,  0,  0,  0,  "CONCRET.CV",   "CONCRET",  2 },
     { "Ember 200",       MC_CUSTOM,   0,  0,  0,  0,  0,  0,  0,  "EMBER.CV",     "EMBER",    0 },
     { "Grit 400",        MC_BW,       0,  0,  0,  0,  0,  0,  0,  "GRIT.CV",      "GRIT",     0 },
+    { "Summer 200",      MC_CUSTOM,   0,  0,  1,  0,  0,  0,  1,  "SUMMER.CV",    "SUMMER",   0 },
+    { "Chrome 64",       MC_CUSTOM,   0,  1,  1,  1,  0,  0,  0,  "CHROME.CV",    "CHROME",   0 },
+    { "Bypass 400",      MC_CUSTOM,   0,  1, -2,  0,  0,  0,  0,  "BYPASS.CV",    "BYPASS",   0 },
+    { "Noir 3200",       MC_BW,       0,  0,  0,  0,  0,  0,  0,  "NOIR.CV",      "NOIR",     0 },
+    { "Turquoise 400",   MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "TURQUOI.CV",   "TURQUOI",  3 },
+    { "Infra 200",       MC_CUSTOM,   0,  0,  1,  0,  0,  0,  0,  "INFRA.CV",     "INFRA",    4 },
+    { "Tintype 50",      MC_SEPIA,    0,  0,  0,  0,  0,  0,  0,  "TINTYPE.CV",   "TINTYPE",  0 },
+    { "Cyano 25",        MC_CUSTOM,   0,  0,  0,  0,  0,  0,  0,  "CYANO.CV",     "CYANO",    5 },
+    { "Instant 600",     MC_CUSTOM,  -1, -1, -1,  0,  0,  0,  0,  "INSTANT.CV",   "INSTANT",  0 },
+    { "Pastel 400",      MC_CUSTOM,  -1, -1, -1,  0,  0,  0,  1,  "PASTEL.CV",    "PASTEL",   0 },
 };
 #define NUM_BUILTIN ((int)(sizeof(sims_builtin)/sizeof(sims_builtin[0])))
 
@@ -842,6 +857,9 @@ __attribute__((optimize("O2"))) void filmsim_raw_apply(char *raw)
     const short (*m)[3];
     if (s->mix == 1)      m = mix_violet;
     else if (s->mix == 2) m = mix_concrete;
+    else if (s->mix == 3) m = mix_turquoise;
+    else if (s->mix == 4) m = mix_infra;
+    else if (s->mix == 5) m = mix_cyano;
     else if (s->mycolors == MC_BW && conf.film_bwfilter > 0 && conf.film_bwfilter < 4)
                           m = mix_bw[conf.film_bwfilter];
     else return;

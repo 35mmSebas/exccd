@@ -12,7 +12,7 @@
  *   Kurve   Datei in A/CHDK/CURVES, Name max. 7 Zeichen, .CV wird ergaenzt;
  *           - = keine
  *   Lasche  Datei A/CHDK/FILMS/<Lasche>.FLM, max. 8 Zeichen; - = Textkarte
- *   Mix     RAW-Kanalmischung 0..2 (optional, Standard 0)
+ *   Mix     RAW-Kanalmischung 0..5 (optional, Standard 0)
  *
  * Fehlerhafte Zeilen werden uebersprungen und in log vermerkt.
  * Keine Bibliotheksfunktionen -> auch am PC testbar.
@@ -183,8 +183,8 @@ int films_txt_parse(char *buf, int len, filmsim_t *sims, films_txt_str_t *str, i
 
         // Mix
         v[11] = 0;
-        if (ncol > 11 && *col[11] && !parse_int(col[11], 0, 2, &v[11])) {
-            log_add(&lp, lend, line, "Mix must be 0..2");
+        if (ncol > 11 && *col[11] && !parse_int(col[11], 0, 5, &v[11])) {
+            log_add(&lp, lend, line, "Mix must be 0..5");
             continue;
         }
 

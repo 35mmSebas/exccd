@@ -289,6 +289,119 @@ def icon_canister(d, cx, cy, r, c):
         x = x0 + w + 0.2 * r + k * 0.3 * r
         d.rectangle([x, y0 + 0.42 * r, x + 0.12 * r, y0 + 0.56 * r], fill=c)
 
+def icon_wave_sun(d, cx, cy, r, c):
+    # Sonne ueber dem Meer: Halbkreis mit Strahlen, darunter zwei Wellen
+    R = 0.46 * r
+    hy = cy + 0.15 * r
+    d.arc([cx - R, hy - R, cx + R, hy + R], 180, 360, fill=c, width=STROKE)
+    d.line([(cx - 1.02 * r, hy), (cx + 1.02 * r, hy)], fill=c, width=STROKE)
+    for k in range(1, 6):
+        a = math.pi + k * math.pi / 6
+        d.line([(cx + 0.62 * r * math.cos(a), hy + 0.62 * r * math.sin(a)),
+                (cx + 0.92 * r * math.cos(a), hy + 0.92 * r * math.sin(a))], fill=c, width=STROKE)
+    for y, n in ((hy + 0.3 * r, 3), (hy + 0.58 * r, 2)):
+        w = 0.56 * r
+        x0 = cx - n * w / 2
+        for i in range(n):
+            d.arc([x0 + i * w, y - 0.1 * r, x0 + (i + 1) * w, y + 0.14 * r], 180, 360, fill=c, width=STROKE)
+
+def icon_slide(d, cx, cy, r, c):
+    # Diarahmen: aussen fast quadratisch, innen das Bildfenster mit Bergen
+    d.rounded_rectangle([cx - r, cy - 0.92 * r, cx + r, cy + 0.92 * r], radius=0.14 * r, outline=c, width=STROKE)
+    x0, y0, x1, y1 = cx - 0.66 * r, cy - 0.46 * r, cx + 0.66 * r, cy + 0.46 * r
+    d.rectangle([x0, y0, x1, y1], outline=c, width=STROKE)
+    d.line([(x0, y1 - 0.1 * r), (cx - 0.22 * r, cy - 0.12 * r), (cx + 0.05 * r, cy + 0.16 * r),
+            (cx + 0.28 * r, cy - 0.04 * r), (x1, y1 - 0.08 * r)], fill=c, width=STROKE, joint="curve")
+
+def icon_half(d, cx, cy, r, c):
+    # Halb entwickelt: Kreis, eine Haelfte schraffiert
+    R = 0.88 * r
+    _circle(d, cx, cy, R, c)
+    d.line([(cx, cy - R), (cx, cy + R)], fill=c, width=STROKE)
+    for k in range(1, 5):
+        y = cy - R + k * 2 * R / 5
+        w = math.sqrt(max(R * R - (y - cy) ** 2, 0))
+        d.line([(cx, y), (cx + w, y)], fill=c, width=STROKE - 2)
+
+def icon_blinds(d, cx, cy, r, c):
+    # Fenster mit Jalousie: das Film-noir-Motiv
+    x0, x1 = cx - 0.78 * r, cx + 0.78 * r
+    y0, y1 = cy - 0.95 * r, cy + 0.95 * r
+    d.rectangle([x0, y0, x1, y1], outline=c, width=STROKE)
+    for k in range(1, 8):
+        y = y0 + k * (y1 - y0) / 8
+        d.line([(x0, y), (x1 - (k % 3) * 0.32 * r, y)], fill=c, width=STROKE - 2)
+
+def icon_waves(d, cx, cy, r, c):
+    # Drei grosse Wellen
+    w = 0.66 * r
+    for k, y in enumerate((cy - 0.48 * r, cy, cy + 0.48 * r)):
+        x0 = cx - 1.0 * r + (k % 2) * 0.16 * r
+        for i in range(3):
+            xa = x0 + i * w
+            d.arc([xa, y - 0.2 * r, xa + w, y + 0.2 * r], 180 if i % 2 == 0 else 0, 360 if i % 2 == 0 else 180,
+                  fill=c, width=STROKE)
+
+def icon_leaf(d, cx, cy, r, c):
+    # Blatt mit Mittelrippe und Seitenadern
+    n = 28
+    h = 0.98 * r
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        pts.append((cx + 0.62 * r * math.sin(t * math.pi) ** 1.2, cy - h + 2 * h * t))
+    for i in range(n, -1, -1):
+        t = i / n
+        pts.append((cx - 0.62 * r * math.sin(t * math.pi) ** 1.2, cy - h + 2 * h * t))
+    _poly(d, pts, c)
+    d.line([(cx, cy - 0.72 * r), (cx, cy + 1.12 * r)], fill=c, width=STROKE)
+    for t in (-0.36, 0.0, 0.36):
+        y = cy + t * r
+        w = 0.42 * r * (1 - abs(t) * 0.8)
+        d.line([(cx, y + 0.18 * r), (cx - w, y - 0.1 * r)], fill=c, width=STROKE - 2)
+        d.line([(cx, y + 0.18 * r), (cx + w, y - 0.1 * r)], fill=c, width=STROKE - 2)
+
+def icon_plate(d, cx, cy, r, c):
+    # Blechplatte mit beschnittenen Ecken und Portraet
+    w, h, k = 0.76 * r, 1.0 * r, 0.2 * r
+    _poly(d, [(cx - w + k, cy - h), (cx + w - k, cy - h), (cx + w, cy - h + k), (cx + w, cy + h - k),
+              (cx + w - k, cy + h), (cx - w + k, cy + h), (cx - w, cy + h - k), (cx - w, cy - h + k)], c)
+    _circle(d, cx, cy - 0.3 * r, 0.27 * r, c)
+    d.arc([cx - 0.52 * r, cy + 0.06 * r, cx + 0.52 * r, cy + 1.0 * r], 180, 360, fill=c, width=STROKE)
+    d.line([(cx - 0.52 * r, cy + 0.53 * r), (cx + 0.52 * r, cy + 0.53 * r)], fill=c, width=STROKE)
+
+def icon_fern(d, cx, cy, r, c):
+    # Farnwedel wie auf einem Sonnendruck
+    x0, y0, x1, y1 = cx - 0.42 * r, cy + r, cx + 0.42 * r, cy - r
+    d.line([(x0, y0), (x1, y1)], fill=c, width=STROKE)
+    n = 7
+    for i in range(1, n + 1):
+        t = i / (n + 1)
+        x, y = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+        l = 0.72 * r * (1 - t) + 0.12 * r
+        d.line([(x, y), (x - l, y - 0.26 * l)], fill=c, width=STROKE - 1)
+        d.line([(x, y), (x + l * 0.9, y + 0.1 * l)], fill=c, width=STROKE - 1)
+
+def icon_instant(d, cx, cy, r, c):
+    # Sofortbild: breiter unterer Rand, darin ein Bild mit Sonne
+    d.rectangle([cx - 0.82 * r, cy - r, cx + 0.82 * r, cy + r], outline=c, width=STROKE)
+    x0, y0, x1, y1 = cx - 0.6 * r, cy - 0.78 * r, cx + 0.6 * r, cy + 0.42 * r
+    d.rectangle([x0, y0, x1, y1], outline=c, width=STROKE)
+    _circle(d, cx + 0.16 * r, cy - 0.36 * r, 0.16 * r, c)
+    d.line([(x0, y1 - 0.14 * r), (cx - 0.22 * r, cy - 0.12 * r), (cx + 0.1 * r, cy + 0.2 * r),
+            (x1, cy + 0.02 * r)], fill=c, width=STROKE, joint="curve")
+
+def icon_cloud(d, cx, cy, r, c):
+    # Kontur einer Wolke aus der Maske, wie die Sichel
+    m = Image.new("L", (W, H), 0)
+    md = ImageDraw.Draw(m)
+    y = cy + 0.1 * r
+    for ox, oy, R in ((-0.56, 0.12, 0.42), (-0.12, -0.26, 0.56), (0.5, 0.0, 0.46)):
+        md.ellipse([cx + (ox - R) * r, y + (oy - R) * r, cx + (ox + R) * r, y + (oy + R) * r], fill=255)
+    md.rectangle([cx - 0.56 * r, y + 0.0 * r, cx + 0.5 * r, y + 0.5 * r], fill=255)
+    edge = ImageChops.subtract(m.filter(ImageFilter.MaxFilter(STROKE)), m.filter(ImageFilter.MinFilter(STROKE)))
+    d.bitmap((0, 0), edge, fill=c)
+
 # ---------------------------------------------------------------------------
 # Looks: Schluessel (8.3), Name, ISO, Filmart, Beschreibung, Motiv, Akzentfarbe
 # ---------------------------------------------------------------------------
@@ -310,6 +423,16 @@ LOOKS = [
     ("CONCRET", "CONCRETE",  "100", "COLOR NEG",     "MUTED URBAN",        icon_city,      0xF3),
     ("EMBER",   "EMBER",     "200", "COLOR NEG",     "RED SCALE",          icon_flame,     0x22),
     ("GRIT",    "GRIT",      "400", "BLACK & WHITE", "PUSHED GRAIN",       icon_canister,  0xE6),
+    ("SUMMER",  "SUMMER",    "200", "COLOR NEG",     "GOLDEN WARMTH",      icon_wave_sun,  0x62),
+    ("CHROME",  "CHROME",    "64",  "COLOR SLIDE",   "DEEP REDS",          icon_slide,     0xBB),
+    ("BYPASS",  "BYPASS",    "400", "CINEMA",        "SILVER RETAINED",    icon_half,      GREY),
+    ("NOIR",    "NOIR",      "3200", "BLACK & WHITE", "HARD PUSHED",       icon_blinds,    WHITE),
+    ("TURQUOI", "TURQUOISE", "400", "COLOR NEG",     "GOLDEN SKIES",       icon_waves,     0xCD),
+    ("INFRA",   "INFRA",     "200", "FALSE COLOR",   "RED FOLIAGE",        icon_leaf,      0x2E),
+    ("TINTYPE", "TINTYPE",   "50",  "WET PLATE",     "WARM METAL",         icon_plate,     0x6F),
+    ("CYANO",   "CYANO",     "25",  "CYANOTYPE" ,    "SUN PRINT",          icon_fern,      0xDF),
+    ("INSTANT", "INSTANT",   "600", "INSTANT",       "CREAMY FADE",        icon_instant,   0xEC),
+    ("PASTEL",  "PASTEL",    "400", "COLOR NEG",     "AIRY SOFT",          icon_cloud,     0x3C),
 ]
 
 def name_size(d):
