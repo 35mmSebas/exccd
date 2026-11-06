@@ -32,6 +32,16 @@ More cameras are planned.
 | Concrete 100 | Color negative | Muted urban |
 | Ember 200 | Color negative | Red scale |
 | Grit 400 | Black and white | Pushed grain |
+| Summer 200 | Colour negative | Golden warmth |
+| Chrome 64 | Colour slide | Deep reds |
+| Bypass 400 | Cinema | Silver retained |
+| Noir 3200 | Black and white | Hard pushed |
+| Turquoise 400 | Colour negative | Golden skies |
+| Infra 200 | Colour negative | Red foliage |
+| Tintype 50 | Alternative process | Warm metal |
+| Cyano 25 | Alternative process | Sun print |
+| Instant 600 | Instant | Creamy fade |
+| Pastel 400 | Colour negative | Airy soft |
 
 Every look also has two **Dynamic+** variants (DR+1, DR+2) that expose shorter to protect
 highlights and lift the shadows with the curve.
