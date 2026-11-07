@@ -2238,6 +2238,17 @@ static const char* gui_filmsim_raw_enum(int change, __attribute__ ((unused))int 
     return lang_str(modes[conf.save_raw ? 1 : 0]);
 }
 
+// DNG mit einem anderen Look neu ausgeben (filmsim_develop_select). Nochmal waehlen: abbrechen.
+static void gui_filmsim_develop(__attribute__ ((unused))int arg)
+{
+    if (filmsim_develop_armed()) {
+        filmsim_develop_cancel();
+        gui_mbox_init(LANG_MENU_RAW_DEVELOP, LANG_EXCCD_DEV_CANCELLED, MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
+        return;
+    }
+    libfselect->file_select(LANG_RAW_DEVELOP_SELECT_FILE, "A/DCIM", "A", filmsim_develop_select);
+}
+
 // Canon-Bildschirmpalette auf die Karte schreiben (fuer die Laschen-Farben)
 static void gui_filmsim_dump_palette(__attribute__ ((unused))int arg)
 {
@@ -2416,7 +2427,8 @@ static CMenuItem root_menu_items[] = {
     MENU_ITEM   (0x5f,LANG_EXCCD_ROLL,                      MENUITEM_ENUM,      filmsim_roll_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_SURPRISE,                  MENUITEM_ENUM,      filmsim_surprise_enum, 0 ),
     MENU_ITEM   (0x5c,LANG_EXCCD_SAVE_RAW,                  MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
-    MENU_ITEM   (0x29,LANG_EXCCD_SYSTEM,                    MENUITEM_SUBMENU,   &system_submenu, 0 ),
+    MENU_ITEM   (0x2a,LANG_MENU_RAW_DEVELOP,                MENUITEM_PROC,      gui_filmsim_develop, 0 ),
+    MENU_ITEM   (0x29,LANG_EXCCD_SYSTEM,                   MENUITEM_SUBMENU,   &system_submenu, 0 ),
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
     {0}
 };

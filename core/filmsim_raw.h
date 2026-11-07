@@ -136,6 +136,29 @@ static inline __attribute__((always_inline)) void mix_block(const short (*m)[3],
     if (!q[k+1]) q[k+1] = 1;
 }
 
+// Weissabgleich nachtraeglich: R und B ueber Schwarz mit fr / fb (*4096) multiplizieren.
+// Gruen und die Defekt-Markierungen (0) bleiben. row0 = 1 bei G B / R G (GBRG).
+__attribute__((noinline))
+static void wb_rescale(unsigned char *raw, int rows, int rowpix, int rowlen, int row0, int blk, int fr, int fb)
+{
+    int y, g, k, groups = rowpix / 8;
+    for (y = 0; y < rows; y++) {
+        int blue = (y ^ row0) & 1, f = blue ? fb : fr;
+        unsigned char *a = raw + y * rowlen;
+        if (f == 4096) continue;
+        for (g = 0; g < groups; g++, a += CAM_SENSOR_BITS_PER_PIXEL) {
+            int v[8];
+            dec8(a, v);
+            for (k = blue; k < 8; k += 2) {
+                if (!v[k]) continue;
+                int n = clip10(blk + (((v[k] - blk) * f + 2048) >> 12));
+                v[k] = n ? n : 1;
+            }
+            enc8(a, v);
+        }
+    }
+}
+
 // Heisse Pixel
 //   Canon ersetzt defekte Pixel erst bei der JPEG-Erzeugung, und nur die aus
 //   seiner Werksliste (in den Rohdaten mit 0 markiert). Andere heisse Pixel

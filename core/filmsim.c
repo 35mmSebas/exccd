@@ -29,6 +29,9 @@
 #include "filmsim.h"
 #include "filmsim_txt.h"
 #include "filmsim_raw.h"
+#include "filmsim_dev.h"
+#include "raw.h"
+#include "gui_mbox.h"
 #include "lang.h"
 #include "gui_lang.h"
 
@@ -502,6 +505,15 @@ void filmsim_apply(void)
 static const short roll_sizes[4] = { 0, 12, 24, 36 };
 static volatile int roll_shot = 0;      // vom RAW-Hook: Foto gemacht, Rest erledigt filmsim_tick
 
+// RAW entwickeln (Ablauf siehe filmsim_develop_select)
+static volatile int dev_armed = 0;      // das naechste Foto ist der Hilfsschuss
+static volatile int dev_active = 0;     // der Hilfsschuss laeuft gerade durch den RAW-Hook
+static volatile int dev_restore = 0;    // fertig: eingelegten Film wieder herstellen
+static int dev_prev = -1;               // eingelegter Film
+static int dev_has_meta = 0;            // 0: reines RAW ohne Aufnahmedaten
+static dng_meta_t dev_meta;
+static char dev_name[16];               // Dateiname fuer Statuszeile und Logbuch
+
 static int roll_total(void)
 {
     return (conf.film_roll > 0 && conf.film_roll < 4) ? roll_sizes[conf.film_roll] : 0;
@@ -531,6 +543,125 @@ static void roll_tick(void)
     if (conf.film_surprise && (!t || conf.film_roll_used >= t))
         surprise_pick();
     if (t || conf.film_surprise) conf_save();   // Zaehler und Film ueberstehen das Ausschalten
+}
+
+// Aus filmsim_tick wie roll_tick: Canon ist mit dem JPEG fertig, erst jetzt den Film zuruecknehmen
+static void dev_tick(void)
+{
+    if (!dev_restore || camera_info.state.is_shutter_half_press) return;
+    dev_restore = 0;
+    if (dev_prev >= 0 && dev_prev != conf.film_sim) filmsim_set(dev_prev);
+    dev_prev = -1;
+}
+
+//-------------------------------------------------------------------
+// RAW entwickeln: eine gespeicherte DNG mit einem anderen Look neu ausgeben
+//   Canon erzeugt JPEGs nur nach einer Aufnahme. Deshalb: DNG und Look waehlen, einmal
+//   ausloesen. raw.c ersetzt die Sensordaten dieses Hilfsschusses durch die DNG, danach laeuft
+//   die normale Kette, und das Original bleibt erhalten. Der eingelegte Film und die Filmrolle
+//   aendern sich dabei nicht.
+//
+//   Vom Hilfsschuss stammen sonst nur Canons Einstellungen. Deshalb wird korrigiert:
+//     Weissabgleich:  Canon rechnet mit den Faktoren des Hilfsschusses. Die Rohdaten werden so
+//                     umgerechnet, dass im JPEG die Faktoren der Aufnahme herauskommen.
+//     Dynamik+:       die Aufhell-Kurve gehoert zur Aufnahme, nicht zur Menueeinstellung
+//     Farbrauschen:   Auto richtet sich nach der ISO der Aufnahme
+//     Datum:          der Datumsstempel zeigt den Aufnahmetag
+//   Exif-Daten und Ausrichtung im JPEG kann EXCCD nicht aendern, die kommen vom Hilfsschuss.
+//-------------------------------------------------------------------
+int filmsim_develop_armed(void)
+{
+    return dev_armed;
+}
+
+// Passt die Datei zu dieser Kamera? Liest auch die Aufnahmedaten.
+static int dev_read_file(const char *fn)
+{
+    struct stat st;
+    int ok = 0;
+    if (strlen(fn) >= 64 || stat(fn, &st) != 0 || st.st_size < (int)camera_sensor.raw_size) return 0;
+    dev_has_meta = 0;
+    if (st.st_size == (int)camera_sensor.raw_size) return 1;    // CHDK-RAW ohne Kopf
+    unsigned char *head = malloc(DNG_HEAD_MAX);
+    if (!head) return 0;
+    int fd = open(fn, O_RDONLY, 0777);
+    if (fd >= 0) {
+        int n = read(fd, head, DNG_HEAD_MAX);
+        close(fd);
+        ok = dng_parse(head, n, camera_sensor.raw_rowpix, camera_sensor.raw_rows, camera_sensor.bits_per_pixel, &dev_meta);
+        dev_has_meta = ok;
+    }
+    free(head);
+    return ok;
+}
+
+// Rueckruf der Dateiauswahl: Datei merken, dann die Filmauswahl zum Waehlen des Looks
+void filmsim_develop_select(const char *fn)
+{
+    if (!fn) return;                    // abgebrochen
+    if (!dev_read_file(fn)) {
+        gui_mbox_init(LANG_MENU_RAW_DEVELOP, LANG_EXCCD_DEV_BAD, MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
+        return;
+    }
+    const char *b = strrchr(fn, '/');
+    strncpy(dev_name, b ? b + 1 : fn, sizeof(dev_name) - 1);
+    dev_name[sizeof(dev_name) - 1] = 0;
+    raw_prepare_develop(fn, 0);
+    // Ruecknahme der letzten Entwicklung noch offen: Dann ist dev_prev weiter der eingelegte Film
+    if (!dev_restore || dev_prev < 0) dev_prev = conf.film_sim;
+    dev_restore = 0;
+    dev_armed = 1;
+    filmsim_open_menu();
+}
+
+void filmsim_develop_cancel(void)
+{
+    raw_prepare_develop(0, 0);
+    dev_armed = 0;
+    dev_restore = 1;                    // uebernimmt dev_tick
+}
+
+// Aus raw.c: Die Datei ist geladen, gleich laeuft die Kette
+void filmsim_develop_begin(char *raw)
+{
+    dev_armed = 0;
+    dev_active = 1;
+    shot_dr = dev_has_meta ? dev_meta.dr : 0;
+#ifdef FS_RAW
+    if (dev_has_meta && raw) {
+        int wb[3] = { 0, 0, 0 };        // G, R, B wie in modules/dng.c
+        get_property_case(camera_info.props.wb_adj, &wb, sizeof(wb));
+        int fr = wb_factor(dev_meta.wb_r, dev_meta.wb_g, wb[1], wb[0]);
+        int fb = wb_factor(dev_meta.wb_b, dev_meta.wb_g, wb[2], wb[0]);
+        if (fr != WB_ONE || fb != WB_ONE)
+            wb_rescale((unsigned char *)raw, camera_sensor.raw_rows, camera_sensor.raw_rowpix, camera_sensor.raw_rowlen,
+                       FS_ROW0, 31, fr, fb);
+    }
+#else
+    (void)raw;
+#endif
+}
+
+// Aus raw.c nach dem Speichern der DNG: Dynamik+-Stufe in den Kopf schreiben, damit die spaetere
+// Entwicklung die passende Kurve nimmt. Rueckgabe: offene Datei fuer raw_closefile, sonst -1.
+// Die Datei behaelt ihre Groesse (die Rohdaten muessen am Dateiende bleiben).
+int filmsim_dng_mark(const char *fn)
+{
+    if (shot_dr < 1 || shot_dr > 2) return -1;
+    unsigned char *head = malloc(DNG_HEAD_MAX);
+    if (!head) return -1;
+    int fd = open(fn, O_RDWR, 0777);
+    if (fd >= 0) {
+        int n = read(fd, head, DNG_HEAD_MAX);
+        int e = n > 8 ? dng_entry(head, n, dng_u32(head + 4), DNG_TAG_DESCRIPTION) : -1;
+        if (e >= 0) {
+            unsigned char v[8] = { 4, 0, 0, 0, 'D', 'R', (unsigned char)('0' + shot_dr), 0 };
+            lseek(fd, e + 4, 0);        // SEEK_SET: Anzahl und Text direkt im Eintrag
+            write(fd, v, sizeof(v));
+        }
+    }
+    free(head);
+    return fd;
 }
 
 const char* filmsim_roll_enum(int change, __attribute__ ((unused))int arg)
@@ -596,6 +727,7 @@ void filmsim_tick(void)
     if (!camera_info.state.gui_mode_none) return;   // nicht in Menues eingreifen
     if (camera_info.state.state_shooting_progress == SHOOTING_PROGRESS_PROCESSING) return;
     roll_tick();
+    dev_tick();
 
     // Altlast aus v0.9: von der Koernung erzwungene ISO 800 zuruecknehmen
     if (conf.film_iso_prev >= 0) {
@@ -814,13 +946,14 @@ static int film_gui_kbd(void)
         need_draw = 1;
         break;
     case KEY_SET:
-        if (roll_locked() && sel != conf.film_sim) {
+        // Beim Entwickeln gilt die Sperre nicht: Der eingelegte Film kommt danach zurueck
+        if (!dev_armed && roll_locked() && sel != conf.film_sim) {
             roll_hint = 1;
             need_draw = 2;
             break;
         }
         filmsim_set(sel);
-        conf_save();
+        if (!dev_armed) conf_save();
         film_gui_close();
         break;
     }
@@ -866,7 +999,7 @@ const char* filmsim_menu_enum(int change, __attribute__ ((unused))int arg)
 static int cnr_level(void)
 {
     if (conf.film_cnr != CNR_AUTO) return conf.film_cnr;
-    int iso = shooting_get_iso_market();
+    int iso = (dev_active && dev_has_meta && dev_meta.iso > 0) ? dev_meta.iso : shooting_get_iso_market();
     return iso >= 800 ? 2 : (iso >= 400 ? 1 : 0);
 }
 
@@ -886,14 +1019,17 @@ void filmsim_draw_osd(void)
     if (was_pending && !preview_pending)
         gui_set_need_restore();      // laengeren Hinweis einmal wegwischen
     was_pending = preview_pending;
-    if (conf.film_sim == 0 && !preview_pending && !conf.tv_override_enabled
+    if (!dev_armed && conf.film_sim == 0 && !preview_pending && !conf.tv_override_enabled
         && !conf.film_double && !conf.subj_dist_override_koef
         && !conf.film_mist && !conf.film_halation && !conf.film_vignette
         && !conf.film_leak && !conf.film_datestamp && !conf.film_dr && !conf.film_cnr
         && !conf.film_zoom && !conf.film_grain && !conf.film_frame && !conf.film_roll
         && !conf.film_surprise) return;
     strcpy(buf, filmsim_name());
-    if (preview_pending) {
+    if (dev_armed) {
+        // Wichtiger als alles andere: Das naechste Foto ist kein Foto
+        sprintf(buf, lang_str(LANG_EXCCD_DEV_OSD), dev_name, filmsim_name());
+    } else if (preview_pending) {
         strcat(buf, " - ");
         strcat(buf, lang_str(LANG_EXCCD_HALF_PRESS));
     } else {
@@ -1107,16 +1243,27 @@ static void shot_line(char *line)
 
 void filmsim_log_shot(void)
 {
-    if (roll_total()) {
-        if (conf.film_roll_used >= roll_total()) conf.film_roll_used = 0;   // neue Rolle
-        conf.film_roll_used++;
+    char line[96];
+    if (dev_active) {                   // Entwickeln: zaehlt nicht als Aufnahme der Rolle
+        dev_active = 0;
+        dev_restore = 1;
+    } else {
+        if (roll_total()) {
+            if (conf.film_roll_used >= roll_total()) conf.film_roll_used = 0;   // neue Rolle
+            conf.film_roll_used++;
+        }
+        roll_shot = 1;
+        dev_name[0] = 0;
     }
-    roll_shot = 1;
-    char line[80];
     const char *fn = "A/CHDK/FILMLOG.CSV";
     struct stat st;
     int is_new = (stat(fn, &st) != 0);
     shot_line(line);
+    if (dev_name[0]) {                  // dritte Spalte: entwickelt aus dieser Datei
+        strcat(line, ";");
+        strcat(line, dev_name);
+        dev_name[0] = 0;
+    }
     strcat(line, "\r\n");
     int fd = open(fn, O_RDWR | O_CREAT, 0777);
     if (fd < 0) return;
@@ -1671,7 +1818,10 @@ static void effects_datestamp(void)
     struct tm *t = get_localtime();
     if (!t) return;
     char s[32];
-    sprintf(s, "'%02d %02d %02d", t->tm_year % 100, t->tm_mon + 1, t->tm_mday);
+    if (dev_active && dev_has_meta && dev_meta.year)    // Entwickeln: Tag der Aufnahme
+        sprintf(s, "'%02d %02d %02d", dev_meta.year % 100, dev_meta.mon, dev_meta.day);
+    else
+        sprintf(s, "'%02d %02d %02d", t->tm_year % 100, t->tm_mon + 1, t->tm_mday);
     int jx, jy, jw, jh;
     jpeg_rect(&jx, &jy, &jw, &jh);
     int H = jh / 24, W = H * 11 / 20, T = H / 8, gap = W * 2 / 5;

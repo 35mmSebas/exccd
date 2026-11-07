@@ -174,8 +174,20 @@ const char *filmsim_tv_str(void) { return 0; }
 const char *filmsim_focus_str(void) { return 0; }
 long get_target_file_num(void) { return 123; }
 void get_target_dir_name(char *d) { strcpy(d, "A/DCIM/100CANON"); }
-static struct tm tm_now;
-struct tm *get_localtime(void) { tm_now.tm_year = 126; tm_now.tm_mon = 10; tm_now.tm_mday = 7; return &tm_now; }
+static struct tm tm_now = { .tm_year = 126, .tm_mon = 10, .tm_mday = 7 };
+struct tm *get_localtime(void) { return &tm_now; }
+
+// RAW entwickeln: Datei, die raw.c laden wuerde; Weissabgleich des Hilfsschusses (G, R, B)
+static char prep_fn[64];
+void raw_prepare_develop(const char *f, int prompt) { (void)prompt; if (f) strcpy(prep_fn, f); else prep_fn[0] = 0; }
+static int host_wb[3] = { 1000, 1000, 1000 };
+long get_property_case(long id, void *buf, long n) { (void)id; memcpy(buf, host_wb, n); return 0; }
+static int mbox_count = 0;
+void gui_mbox_init(int title, int msg, const unsigned int flags, void (*on_select)(unsigned int btn))
+{
+    (void)title; (void)msg; (void)flags; (void)on_select;
+    mbox_count++;
+}
 
 // --- Rohbild ----------------------------------------------------------------
 static unsigned char *rawbuf;
@@ -625,6 +637,253 @@ static void scenario_raw(const char *root)
     free(orig);
 }
 
+// --- RAW entwickeln -----------------------------------------------------------
+#define DNG_HEAD 1024
+static void put16(unsigned char *b, unsigned v) { b[0] = v & 255; b[1] = (v >> 8) & 255; }
+static void put32(unsigned char *b, unsigned v) { put16(b, v & 0xffff); put16(b + 2, v >> 16); }
+static void put_entry(unsigned char *ifd, int i, unsigned tag, unsigned type, unsigned count, unsigned value)
+{
+    unsigned char *e = ifd + 2 + i * 12;
+    put16(e, tag); put16(e + 2, type); put32(e + 4, count); put32(e + 8, value);
+}
+
+// Kopf wie modules/dng.c (nur die Eintraege, die EXCCD liest), Rohdaten am Dateiende
+static void make_dng(const char *name, int w, int h, int bits, int wr, int wg, int wb, int iso, const char *date)
+{
+    int rawsize = camera_sensor.raw_size;
+    unsigned char *f = malloc(DNG_HEAD + rawsize);
+    memset(f, 0, DNG_HEAD);
+    f[0] = 'I'; f[1] = 'I'; put16(f + 2, 42); put32(f + 4, 8);
+    put16(f + 8, 4);
+    put_entry(f + 8, 0, 0x10E, 2, 1, 0);        // ImageDescription, leer
+    put_entry(f + 8, 1, 0x14A, 4, 1, 200);
+    put_entry(f + 8, 2, 0x8769, 4, 1, 300);
+    put_entry(f + 8, 3, 0xC628, 5, 3, 400);
+    put16(f + 200, 3);
+    put_entry(f + 200, 0, 0x100, 4, 1, w);
+    put_entry(f + 200, 1, 0x101, 4, 1, h);
+    put_entry(f + 200, 2, 0x102, 3, 1, bits);
+    put16(f + 300, 2);
+    put_entry(f + 300, 0, 0x8827, 3, 1, iso);
+    put_entry(f + 300, 1, 0x9003, 2, 20, 460);
+    put32(f + 400, 1000); put32(f + 404, wr);
+    put32(f + 408, 1000); put32(f + 412, wg);
+    put32(f + 416, 1000); put32(f + 420, wb);
+    strcpy((char *)f + 460, date);
+    memcpy(f + DNG_HEAD, rawbuf, rawsize);
+    fs_put(name, (char *)f, DNG_HEAD + rawsize);
+    free(f);
+}
+
+// raw.c: Datei laden, dann die Kette
+static void develop_shot(void)
+{
+    struct stat st;
+    int fd = open(prep_fn, O_RDONLY, 0);
+    CHECK(fd >= 0, "Entwickeln ohne Datei");
+    stat(prep_fn, &st);
+    lseek(fd, st.st_size - camera_sensor.raw_size, 0);
+    read(fd, rawbuf, camera_sensor.raw_size);
+    close(fd);
+    prep_fn[0] = 0;
+    camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_PROCESSING;
+    filmsim_develop_begin((char *)rawbuf);
+    shoot((char *)rawbuf);
+}
+
+static void fill_flat(int v)
+{
+    int x, y;
+    for (y = 0; y < (int)camera_sensor.raw_rows; y++)
+        for (x = 0; x < (int)camera_sensor.raw_rowpix; x++)
+            set_raw_pixel(x, y, (unsigned short)(v << (CAM_SENSOR_BITS_PER_PIXEL - 10)));
+}
+
+static void scenario_develop(void)
+{
+    const char *good = "A/DCIM/100CANON/CRW_0012.DNG";
+    int rows = camera_sensor.raw_rows, rowpix = camera_sensor.raw_rowpix, rowlen = camera_sensor.raw_rowlen;
+    int bits = camera_sensor.bits_per_pixel, r0 = FS_TEST_ROW0, saves, m;
+    int cx = (rowpix / 2) & ~7, cy = (rows / 2) & ~1;    // Mitte, gerade
+    rawbuf = malloc(rows * rowlen + 8);
+    unsigned char *a = malloc(rows * rowlen);
+    CHECK(rawbuf && a, "Speicher");
+    camera_on();
+    fill_flat(400);
+    make_dng(good, rowpix, rows, bits, 2000, 1000, 1500, 100, "2025:03:04 10:11:12");
+
+    // Fremde Dateien werden abgelehnt und nichts wird scharf gestellt
+    make_dng("A/DCIM/W.DNG", rowpix + 8, rows, bits, 2000, 1000, 1500, 100, "2025:03:04 10:11:12");
+    make_dng("A/DCIM/B.DNG", rowpix, rows, bits == 10 ? 12 : 10, 2000, 1000, 1500, 100, "2025:03:04 10:11:12");
+    fs_put("A/DCIM/SMALL.JPG", "xx", 2);
+    static const char *bad[] = { "A/DCIM/W.DNG", "A/DCIM/B.DNG", "A/DCIM/SMALL.JPG", "A/DCIM/FEHLT.DNG", 0 };
+    for (m = 0; bad[m]; m++) {
+        int c = mbox_count;
+        filmsim_develop_select(bad[m]);
+        CHECK(mbox_count == c + 1, "%s: keine Meldung", bad[m]);
+        CHECK(!filmsim_develop_armed() && !prep_fn[0], "%s: scharf gestellt", bad[m]);
+    }
+    filmsim_develop_select(0);          // Dateiauswahl abgebrochen
+    CHECK(!filmsim_develop_armed(), "Abbruch stellt scharf");
+
+    // Halbvolle Rolle, Look 5: Auswahl geht trotz Sperre, der Film kommt danach zurueck
+    filmsim_set(5);
+    filmsim_roll_enum(1, 0);
+    for (m = 0; m < 3; m++) { filmsim_log_shot(); ticks(30); }
+    saves = conf_saves;
+    cur_mode = 0;
+    filmsim_develop_select(good);
+    CHECK(filmsim_develop_armed() && strcmp(prep_fn, good) == 0, "nicht scharf: [%s]", prep_fn);
+    CHECK(cur_mode != 0, "Filmauswahl nicht offen");
+    filmsim_open_menu();
+    for (m = 1; m < 5; m++) press(KEY_LEFT);    // Look 1, Daylight: keine Kurve, keine Mischung
+    press(KEY_SET);
+    CHECK(conf.film_sim == 1, "Look: %d", conf.film_sim);
+    CHECK(conf_saves == saves, "Probierlook gespeichert");
+    CHECK(strstr(osd_text(), "Develop CRW_0012.DNG: Daylight 100") != 0, "Statuszeile: [%s]", drawn);
+
+    // Hilfsschuss in anderem Licht: Rohdaten so umrechnen, dass der WB der Aufnahme herauskommt
+    host_wb[0] = 1000; host_wb[1] = 1000; host_wb[2] = 3000;
+    fill_flat(10);                      // Sensordaten des Hilfsschusses, muessen verschwinden
+    int mark = card[fs_find("A/CHDK/FILMLOG.CSV")].size;
+    develop_shot();
+    CHECK(!filmsim_develop_armed(), "bleibt scharf");
+    CHECK(RAW10(cx, cy + r0) == 31 + 369 * 2, "R: %d", RAW10(cx, cy + r0));
+    CHECK(RAW10(cx + 1, cy + r0) == 400, "G: %d", RAW10(cx + 1, cy + r0));
+    CHECK(RAW10(cx + 1, cy + r0 + 1) == 31 + 185, "B: %d", RAW10(cx + 1, cy + r0 + 1));
+    CHECK(conf.film_roll_used == 3, "Rolle zaehlt mit: %d", conf.film_roll_used);
+    {
+        int li = fs_find("A/CHDK/FILMLOG.CSV");
+        card[li].data[card[li].size] = 0;
+        CHECK(strstr(card[li].data + mark, ";Daylight 100;CRW_0012.DNG") != 0, "Logbuch: [%s]", card[li].data + mark);
+    }
+
+    // Film erst zurueck, wenn Canon fertig ist
+    ticks(60);
+    CHECK(conf.film_sim == 1, "Ruecknahme waehrend der Verarbeitung");
+    camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_NONE;
+    ticks(60);
+    CHECK(conf.film_sim == 5, "eingelegter Film nicht zurueck: %d", conf.film_sim);
+    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
+    CHECK(conf.film_sim == 5, "Rolle danach nicht mehr gesperrt: %d", conf.film_sim);
+    cur_mode = 0;
+
+    // Normales Foto danach: zaehlt wieder, keine dritte Spalte, Ueberschreiben klappt
+    host_wb[0] = host_wb[1] = host_wb[2] = 1000;
+    filmsim_set(5);
+    mark = card[fs_find("A/CHDK/FILMLOG.CSV")].size;
+    filmsim_log_shot();
+    ticks(30);
+    CHECK(conf.film_roll_used == 4, "normales Foto: %d", conf.film_roll_used);
+    {
+        int li = fs_find("A/CHDK/FILMLOG.CSV");
+        card[li].data[card[li].size] = 0;
+        CHECK(strstr(card[li].data + mark, ".DNG") == 0, "normales Foto mit Quelle: [%s]", card[li].data + mark);
+    }
+    filmsim_roll_enum(-1, 0);
+
+    // Abbrechen: Look und Zustand zurueck
+    filmsim_develop_select(good);
+    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
+    CHECK(conf.film_sim == 6, "Abbruch-Look: %d", conf.film_sim);
+    filmsim_develop_cancel();
+    CHECK(!filmsim_develop_armed() && !prep_fn[0], "Abbruch: noch scharf");
+    ticks(60);
+    CHECK(conf.film_sim == 5, "Abbruch: Film %d", conf.film_sim);
+    cur_mode = 0;
+
+    // Sofort neu waehlen, solange die Ruecknahme offen ist: Der eingelegte Film bleibt gemerkt
+    filmsim_develop_select(good);
+    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
+    filmsim_develop_cancel();
+    camera_info.state.gui_mode_none = 0;
+    ticks(60);
+    filmsim_develop_select(good);
+    camera_info.state.gui_mode_none = 1;
+    filmsim_develop_cancel();
+    ticks(60);
+    CHECK(conf.film_sim == 5, "neu waehlen: Film %d", conf.film_sim);
+    cur_mode = 0;
+
+    // Datumsstempel: Tag der Aufnahme
+    filmsim_set(1);
+    conf.film_datestamp = 1;
+    fill_flat(400);
+    make_dng(good, rowpix, rows, bits, 1000, 1000, 1000, 100, "2025:03:04 10:11:12");
+    filmsim_develop_select(good);
+    filmsim_open_menu(); press(KEY_SET);
+    develop_shot();
+    camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_NONE;
+    ticks(60);
+    memcpy(a, rawbuf, rows * rowlen);
+    fill_flat(400);
+    shoot((char *)rawbuf);
+    ticks(60);
+    CHECK(memcmp(a, rawbuf, rows * rowlen) != 0, "Datum: heute und Aufnahmetag gleich");
+    fill_flat(400);
+    tm_now.tm_year = 125; tm_now.tm_mon = 2; tm_now.tm_mday = 4;
+    shoot((char *)rawbuf);
+    ticks(60);
+    tm_now.tm_year = 126; tm_now.tm_mon = 10; tm_now.tm_mday = 7;
+    CHECK(memcmp(a, rawbuf, rows * rowlen) == 0, "Datum: nicht der Aufnahmetag");
+    conf.film_datestamp = 0;
+
+    // Farbrauschen Auto richtet sich nach der ISO der Aufnahme, nicht nach dem Hilfsschuss
+    {
+        int x, y;
+        filmsim_cnr_enum(1, 0);
+        for (y = 0; y < rows; y++)
+            for (x = 0; x < rowpix; x++)
+                set_raw_pixel(x, y, (unsigned short)((300 + (x * 31 + y * 17) % 64) << (CAM_SENSOR_BITS_PER_PIXEL - 10)));
+        memcpy(a, rawbuf, rows * rowlen);
+        shoot((char *)rawbuf);          // ISO 100 laut Kamera: kein Filter
+        CHECK(memcmp(a, rawbuf, rows * rowlen) == 0, "Auto bei ISO 100 filtert");
+        ticks(60);
+        memcpy(rawbuf, a, rows * rowlen);
+        make_dng(good, rowpix, rows, bits, 1000, 1000, 1000, 800, "2025:03:04 10:11:12");
+        filmsim_develop_select(good);
+        filmsim_open_menu(); press(KEY_SET);
+        develop_shot();
+        camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_NONE;
+        CHECK(memcmp(a, rawbuf, rows * rowlen) != 0, "Auto nimmt nicht die ISO der Aufnahme");
+        ticks(60);
+        filmsim_cnr_enum(-1, 0);
+        cur_mode = 0;
+    }
+
+    // Dynamik+: Stufe im Kopf vermerken, Groesse und Rohdaten bleiben, Entwicklung nimmt ihre Kurve
+    {
+        int ci, size;
+        fill_flat(400);
+        make_dng(good, rowpix, rows, bits, 1000, 1000, 1000, 100, "2025:03:04 10:11:12");
+        ci = fs_find(good);
+        size = card[ci].size;
+        memcpy(a, card[ci].data + DNG_HEAD, rows * rowlen);
+        CHECK(filmsim_dng_mark(good) == -1, "Vermerk ohne Dynamik+");
+        conf.film_dr = 2;
+        CHECK(filmsim_dr_tv96_shift(1) == 192, "Dynamik+");
+        CHECK(filmsim_dng_mark(good) >= 0, "Vermerk fehlt");
+        conf.film_dr = 0;
+        filmsim_dr_curve_hook(1);       // Normale Aufnahme zu Ende, Stufe wieder unbekannt
+        CHECK(card[ci].size == size, "Groesse %d statt %d", card[ci].size, size);
+        CHECK(memcmp(a, card[ci].data + DNG_HEAD, rows * rowlen) == 0, "Rohdaten veraendert");
+        filmsim_set(0);
+        filmsim_develop_select(good);
+        filmsim_open_menu(); press(KEY_SET);
+        filmsim_develop_begin((char *)rawbuf);
+        filmsim_dr_curve_hook(0);
+#if CAM_SENSOR_BITS_PER_PIXEL == 12     // bei 10 Bit laedt curves.flt, das gibt es am PC nicht
+        CHECK(strstr(conf.curve_file, "DR2.CV") != 0, "Kurve: [%s]", conf.curve_file);
+#endif
+        filmsim_log_shot();
+        filmsim_dr_curve_hook(1);
+        CHECK(conf.film_dr == 0, "Einstellung geaendert");
+        ticks(60);
+    }
+    free(a);
+    free(rawbuf);
+}
+
 int main(int argc, char **argv)
 {
     const char *what = argc > 1 ? argv[1] : "";
@@ -634,6 +893,7 @@ int main(int argc, char **argv)
     else if (strcmp(what, "roll") == 0) scenario_roll();
     else if (strcmp(what, "surprise") == 0) scenario_surprise();
     else if (strcmp(what, "raw") == 0) scenario_raw(root);
+    else if (strcmp(what, "develop") == 0) scenario_develop();
     else { printf("Szenario?\n"); return 2; }
     printf("%s (%d Fehler)\n", fails ? "FEHLER" : "ok", fails);
     return fails != 0;

@@ -12,6 +12,7 @@
 #include "remotecap_core.h"
 #include "ptp.h" // for remotecap constants
 #include "script_api.h" // for script hook
+#include "filmsim.h"
 
 //-------------------------------------------------------------------
 #ifdef CAM_DATE_FOLDER_NAMING
@@ -222,7 +223,11 @@ void raw_process(void)
         return;
     }
 
-    if (develop_raw != RAW_DEVELOP_OFF)
+    // Filmsim: RAW entwickeln. Die Datei ersetzt die Sensordaten, danach laeuft die normale
+    // Kette (ohne Speichern, Doppelbelichtung und Rolle). Sie enthaelt die Korrekturen der
+    // Aufnahme schon (Defektpixel, Spalten). Details in filmsim.c, filmsim_develop_select.
+    int developing = (develop_raw != RAW_DEVELOP_OFF);
+    if (developing)
     {
         started();
         if (develop_raw == RAW_DEVELOP_DNG)
@@ -237,14 +242,14 @@ void raw_process(void)
                 close(fd);
             }
         }
-#ifdef OPT_CURVES
-        if (conf.curve_enable)
-            libcurves->curve_apply();
-#endif
         finished();
         develop_raw = RAW_DEVELOP_OFF;
-        return;
+        // Haelt filmsim_tick zurueck, bis Canon das JPEG fertig hat
+        camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_PROCESSING;
+        filmsim_develop_begin(rawadr);
     }
+    else
+    {
 
     // Filmsim: A/CHDK/badpixel.txt wirkt immer, das RAW-Untermenue ist nicht erreichbar
     patch_bad_pixels();
@@ -277,8 +282,12 @@ void raw_process(void)
 
         if (conf.save_raw && is_raw_enabled())
         {
-            raw_savefile(rawadr,altrawadr);
+            // Filmsim: Dynamik+-Stufe im DNG-Kopf vermerken (spaetere Entwicklung)
+            if (raw_savefile(rawadr,altrawadr) && conf.dng_raw)
+                raw_closefile(filmsim_dng_mark(fn));
         }
+    }
+
     }
 
     // Filmsim: Zeitmessung der folgenden Schritte (A/CHDK/FILMTIME.CSV)
@@ -293,7 +302,8 @@ void raw_process(void)
 
     // Filmsim: Doppelbelichtung (vor Kurven, damit der Look nur einmal wirkt)
     extern void filmsim_double_hook(char *raw);
-    filmsim_double_hook(rawadr);
+    if (!developing)
+        filmsim_double_hook(rawadr);
     filmsim_time_mark(2);
 
     // Filmsim: Farbrauschen glaetten (vor Kurven, im linearen Rohbild)

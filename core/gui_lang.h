@@ -862,7 +862,11 @@
 #define LANG_EXCCD_ROLL_LOCKED                  731
 #define LANG_EXCCD_ROLL_DONE                    732
 
-#define GUI_LANG_ITEMS                          732
+#define LANG_EXCCD_DEV_OSD                      733
+#define LANG_EXCCD_DEV_BAD                      734
+#define LANG_EXCCD_DEV_CANCELLED                735
+
+#define GUI_LANG_ITEMS                          735
 
 //-------------------------------------------------------------------
 extern void gui_lang_init();

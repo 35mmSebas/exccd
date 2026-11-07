@@ -323,7 +323,7 @@
 
 265 "Canon-Überbelichtungswert"
 
-266 "RAW-Enwicklung"
+266 "RAW-Entwicklung"
 267 "Bitte Kamera im Auf-\nnahmemodus starten und ein Bild\nmachen."
 268 "RAW-Datei auswählen"
 269 "RAW-Summe"
@@ -894,3 +894,6 @@
 730 "Ueberraschungsfilm"
 731 "Rolle drin: noch %d"
 732 "Rolle voll"
+733 "Entwickeln %s: %s"
+734 "Kein RAW dieser Kamera."
+735 "RAW-Entwicklung abgebrochen."

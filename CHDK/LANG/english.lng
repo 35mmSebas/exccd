@@ -870,3 +870,6 @@
 730 "Surprise film"
 731 "Roll loaded: %d left"
 732 "roll done"
+733 "Develop %s: %s"
+734 "No RAW file from this camera."
+735 "RAW develop cancelled."

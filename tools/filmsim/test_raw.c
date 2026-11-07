@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "filmsim_raw.h"
+#include "filmsim_dev.h"
 
 #define BPP     CAM_SENSOR_BITS_PER_PIXEL
 #define ROWPIX  64
@@ -423,6 +424,40 @@ static void test_frame(void)
     CHECK(sizeof frame_font / sizeof frame_font[0] == 38, "Schrifttabelle");
 }
 
+// Weissabgleich nachtraeglich: Faktor, Bayer-Lage, Gruen und Defekte bleiben
+static void test_wb(void)
+{
+    int row0, x, y;
+    CHECK(wb_factor(2000, 1000, 1000, 1000) == 8192, "wb_factor doppelt: %d", wb_factor(2000, 1000, 1000, 1000));
+    CHECK(wb_factor(1500, 1000, 3000, 1000) == 2048, "wb_factor halb: %d", wb_factor(1500, 1000, 3000, 1000));
+    CHECK(wb_factor(1500, 1024, 1500, 1024) == WB_ONE, "wb_factor gleich");
+    CHECK(wb_factor(1502, 1000, 1500, 1000) == WB_ONE, "wb_factor unter 0,5 %%");
+    CHECK(wb_factor(0, 1000, 1500, 1000) == WB_ONE && wb_factor(1500, 1000, 0, 0) == WB_ONE, "wb_factor unbekannt");
+    CHECK(wb_factor(60000, 100, 100, 60000) == WB_ONE * 4, "wb_factor Grenze: %d", wb_factor(60000, 100, 100, 60000));
+    // grosse Werte laufen nicht ueber
+    CHECK(abs(wb_factor(60000, 60000, 30000, 60000) - 8192) < 40, "wb_factor gross: %d", wb_factor(60000, 60000, 30000, 60000));
+
+    for (row0 = 0; row0 < 2; row0++) {
+        for (y = 0; y < ROWS; y++)
+            for (x = 0; x < ROWPIX; x++)
+                set_px(buf, x, y, (unsigned short)(400 << (BPP - 10)));
+        set_px(buf, 8, row0, 0);                                // Defekt auf einem R-Pixel
+        set_px(buf, 10, row0, (unsigned short)(900 << (BPP - 10)));   // laeuft ueber
+        wb_rescale(buf, ROWS, ROWPIX, ROWLEN, row0, 31, 8192, 2048);
+        for (y = 0; y < ROWS; y++)
+            for (x = 0; x < ROWPIX; x++) {
+                int rrow = ((y ^ row0) & 1) == 0;
+                int want = 400;
+                if (rrow && !(x & 1)) want = 31 + 369 * 2;      // R
+                if (!rrow && (x & 1)) want = 31 + 185;          // B, gerundet
+                if (y == row0 && x == 8) want = 0;
+                if (y == row0 && x == 10) want = 1023;
+                CHECK((int)(get_px(buf, x, y) >> (BPP - 10)) == want, "wb_rescale row0 %d x%d y%d: %d statt %d",
+                      row0, x, y, (int)(get_px(buf, x, y) >> (BPP - 10)), want);
+            }
+    }
+}
+
 int main(void)
 {
     unsigned i;
@@ -438,6 +473,7 @@ int main(void)
     test_mix();
     test_grain();
     test_frame();
+    test_wb();
 #if BPP == 12
     test_curves();
 #endif
