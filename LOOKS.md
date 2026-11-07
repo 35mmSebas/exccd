@@ -66,8 +66,8 @@ as (R, G, B), ±0.03 = clearly visible. Point-curve looks are drawn freely per c
 | Chrome       | points     | medium   | –    | –        | deep                    | warm                    | dense slide film, strong reds |
 | Bypass       | recipe     |  0.42    | 0.01 | 0.02     | −0.004 / 0 / +0.006     | +0.002 / +0.002 / 0     | silver retained: hard, almost no colour |
 | Noir (B/W)   | recipe     |  0.55    | 0.035| 0.02     | Gain 1.05 / 1.0 / 0.95  |                         | B/W, pushed: very hard, grey blacks |
-| Turquoise    | recipe     |  0.14    | 0.02 | 0.10     | −0.006 / +0.004 / +0.008| +0.006 / +0.002 / −0.004| + Mix 3: golden skies, teal foliage |
-| Infra        | recipe     |  0.16    | 0.01 | 0.08     | +0.004 / −0.004 / +0.006| +0.004 / 0 / 0          | + Mix 4: red foliage, deep blue skies |
+| Turquoise    | recipe     |  0.14    | 0.02 | 0.10     | −0.006 / +0.004 / +0.008| +0.006 / +0.002 / −0.004| + Mix 3: teal foliage and warm tones, blue skies turn warm |
+| Infra        | recipe     |  0.16    | 0.01 | 0.08     | +0.004 / −0.004 / +0.006| +0.004 / 0 / 0          | + Mix 4: green turns red, red turns orange, skies stay blue |
 | Tintype      | recipe     |  0.42    | 0.00 | 0.04     | –                       | –                       | hard, with Canon's sepia mode |
 | Cyano        | recipe     |  0.30    | 0.02 | 0.06     | –                       | –                       | + Mix 5: monochrome blue print |
 | Instant      | recipe     |  0.12    | 0.07 | 0.22     | −0.008 / +0.004 / +0.016| +0.012 / +0.008 / −0.014| faded blacks, creamy highlights |

@@ -12,6 +12,10 @@ make_curves.RECIPES, die Tabelle aus CHDK/FILMS/EXAMPLE.TXT, die Matrizen aus
 core/filmsim_raw.h. Die Regler von Custom Color und Canons Tonkurve sind nur
 genaehert (Staerken an echten Fotos geprueft): Das Ergebnis zeigt die Richtung,
 es ersetzt kein Foto von der Kamera.
+
+Turquoise und Infra (Mix 3, 4) zeigt diese Simulation falsch: Ihre Matrizen wirken im Rohbild
+vor Canons Farbmatrix und sind dafuer an echten Fotos abgestimmt (fit_mix.py). Die Beispielbilder
+dieser beiden Looks kommen aus fit_mix.render_sample.
 """
 import os, re, sys
 import numpy as np

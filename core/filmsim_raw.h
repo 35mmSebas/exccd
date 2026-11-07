@@ -84,17 +84,21 @@ static const short mix_concrete[3][3] = {
     {  64, 154,  38 },
     {  51, 102, 103 },
 };
-// Turquoise: Himmel -> Gold/Pfirsich, Gruen -> Tuerkis, Haut -> kuehl
+// Turquoise und Infra sind an echten Fotos der SX110 abgestimmt (tools/filmsim/fit_mix.py, 07.11.2026):
+// Kurve und Mischung wie hier, dazu Canons Verarbeitung, nachgebildet aus Paaren von DNG und Kamera-JPEG.
+// Ziel je Farbton, Rauschverstaerkung je Zeile hoechstens 1,5. Die alten, am PC im fertigen Bild
+// entworfenen Werte wirkten auf der Kamera ganz anders (Turquoise kobaltblau, Infra hellgruen).
+// Turquoise: Gruen und Warmes -> Tuerkis, blauer Himmel -> warm
 static const short mix_turquoise[3][3] = {
-    {  38,  38, 180 },
-    {  51, 154,  51 },
-    { 141,  90,  25 },
+    {  10, -25, 271 },
+    { 140, -54, 170 },
+    { 190,-201, 267 },
 };
-// Infra: wie Falschfarben-Infrarotfilm: Gruen -> Rot, Rot -> Gelb, Himmel tiefblau
+// Infra: wie Falschfarben-Infrarotfilm: Gruen -> Rot, Rot -> Orange, Himmel bleibt blau
 static const short mix_infra[3][3] = {
-    { 108, 136,  12 },
-    { 154,  64,  38 },
-    {  13,  38, 205 },
+    { 285,-167, 138 },
+    { 123,-182, 315 },
+    { 100,-147, 303 },
 };
 // Cyano: einfarbig Blau wie eine Cyanotypie. Die Zeilensummen sind hier bewusst
 // nicht 256: Grau wird blau, das ist der Look.

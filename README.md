@@ -36,7 +36,7 @@ More cameras are planned.
 | Chrome 64 | Colour slide | Deep reds |
 | Bypass 400 | Cinema | Silver retained |
 | Noir 3200 | Black and white | Hard pushed |
-| Turquoise 400 | Colour negative | Golden skies |
+| Turquoise 400 | Colour negative | Teal leaves |
 | Infra 200 | Colour negative | Red foliage |
 | Tintype 50 | Alternative process | Warm metal |
 | Cyano 25 | Alternative process | Sun print |

@@ -36,8 +36,11 @@ Je 2 Fotos, dann `FILMTIME.CSV` ansehen. Vergleichswerte v1.9.27 (siehe Spalten)
 
 Motive: Laub und Himmel (Infra, Turquoise, Violet zum Vergleich), Haut (Summer, Pastel, Instant), Innenraum.
 
-- [ ] Infra 200: Laub rot genug? Am PC nur an Fassaden geprueft, ohne Gruen im Motiv. Staerker: `mix_infra`
-- [ ] Turquoise 400: Himmel golden, Laub tuerkis?
+- [ ] Infra 200 und Turquoise 400 sind seit dem SX110-Test vom 07.11. neu abgestimmt (`tools/filmsim/fit_mix.py`,
+  an DNG/JPEG-Paaren der SX110). Ein Bild davon ist noch nicht auf der Kamera entstanden. Pruefen:
+  Infra: gruenes Laub rot, Herbstlaub orange, Himmel blau, Haut natuerlich. Turquoise: Laub und Warmes tuerkis, nicht kobaltblau
+- [ ] Rauschen bei Infra/Turquoise: Die Matrizen verstaerken Farbrauschen bis 1,5-fach. Bei ISO 400 noch ok?
+- [ ] IXUS 60 / IXUS 132: Die Matrizen sind an der SX110 gemessen. Weicht der Look stark ab, braucht es Werte je Kamera
 - [ ] Cyano 25: durchgehend blau? Lichter nicht zu grell?
 - [ ] Tintype 50: Canons Sepia-Modus plus harte Kurve, passt das zusammen?
 - [ ] Noir 3200: nicht zu hart? Schwarz leicht grau gewollt

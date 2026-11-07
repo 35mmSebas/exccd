@@ -427,7 +427,7 @@ LOOKS = [
     ("CHROME",  "CHROME",    "64",  "COLOR SLIDE",   "DEEP REDS",          icon_slide,     0xBB),
     ("BYPASS",  "BYPASS",    "400", "CINEMA",        "SILVER RETAINED",    icon_half,      GREY),
     ("NOIR",    "NOIR",      "3200", "BLACK & WHITE", "HARD PUSHED",       icon_blinds,    WHITE),
-    ("TURQUOI", "TURQUOISE", "400", "COLOR NEG",     "GOLDEN SKIES",       icon_waves,     0xCD),
+    ("TURQUOI", "TURQUOISE", "400", "COLOR NEG",     "TEAL LEAVES",        icon_waves,     0xCD),
     ("INFRA",   "INFRA",     "200", "COLOR NEG",     "RED FOLIAGE",        icon_leaf,      0x2E),
     ("TINTYPE", "TINTYPE",   "50",  "ALT PROCESS",   "WARM METAL",         icon_plate,     0x6F),
     ("CYANO",   "CYANO",     "25",  "ALT PROCESS",   "SUN PRINT",          icon_fern,      0xDF),
