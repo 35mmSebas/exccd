@@ -137,7 +137,7 @@ and shows them in a camera menu; cameras marked `test` appear as beta. CI only p
 `stabil` ones. To try it locally:
 
 ```sh
-python tools/site/build_site.py dist/v1.9.27/*.zip _site
+python tools/site/build_site.py dist/v1.10.0/*.zip _site
 python -m http.server -d _site
 ```
 
