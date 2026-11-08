@@ -80,17 +80,11 @@ card the camera is unchanged.
 The name of the active look is shown at the bottom of the screen. For every photo,
 `A/CHDK/FILMLOG.CSV` records which look was active.
 
-**Film roll** (Options): load 12, 24 or 36 exposures. The status line counts them and the
-look stays locked until the roll is full, as with a real film. To get out early, set
-Film roll to Off. **Surprise film**: every full roll (without a roll: every photo) puts a
-random look in the camera.
-
 **RAW develop** (Options): render a saved DNG again with a different look. Set Options → RAW
 to DNG when shooting. Later, choose RAW develop, pick the DNG and the look, then take one
 photo: what is in front of the lens does not matter, the camera only needs a shot to run its
 JPEG engine. The status line shows `Develop <file>: <look>` until then; choose RAW develop
-again to cancel. You get a new JPEG. The DNG stays untouched, your loaded look comes back
-and a film roll does not count the shot.
+again to cancel. You get a new JPEG. The DNG stays untouched, your loaded look comes back.
 
 White balance, Dynamic+ level, date stamp and Auto color noise filter come from the original
 photo. The JPEG's Exif data (date, exposure, orientation) comes from the helper shot, so hold

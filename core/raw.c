@@ -224,7 +224,7 @@ void raw_process(void)
     }
 
     // Filmsim: RAW entwickeln. Die Datei ersetzt die Sensordaten, danach laeuft die normale
-    // Kette (ohne Speichern, Doppelbelichtung und Rolle). Sie enthaelt die Korrekturen der
+    // Kette (ohne Speichern und Doppelbelichtung). Sie enthaelt die Korrekturen der
     // Aufnahme schon (Defektpixel, Spalten). Details in filmsim.c, filmsim_develop_select.
     int developing = (develop_raw != RAW_DEVELOP_OFF);
     if (developing)

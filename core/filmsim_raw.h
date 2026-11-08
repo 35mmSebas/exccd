@@ -386,83 +386,22 @@ static void raw_fill(unsigned char *raw, int rowlen, int row0, int x0, int y0, i
     }
 }
 
-// Schrift 5 x 7 fuer den Filmrand: A-Z, 0-9, Leerzeichen, - und . Je Zeichen 5 Spalten.
-static const unsigned char frame_font[][5] = {
-    {0x7E,0x11,0x11,0x11,0x7E},{0x7F,0x49,0x49,0x49,0x36},{0x3E,0x41,0x41,0x41,0x22},{0x7F,0x41,0x41,0x22,0x1C},
-    {0x7F,0x49,0x49,0x49,0x41},{0x7F,0x09,0x09,0x09,0x01},{0x3E,0x41,0x49,0x49,0x7A},{0x7F,0x08,0x08,0x08,0x7F},
-    {0x00,0x41,0x7F,0x41,0x00},{0x20,0x40,0x41,0x3F,0x01},{0x7F,0x08,0x14,0x22,0x41},{0x7F,0x40,0x40,0x40,0x40},
-    {0x7F,0x02,0x0C,0x02,0x7F},{0x7F,0x04,0x08,0x10,0x7F},{0x3E,0x41,0x41,0x41,0x3E},{0x7F,0x09,0x09,0x09,0x06},
-    {0x3E,0x41,0x51,0x21,0x5E},{0x7F,0x09,0x19,0x29,0x46},{0x46,0x49,0x49,0x49,0x31},{0x01,0x01,0x7F,0x01,0x01},
-    {0x3F,0x40,0x40,0x40,0x3F},{0x1F,0x20,0x40,0x20,0x1F},{0x3F,0x40,0x38,0x40,0x3F},{0x63,0x14,0x08,0x14,0x63},
-    {0x07,0x08,0x70,0x08,0x07},{0x61,0x51,0x49,0x45,0x43},
-    {0x3E,0x51,0x49,0x45,0x3E},{0x00,0x42,0x7F,0x40,0x00},{0x42,0x61,0x51,0x49,0x46},{0x21,0x41,0x45,0x4B,0x31},
-    {0x18,0x14,0x12,0x7F,0x10},{0x27,0x45,0x45,0x45,0x39},{0x3C,0x4A,0x49,0x49,0x30},{0x01,0x71,0x09,0x05,0x03},
-    {0x36,0x49,0x49,0x49,0x36},{0x06,0x49,0x49,0x29,0x1E},
-    {0x08,0x08,0x08,0x08,0x08},{0x00,0x60,0x60,0x00,0x00},
-};
-
-static int frame_glyph(int c)
-{
-    if (c >= 'a' && c <= 'z') c -= 'a' - 'A';
-    if (c >= 'A' && c <= 'Z') return c - 'A';
-    if (c >= '0' && c <= '9') return 26 + c - '0';
-    if (c == '-') return 36;
-    if (c == '.') return 37;
-    return -1;
-}
-
-// Text mit Pixelgroesse sz ab (x, y) schreiben, Rueckgabe: Breite in Rohpixeln
-static int frame_text(unsigned char *raw, int rowlen, int row0, int x, int y, int sz, const char *s, const short *col)
-{
-    int x0 = x;
-    for (; *s; s++, x += 6 * sz) {
-        int g = frame_glyph(*s), cx, cy;
-        if (g < 0) continue;
-        for (cx = 0; cx < 5; cx++)
-            for (cy = 0; cy < 7; cy++)
-                if (frame_font[g][cx] & (1 << cy))
-                    raw_fill(raw, rowlen, row0, x + cx * sz, y + cy * sz, x + (cx + 1) * sz, y + (cy + 1) * sz, col);
-    }
-    return x - x0;
-}
-
 #define FRAME_THIN 1
-#define FRAME_FILM 2
 
-// Raender (in Rohpixeln) fuer ein Bild der Hoehe jh: Film beschneidet 4:3 auf etwa
-// 3:2 wie ein Kleinbild-Negativ.
-static inline int frame_border_v(int style, int jh) { return style == FRAME_FILM ? jh / 11 : jh / 48; }
-static inline int frame_border_h(int jh) { return jh / 48; }
+// Rand (in Rohpixeln) fuer ein Bild der Hoehe jh, oben/unten und links/rechts gleich
+static inline int frame_border(int jh) { return jh / 48; }
 
-// Rahmen zeichnen. black, hole, ink: Rohwerte je Bayer-Farbe; left/right: Randbeschriftung
-// (nur FRAME_FILM). jx..jh: sichtbarer Bildausschnitt.
-static void frame_draw(unsigned char *raw, int rowlen, int row0, int jx, int jy, int jw, int jh, int style,
-                       const short *black, const short *hole, const short *ink, const char *left, const char *right)
+// Schmalen schwarzen Rahmen zeichnen. black: Rohwerte je Bayer-Farbe; jx..jh: sichtbarer
+// Bildausschnitt.
+static void frame_draw(unsigned char *raw, int rowlen, int row0, int jx, int jy, int jw, int jh,
+                       const short *black)
 {
-    int bv = frame_border_v(style, jh), bh = frame_border_h(jh);
-    int x1 = jx + jw, y1 = jy + jh, k;
-    raw_fill(raw, rowlen, row0, jx, jy, x1, jy + bv, black);
-    raw_fill(raw, rowlen, row0, jx, y1 - bv, x1, y1, black);
-    raw_fill(raw, rowlen, row0, jx, jy + bv, jx + bh, y1 - bv, black);
-    raw_fill(raw, rowlen, row0, x1 - bh, jy + bv, x1, y1 - bv, black);
-    if (style != FRAME_FILM) return;
-
-    // Perforation aussen am Rand, Beschriftung innen, wie auf dem Negativ
-    int pitch = jw / 28, hw = pitch * 11 / 20, hh = bv * 9 / 20, my = bv / 14;
-    int sz = bv / 28;
-    if (sz < 1) sz = 1;
-    for (k = 0; k < 28; k++) {
-        int hx = jx + k * pitch + (pitch - hw) / 2;
-        raw_fill(raw, rowlen, row0, hx, jy + my, hx + hw, jy + my + hh, hole);
-        raw_fill(raw, rowlen, row0, hx, y1 - my - hh, hx + hw, y1 - my, hole);
-    }
-    int ty = y1 - bv + sz;                       // zwischen Bild und Perforation
-    if (left) frame_text(raw, rowlen, row0, jx + 3 * pitch, ty, sz, left, ink);
-    if (right) {
-        int n = 0;
-        while (right[n]) n++;
-        frame_text(raw, rowlen, row0, x1 - 3 * pitch - n * 6 * sz, ty, sz, right, ink);
-    }
+    int b = frame_border(jh);
+    int x1 = jx + jw, y1 = jy + jh;
+    raw_fill(raw, rowlen, row0, jx, jy, x1, jy + b, black);
+    raw_fill(raw, rowlen, row0, jx, y1 - b, x1, y1, black);
+    raw_fill(raw, rowlen, row0, jx, jy + b, jx + b, y1 - b, black);
+    raw_fill(raw, rowlen, row0, x1 - b, jy + b, x1, y1 - b, black);
 }
 
 #if CAM_SENSOR_BITS_PER_PIXEL == 12

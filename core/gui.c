@@ -2424,8 +2424,6 @@ static CMenuItem root_menu_items[] = {
     MENU_ITEM   (0x5f,LANG_EXCCD_CNR,                       MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_BWFILTER,                  MENUITEM_ENUM,      filmsim_bwfilter_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_EFFECTS,                   MENUITEM_SUBMENU,   &effects_submenu, 0 ),
-    MENU_ITEM   (0x5f,LANG_EXCCD_ROLL,                      MENUITEM_ENUM,      filmsim_roll_enum, 0 ),
-    MENU_ITEM   (0x5f,LANG_EXCCD_SURPRISE,                  MENUITEM_ENUM,      filmsim_surprise_enum, 0 ),
     MENU_ITEM   (0x5c,LANG_EXCCD_SAVE_RAW,                  MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
     MENU_ITEM   (0x2a,LANG_MENU_RAW_DEVELOP,                MENUITEM_PROC,      gui_filmsim_develop, 0 ),
     MENU_ITEM   (0x29,LANG_EXCCD_SYSTEM,                   MENUITEM_SUBMENU,   &system_submenu, 0 ),

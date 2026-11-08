@@ -399,29 +399,25 @@ static void test_grain(void)
 // --- Filmrahmen ------------------------------------------------------------
 static void test_frame(void)
 {
-    static const short black[4] = { 31, 31, 31, 31 }, hole[4] = { 300, 500, 500, 350 }, ink[4] = { 400, 200, 200, 40 };
-    int x, y, st;
-    for (st = FRAME_THIN; st <= FRAME_FILM; st++) {
-        // Ausschnitt mit Abstand zum Rand: darf nichts ausserhalb anfassen
-        int jx = 8, jy = 4, jw = 48, jh = GROWS - 8;
-        int bv = frame_border_v(st, jh), bh = frame_border_h(jh);
-        for (y = 0; y < GROWS; y++)
-            for (x = 0; x < ROWPIX; x++) set_px_rows(gbuf, x, y, (unsigned short)(600 << (BPP - 10)));
-        set_px_rows(gbuf, jx + 2, jy + 1, 0);
-        frame_draw(gbuf, ROWLEN, 0, jx, jy, jw, jh, st, black, hole, ink, "A1", "12A");
-        for (y = 0; y < GROWS; y++)
-            for (x = 0; x < ROWPIX; x++) {
-                int v = (int)(get_px_rows(gbuf, x, y) >> (BPP - 10));
-                int in_img = x >= jx && x < jx + jw && y >= jy && y < jy + jh;
-                int in_pic = x >= jx + bh && x < jx + jw - bh && y >= jy + bv && y < jy + jh - bv;
-                if (!in_img || in_pic) CHECK(v == 600, "Rahmen %d: x%d y%d veraendert (%d)", st, x, y, v);
-                else if (x == jx + 2 && y == jy + 1) CHECK(v == 0, "Rahmen: Defekt-Markierung weg");
-                else CHECK(v != 600, "Rahmen %d: x%d y%d nicht gefuellt", st, x, y);
-            }
-    }
-    // Schrift: jedes Zeichen hat Tinte, unbekannte Zeichen ruecken nur weiter
-    CHECK(frame_glyph('a') == frame_glyph('A') && frame_glyph('9') == 35 && frame_glyph('#') == -1, "frame_glyph");
-    CHECK(sizeof frame_font / sizeof frame_font[0] == 38, "Schrifttabelle");
+    static const short black[4] = { 31, 31, 31, 31 };
+    int x, y;
+    // Ausschnitt mit Abstand zum Rand: darf nichts ausserhalb anfassen
+    int jx = 8, jy = 4, jw = 48, jh = GROWS - 8;
+    int b = frame_border(jh);
+    CHECK(b >= 1, "Rahmen zu schmal fuer den Test: %d", b);
+    for (y = 0; y < GROWS; y++)
+        for (x = 0; x < ROWPIX; x++) set_px_rows(gbuf, x, y, (unsigned short)(600 << (BPP - 10)));
+    set_px_rows(gbuf, jx + 2, jy + 1, 0);
+    frame_draw(gbuf, ROWLEN, 0, jx, jy, jw, jh, black);
+    for (y = 0; y < GROWS; y++)
+        for (x = 0; x < ROWPIX; x++) {
+            int v = (int)(get_px_rows(gbuf, x, y) >> (BPP - 10));
+            int in_img = x >= jx && x < jx + jw && y >= jy && y < jy + jh;
+            int in_pic = x >= jx + b && x < jx + jw - b && y >= jy + b && y < jy + jh - b;
+            if (!in_img || in_pic) CHECK(v == 600, "Rahmen: x%d y%d veraendert (%d)", x, y, v);
+            else if (x == jx + 2 && y == jy + 1) CHECK(v == 0, "Rahmen: Defekt-Markierung weg");
+            else CHECK(v == 31, "Rahmen: x%d y%d nicht schwarz (%d)", x, y, v);
+        }
 }
 
 // Weissabgleich nachtraeglich: Faktor, Bayer-Lage, Gruen und Defekte bleiben

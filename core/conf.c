@@ -553,9 +553,6 @@ static ConfInfo conf_info[] = {
     CONF_INFO(265, conf.exccd_ui,                               CONF_DEF_VALUE, i:0),
     CONF_INFO(266, conf.film_zoom,                              CONF_DEF_VALUE, i:0),
     CONF_INFO(267, conf.film_frame,                             CONF_DEF_VALUE, i:0),
-    CONF_INFO(268, conf.film_roll,                              CONF_DEF_VALUE, i:0),
-    CONF_INFO(269, conf.film_roll_used,                         CONF_DEF_VALUE, i:0),
-    CONF_INFO(270, conf.film_surprise,                          CONF_DEF_VALUE, i:0),
     CONF_INFO(271, conf.film_name,                              CONF_CHAR_PTR,  ptr:""),
 
     CONF_INFO(999, conf.script_allow_lua_native_calls,          CONF_DEF_VALUE, i:0),

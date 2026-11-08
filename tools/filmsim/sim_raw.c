@@ -40,12 +40,9 @@ int main(int argc, char **argv)
         grain_apply(raw, rows, rowpix, rowlen, 0, 65536 / WB_R, 65536 / WB_B, amp, up, 12345);
         free(up);
     }
-    if (style) {
+    if (style) {                        // Filmrahmen (nur noch Thin)
         static const short black[4] = { BLK, BLK, BLK, BLK };
-        short hole[4], ink[4];
-        hole[0] = BLK + 440 * 256 / WB_R; hole[1] = hole[2] = BLK + 440; hole[3] = BLK + 440 * 256 / WB_B;
-        ink[0] = BLK + 620 * 256 / WB_R; ink[1] = ink[2] = BLK + 200; ink[3] = BLK + 18 * 256 / WB_B;
-        frame_draw(raw, rowlen, 0, 0, 0, rowpix, rows, style, black, hole, ink, "PORTRAIT 400", "12A");
+        frame_draw(raw, rowlen, 0, 0, 0, rowpix, rows, black);
     }
     for (y = 0; y < rows; y++)
         for (g = 0; g < rowpix / 8; g++) {

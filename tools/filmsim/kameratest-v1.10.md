@@ -1,4 +1,4 @@
-# Kameratest v1.10.0-lab
+# Kameratest v1.10.0
 
 Dieser Stand ist komplett am PC entstanden: Rohdaten-Code in PC-Tests (10 und 12 Bit), Looks
 und Effekte mit `simulate_looks.py` und `sim_raw.c` beurteilt, alle Kameras gebaut.
@@ -58,26 +58,13 @@ Der offene Punkt ist Canons Rauschfilter: Er laeuft nach EXCCD und kann feines K
 
 ## 6. Filmrahmen (Optionen -> Effekte -> Filmrahmen)
 
-- [ ] Thin: Rand auf allen vier Seiten gleich breit, kein Bildstreifen aussen
-- [ ] Negative: Perforation oben und unten, Filmname und Nummer in Bernstein, Bild etwa 3:2
+- [ ] Thin: Rand auf allen vier Seiten gleich breit, kein Bildstreifen aussen (Negative und Filmrolle sind beim Merge nach main weggefallen)
 - [ ] **Sitzt der Rahmen an allen vier Kanten?** Auf jeder Kamera pruefen, der Ausschnitt ist hier noch geschaetzt (IXUS 145: `To do` in `platform_camera.h`). Display-Foto oder JPEG-Ecke reicht
 - [ ] Schwarzer Rand: Beeinflusst er Canons Weissabgleich oder die Belichtung? (Sollte nicht, er entsteht erst nach der Aufnahme.)
 - [ ] Zusammen mit Date stamp: Datum sitzt ueber dem Filmrand
 - [ ] DNG speichern: Das DNG bleibt ohne Rahmen und Korn (wird vorher geschrieben)
 
-## 7. Filmrolle und Ueberraschungsfilm (Optionen)
-
-- [ ] Filmrolle 12: Statuszeile zaehlt `1/12`, `2/12` ...; bei `12` Anzeige "roll done"
-- [ ] Rolle angefangen: Filmauswahl laesst blaettern, SET auf einen anderen Film zeigt "Roll loaded: n left" und wechselt nicht
-- [ ] Rolle voll: Wechsel moeglich, naechstes Foto zaehlt wieder `1/12`
-- [ ] Ausschalten mitten in der Rolle: Zaehler bleibt
-- [ ] Filmrolle auf Off: Sperre weg
-- [ ] Mit Negative: Nummer im Filmrand passt zum Zaehler
-- [ ] Ueberraschungsfilm ohne Rolle: nach jedem Foto ein anderer Look, Statuszeile zeigt ihn
-- [ ] Ueberraschungsfilm mit Rolle: neuer Look erst, wenn die Rolle voll ist
-- [ ] Serienbild: Zaehler stimmt, keine Haenger
-
-## 8. RAW entwickeln (Optionen -> RAW develop)
+## 7. RAW entwickeln (Optionen -> RAW develop)
 
 Vorher: Optionen -> RAW auf DNG, ein paar Fotos machen. Dann DNG waehlen, Look waehlen, einmal ausloesen.
 
@@ -85,7 +72,7 @@ Vorher: Optionen -> RAW auf DNG, ein paar Fotos machen. Dann DNG waehlen, Look w
 - [ ] Das neue JPEG zeigt das Motiv der DNG, nicht den Hilfsschuss, und mit dem gewaehlten Look. Die DNG ist unveraendert, es entsteht keine neue DNG
 - [ ] **Weissabgleich, die wichtigste Pruefung:** Foto bei Tageslicht mit DNG und Look. Dieselbe DNG mit demselben Look einmal bei Tageslicht und einmal bei Kunstlicht entwickeln. Beide JPEGs sollen wie das Original aussehen. Falls nicht: Canon nutzt zur JPEG-Zeit andere Werte als `wb_adj` beim RAW-Hook, dann `filmsim_develop_begin` pruefen
 - [ ] Hilfsschuss im Dunkeln und mit Blitz: Ergebnis gleich? Lange Belichtung kostet nur Zeit (Canons Dunkelbild)
-- [ ] Danach ist wieder der vorher eingelegte Film aktiv, Filmrolle hat nicht gezaehlt, auch bei angefangener Rolle ging die Auswahl
+- [ ] Danach ist wieder der vorher eingelegte Film aktiv
 - [ ] Korn, Rahmen, Vignette, Datum wirken; der Datumsstempel zeigt den Aufnahmetag
 - [ ] Dynamik+: Foto mit DR+2 und DNG. Entwickeln bei Dynamik+ Off: gleiche Helligkeit wie das Original? Die DNG oeffnet sich weiter normal am PC
 - [ ] Abbrechen: Optionen -> RAW develop nochmal. Meldung, Film zurueck, naechstes Foto ist normal
@@ -93,6 +80,6 @@ Vorher: Optionen -> RAW auf DNG, ein paar Fotos machen. Dann DNG waehlen, Look w
 - [ ] Kamera beim Hilfsschuss hochkant halten: Das JPEG uebernimmt die Ausrichtung (bekannt, siehe README). Digitalzoom beim Hilfsschuss: Ausschnitt? Stoert es, dann Hinweis oder Sperre ergaenzen
 - [ ] Zeit in `FILMTIME.CSV`: Wartezeit vertretbar? Die WB-Umrechnung kommt vor `Hotpixel` und ist dort nicht mitgemessen
 
-## 9. Sprache
+## 8. Sprache
 
-- [ ] `german.lng`: Filmkorn, Filmrahmen, Filmrolle, Ueberraschungsfilm, RAW-Entwicklung passen in die Menuezeile
+- [ ] `german.lng`: Filmkorn, Filmrahmen, RAW-Entwicklung passen in die Menuezeile

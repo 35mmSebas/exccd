@@ -853,20 +853,15 @@
 #define LANG_EXCCD_GRAIN                        722
 #define LANG_EXCCD_FRAME                        723
 #define LANG_EXCCD_THIN                         724
-#define LANG_EXCCD_NEGATIVE                     725
-#define LANG_EXCCD_FINE                         726
-#define LANG_EXCCD_MEDIUM                       727
-#define LANG_EXCCD_COARSE                       728
-#define LANG_EXCCD_ROLL                         729
-#define LANG_EXCCD_SURPRISE                     730
-#define LANG_EXCCD_ROLL_LOCKED                  731
-#define LANG_EXCCD_ROLL_DONE                    732
+#define LANG_EXCCD_FINE                         725
+#define LANG_EXCCD_MEDIUM                       726
+#define LANG_EXCCD_COARSE                       727
 
-#define LANG_EXCCD_DEV_OSD                      733
-#define LANG_EXCCD_DEV_BAD                      734
-#define LANG_EXCCD_DEV_CANCELLED                735
+#define LANG_EXCCD_DEV_OSD                      728
+#define LANG_EXCCD_DEV_BAD                      729
+#define LANG_EXCCD_DEV_CANCELLED                730
 
-#define GUI_LANG_ITEMS                          735
+#define GUI_LANG_ITEMS                          730
 
 //-------------------------------------------------------------------
 extern void gui_lang_init();

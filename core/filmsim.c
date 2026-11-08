@@ -493,18 +493,6 @@ void filmsim_apply(void)
     set_curve(s);
 }
 
-//-------------------------------------------------------------------
-// Filmrolle und Ueberraschungsfilm
-//   Rolle: 12/24/36 Aufnahmen, die Statuszeile zaehlt mit. Solange die Rolle nicht
-//   voll ist, laesst die Filmauswahl keinen anderen Film zu (wie im echten Leben;
-//   raus kommt man ueber Optionen -> Filmrolle). Die Kamera nimmt danach weiter auf,
-//   das naechste Foto beginnt eine neue Rolle.
-//   Ueberraschungsfilm: Mit jeder vollen Rolle (ohne Rolle: nach jedem Foto) wird
-//   zufaellig ein neuer Film eingelegt.
-//-------------------------------------------------------------------
-static const short roll_sizes[4] = { 0, 12, 24, 36 };
-static volatile int roll_shot = 0;      // vom RAW-Hook: Foto gemacht, Rest erledigt filmsim_tick
-
 // RAW entwickeln (Ablauf siehe filmsim_develop_select)
 static volatile int dev_armed = 0;      // das naechste Foto ist der Hilfsschuss
 static volatile int dev_active = 0;     // der Hilfsschuss laeuft gerade durch den RAW-Hook
@@ -514,38 +502,8 @@ static int dev_has_meta = 0;            // 0: reines RAW ohne Aufnahmedaten
 static dng_meta_t dev_meta;
 static char dev_name[16];               // Dateiname fuer Statuszeile und Logbuch
 
-static int roll_total(void)
-{
-    return (conf.film_roll > 0 && conf.film_roll < 4) ? roll_sizes[conf.film_roll] : 0;
-}
-
-static int roll_locked(void)
-{
-    int t = roll_total();
-    return t && conf.film_roll_used > 0 && conf.film_roll_used < t;
-}
-
-static void surprise_pick(void)
-{
-    if (NUM_SIMS < 3) return;
-    unsigned int r = (unsigned int)get_tick_count() * 2654435761u;
-    int v = 1 + (int)((r >> 16) % (unsigned)(NUM_SIMS - 1));
-    if (v == conf.film_sim) v = (v < NUM_SIMS - 1) ? v + 1 : 1;
-    filmsim_set(v);
-}
-
-// Aus filmsim_tick: Kamera im Fotomodus, keine Menues, kein Bild in Arbeit
-static void roll_tick(void)
-{
-    if (!roll_shot || camera_info.state.is_shutter_half_press) return;
-    roll_shot = 0;
-    int t = roll_total();
-    if (conf.film_surprise && (!t || conf.film_roll_used >= t))
-        surprise_pick();
-    if (t || conf.film_surprise) conf_save();   // Zaehler und Film ueberstehen das Ausschalten
-}
-
-// Aus filmsim_tick wie roll_tick: Canon ist mit dem JPEG fertig, erst jetzt den Film zuruecknehmen
+// Aus filmsim_tick: Kamera im Fotomodus, keine Menues, kein Bild in Arbeit.
+// Canon ist mit dem JPEG fertig, erst jetzt den Film zuruecknehmen
 static void dev_tick(void)
 {
     if (!dev_restore || camera_info.state.is_shutter_half_press) return;
@@ -558,8 +516,8 @@ static void dev_tick(void)
 // RAW entwickeln: eine gespeicherte DNG mit einem anderen Look neu ausgeben
 //   Canon erzeugt JPEGs nur nach einer Aufnahme. Deshalb: DNG und Look waehlen, einmal
 //   ausloesen. raw.c ersetzt die Sensordaten dieses Hilfsschusses durch die DNG, danach laeuft
-//   die normale Kette, und das Original bleibt erhalten. Der eingelegte Film und die Filmrolle
-//   aendern sich dabei nicht.
+//   die normale Kette, und das Original bleibt erhalten. Der eingelegte Film
+//   aendert sich dabei nicht.
 //
 //   Vom Hilfsschuss stammen sonst nur Canons Einstellungen. Deshalb wird korrigiert:
 //     Weissabgleich:  Canon rechnet mit den Faktoren des Hilfsschusses. Die Rohdaten werden so
@@ -664,23 +622,6 @@ int filmsim_dng_mark(const char *fn)
     return fd;
 }
 
-const char* filmsim_roll_enum(int change, __attribute__ ((unused))int arg)
-{
-    static const int m[] = { LANG_EXCCD_OFF, (int)"12", (int)"24", (int)"36" };
-    if (change) {
-        conf.film_roll = (conf.film_roll + change + 4) % 4;
-        conf.film_roll_used = 0;        // andere Rolle: frisch anfangen
-    }
-    return lang_str(m[conf.film_roll % 4]);
-}
-
-const char* filmsim_surprise_enum(int change, __attribute__ ((unused))int arg)
-{
-    static const int m[] = { LANG_EXCCD_OFF, LANG_EXCCD_ON };
-    if (change) conf.film_surprise = !conf.film_surprise;
-    return lang_str(m[conf.film_surprise ? 1 : 0]);
-}
-
 // Wird ca. alle 20 ms aus der Hauptschleife aufgerufen
 void filmsim_tick(void)
 {
@@ -726,7 +667,6 @@ void filmsim_tick(void)
     if (!filmsim_photo_mode()) return;
     if (!camera_info.state.gui_mode_none) return;   // nicht in Menues eingreifen
     if (camera_info.state.state_shooting_progress == SHOOTING_PROGRESS_PROCESSING) return;
-    roll_tick();
     dev_tick();
 
     // Altlast aus v0.9: von der Koernung erzwungene ISO 800 zuruecknehmen
@@ -785,7 +725,6 @@ extern gui_handler menuGuiHandler;
 
 static int sel = 0;                 // gerade angezeigter Film
 static int need_draw = 0;           // 1 = alles, 2 = nur Leiste
-static int roll_hint = 0;           // Leiste zeigt: Rolle noch nicht voll
 static unsigned char *label_buf = 0;
 static int label_len = 0;
 static int label_for = -1;          // fuer welchen Film label_buf gilt
@@ -873,13 +812,6 @@ static void bar_draw(void)
                    MAKE_COLOR(COLOR_BLACK, COLOR_BLACK), RECT_BORDER0|DRAW_FILLED);
     draw_string(x0, BAR_Y, "<", MAKE_COLOR(COLOR_BLACK, EX_GREY));
     draw_string(x1, BAR_Y, ">", MAKE_COLOR(COLOR_BLACK, EX_GREY));
-    if (roll_hint) {
-        char hint[40];
-        sprintf(hint, lang_str(LANG_EXCCD_ROLL_LOCKED), roll_total() - conf.film_roll_used);
-        draw_string((camera_screen.width - (int)strlen(hint) * FONT_WIDTH) / 2, BAR_Y, hint,
-                    MAKE_COLOR(COLOR_BLACK, COLOR_WHITE));
-        return;
-    }
     // Position in der Liste, bei vielen Looks sonst schwer zu schaetzen
     if (sel > 0) {
         char pos[12];
@@ -927,31 +859,21 @@ static int film_gui_kbd(void)
     {
     case KEY_LEFT: case JOGDIAL_LEFT:
         sel = (sel > 0) ? sel - 1 : NUM_SIMS - 1;
-        roll_hint = 0;
         need_draw = 1;
         break;
     case KEY_RIGHT: case JOGDIAL_RIGHT:
         sel = (sel < NUM_SIMS - 1) ? sel + 1 : 0;
-        roll_hint = 0;
         need_draw = 1;
         break;
     case KEY_UP:                    // grosser Sprung
         sel = (sel + NUM_SIMS - 5 % NUM_SIMS) % NUM_SIMS;
-        roll_hint = 0;
         need_draw = 1;
         break;
     case KEY_DOWN:
         sel = (sel + 5) % NUM_SIMS;
-        roll_hint = 0;
         need_draw = 1;
         break;
     case KEY_SET:
-        // Beim Entwickeln gilt die Sperre nicht: Der eingelegte Film kommt danach zurueck
-        if (!dev_armed && roll_locked() && sel != conf.film_sim) {
-            roll_hint = 1;
-            need_draw = 2;
-            break;
-        }
         filmsim_set(sel);
         if (!dev_armed) conf_save();
         film_gui_close();
@@ -974,7 +896,6 @@ void filmsim_open_menu(void)
     films_load();
     sel = conf.film_sim;
     if (sel < 0 || sel >= NUM_SIMS) sel = 0;
-    roll_hint = 0;
     need_draw = 1;
     gui_set_mode(&filmGuiHandler);
 }
@@ -1023,8 +944,7 @@ void filmsim_draw_osd(void)
         && !conf.film_double && !conf.subj_dist_override_koef
         && !conf.film_mist && !conf.film_halation && !conf.film_vignette
         && !conf.film_leak && !conf.film_datestamp && !conf.film_dr && !conf.film_cnr
-        && !conf.film_zoom && !conf.film_grain && !conf.film_frame && !conf.film_roll
-        && !conf.film_surprise) return;
+        && !conf.film_zoom && !conf.film_grain && !conf.film_frame) return;
     strcpy(buf, filmsim_name());
     if (dev_armed) {
         // Wichtiger als alles andere: Das naechste Foto ist kein Foto
@@ -1042,14 +962,6 @@ void filmsim_draw_osd(void)
         const char *zo = filmsim_zoom_str();
         if (zo) { strcat(buf, " | "); strcat(buf, zo); }
         if (conf.film_double) strcat(buf, conf.film_double == 1 ? " | 2x 1/2" : " | 2x 2/2");
-        if (roll_total()) {
-            if (conf.film_roll_used >= roll_total()) {
-                strcat(buf, " | ");
-                strcat(buf, lang_str(LANG_EXCCD_ROLL_DONE));
-            } else {
-                sprintf(buf + strlen(buf), " | %d/%d", conf.film_roll_used + 1, roll_total());
-            }
-        }
         if (conf.film_dr == 1) strcat(buf, " | DR+1");
         if (conf.film_dr == 2) strcat(buf, " | DR+2");
         if (conf.film_cnr) strcat(buf, conf.film_cnr == CNR_AUTO ? " | NR auto" : " | NR");
@@ -1244,15 +1156,10 @@ static void shot_line(char *line)
 void filmsim_log_shot(void)
 {
     char line[96];
-    if (dev_active) {                   // Entwickeln: zaehlt nicht als Aufnahme der Rolle
+    if (dev_active) {                   // Entwickeln: danach eingelegten Film zurueck
         dev_active = 0;
         dev_restore = 1;
     } else {
-        if (roll_total()) {
-            if (conf.film_roll_used >= roll_total()) conf.film_roll_used = 0;   // neue Rolle
-            conf.film_roll_used++;
-        }
-        roll_shot = 1;
         dev_name[0] = 0;
     }
     const char *fn = "A/CHDK/FILMLOG.CSV";
@@ -1784,7 +1691,7 @@ __attribute__((optimize("O2"))) static void effects_grain(char *raw)
 //---------------- Filmrahmen ----------------
 static void effects_frame(char *raw)
 {
-    if (conf.film_frame != FRAME_THIN && conf.film_frame != FRAME_FILM) return;
+    if (!conf.film_frame) return;       // auch 2 (Negative aus dem Lab-Build) gilt als Thin
     int jx, jy, jw, jh;
     jpeg_rect(&jx, &jy, &jw, &jh);
     // Etwas ueber den Ausschnitt hinaus (nur im aktiven Bereich): Falls Canons JPEG
@@ -1800,16 +1707,8 @@ static void effects_frame(char *raw)
             jh = (y1 > ey ? ey : y1) - jy;
         }
     }
-#define FR_RGB(r, g, b) { BLK + (r) * 256 / WB_R, BLK + (g), BLK + (g), BLK + (b) * 256 / WB_B }
     static const short black[4] = { BLK, BLK, BLK, BLK };
-    static const short hole[4] = FR_RGB(440, 440, 440);         // Perforation: helles Grau
-    static const short ink[4] = FR_RGB(620, 200, 18);           // Randschrift: Bernstein
-#undef FR_RGB
-    char num[12];
-    int t = roll_total();
-    sprintf(num, "%dA", t ? (conf.film_roll_used % t) + 1 : (int)(get_target_file_num() % 36) + 1);
-    frame_draw((unsigned char *)raw, camera_sensor.raw_rowlen, FS_ROW0, jx, jy, jw, jh, conf.film_frame,
-               black, hole, ink, filmsim_name(), num);
+    frame_draw((unsigned char *)raw, camera_sensor.raw_rowlen, FS_ROW0, jx, jy, jw, jh, black);
 }
 
 static void effects_datestamp(void)
@@ -1830,7 +1729,6 @@ static void effects_datestamp(void)
     for (i = 0; i < n; i++) total += (s[i] == '\'' ? W / 2 : (s[i] == ' ' ? W / 2 : W)) + gap;
     int x = jx + jw - jw / 14 - total;
     int y = jy + jh - jh / 12 - H;
-    if (conf.film_frame == FRAME_FILM) y -= frame_border_v(FRAME_FILM, jh);   // nicht auf den Filmrand
     for (i = 0; i < n; i++) {
         stamp_char(x, y, H, W, T, s[i], 40);
         x += (s[i] == '\'' ? W / 2 : (s[i] == ' ' ? W / 2 : W)) + gap;
@@ -2072,9 +1970,9 @@ const char* filmsim_grain_enum(int change, __attribute__ ((unused))int arg)
 }
 const char* filmsim_frame_enum(int change, __attribute__ ((unused))int arg)
 {
-    static const int m[] = { LANG_EXCCD_OFF, LANG_EXCCD_THIN, LANG_EXCCD_NEGATIVE };
-    if (change) conf.film_frame = (conf.film_frame + change + 3) % 3;
-    return lang_str(m[conf.film_frame % 3]);
+    static const int m[] = { LANG_EXCCD_OFF, LANG_EXCCD_THIN };
+    if (change) conf.film_frame = !conf.film_frame;
+    return lang_str(m[conf.film_frame ? 1 : 0]);
 }
 
 //-------------------------------------------------------------------

@@ -419,96 +419,6 @@ static void scenario_picker(void)
     CHECK(alt_exits == 1, "SET schliesst nicht");
 }
 
-static void scenario_roll(void)
-{
-    int i;
-    char *raw = 0;
-    camera_on();
-    filmsim_set(5);
-    filmsim_roll_enum(1, 0);
-    CHECK(conf.film_roll == 1 && conf.film_roll_used == 0, "Rolle an: %d %d", conf.film_roll, conf.film_roll_used);
-    CHECK(strstr(osd_text(), "| 1/12") != 0, "Statuszeile: [%s]", drawn);
-    // Vor dem ersten Foto ist der Wechsel frei
-    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
-    CHECK(conf.film_sim == 6, "Wechsel vor Foto 1: %d", conf.film_sim);
-    cur_mode = 0;
-    for (i = 0; i < 5; i++) { filmsim_log_shot(); ticks(30); }
-    CHECK(conf.film_roll_used == 5, "Zaehler %d", conf.film_roll_used);
-    CHECK(conf_saves > 0, "Zaehler nicht gespeichert");
-    CHECK(strstr(osd_text(), "| 6/12") != 0, "Statuszeile: [%s]", drawn);
-    // Gesperrt: anderer Film geht nicht, Hinweis in der Leiste
-    int ex = alt_exits;
-    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
-    CHECK(conf.film_sim == 6, "Sperre wirkt nicht: %d", conf.film_sim);
-    CHECK(strstr(drawn, "Roll loaded: 7 left") != 0, "Hinweis: [%s]", drawn);
-    CHECK(alt_exits == ex, "Auswahl geschlossen");
-    press(KEY_LEFT);
-    CHECK(strstr(drawn, "6/26") != 0, "Hinweis bleibt: [%s]", drawn);
-    press(KEY_SET);                     // derselbe Film: schliesst normal
-    CHECK(alt_exits == ex + 1, "derselbe Film schliesst nicht");
-    // Rolle voll
-    for (i = 0; i < 7; i++) { filmsim_log_shot(); ticks(30); }
-    CHECK(conf.film_roll_used == 12, "voll: %d", conf.film_roll_used);
-    CHECK(strstr(osd_text(), "roll done") != 0, "Rolle voll: [%s]", drawn);
-    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
-    CHECK(conf.film_sim == 7, "volle Rolle sperrt: %d", conf.film_sim);
-    // Naechstes Foto: neue Rolle, wieder gesperrt
-    filmsim_log_shot(); ticks(30);
-    CHECK(conf.film_roll_used == 1, "neue Rolle: %d", conf.film_roll_used);
-    CHECK(strstr(osd_text(), "| 2/12") != 0, "neue Rolle: [%s]", drawn);
-    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
-    CHECK(conf.film_sim == 7, "neue Rolle sperrt nicht: %d", conf.film_sim);
-    // Raus ueber das Menue
-    filmsim_roll_enum(-1, 0);
-    CHECK(conf.film_roll == 0 && conf.film_roll_used == 0, "Rolle aus: %d %d", conf.film_roll, conf.film_roll_used);
-    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
-    CHECK(conf.film_sim == 8, "Rolle aus, Sperre bleibt: %d", conf.film_sim);
-    CHECK(strstr(osd_text(), "/12") == 0, "Statuszeile: [%s]", drawn);
-    (void)raw;
-}
-
-static void scenario_surprise(void)
-{
-    int i, last, changed = 0, seen[64] = {0}, kinds = 0;
-    camera_on();
-    filmsim_set(5);
-    filmsim_surprise_enum(1, 0);
-    CHECK(conf.film_surprise == 1, "An");
-    last = conf.film_sim;
-    for (i = 0; i < 200; i++) {
-        filmsim_log_shot();
-        now_ms += 1237;
-        ticks(30);
-        CHECK(conf.film_sim >= 1 && conf.film_sim <= 26, "Film %d", conf.film_sim);
-        if (conf.film_sim != last) changed++;
-        last = conf.film_sim;
-        if (!seen[conf.film_sim]++) kinds++;
-    }
-    CHECK(changed == 200, "nur %d von 200 Fotos mit neuem Film", changed);
-    CHECK(kinds >= 20, "nur %d verschiedene Filme", kinds);
-    // Nicht waehrend Halbdruck oder Verarbeitung
-    filmsim_log_shot();
-    last = conf.film_sim;
-    camera_info.state.is_shutter_half_press = 1;
-    ticks(30);
-    CHECK(conf.film_sim == last, "Wechsel bei Halbdruck");
-    camera_info.state.is_shutter_half_press = 0;
-    camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_PROCESSING;
-    ticks(30);
-    CHECK(conf.film_sim == last, "Wechsel waehrend der Verarbeitung");
-    camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_NONE;
-    ticks(30);
-    CHECK(conf.film_sim != last, "kein Wechsel danach");
-    // Mit Rolle: erst wenn sie voll ist
-    filmsim_roll_enum(1, 0);
-    last = conf.film_sim;
-    for (i = 0; i < 11; i++) { filmsim_log_shot(); now_ms += 500; ticks(30); }
-    CHECK(conf.film_sim == last, "Wechsel mitten in der Rolle");
-    filmsim_log_shot(); now_ms += 500; ticks(30);
-    CHECK(conf.film_sim != last, "kein Wechsel bei voller Rolle");
-    CHECK(conf.film_roll_used == 12, "Zaehler %d", conf.film_roll_used);
-}
-
 // Rohbild: Verlauf, Spalte fuer Spalte verschieden, je Bayer-Farbe plausibel
 static void raw_fill_test(void)
 {
@@ -557,7 +467,8 @@ static void scenario_raw(const char *root)
     shoot((char *)rawbuf);
     CHECK(memcmp(orig, rawbuf, rows * rowlen) == 0, "Daylight veraendert das Rohbild");
 
-    // Filmrahmen: an den Kanten des Ausschnitts, Dunkelbereich unberuehrt
+    // Filmrahmen: an den Kanten des Ausschnitts, Dunkelbereich unberuehrt.
+    // 2 (Negative aus dem Lab-Build) steht vielleicht noch in der CFG und gilt als Thin.
     for (st = 1; st <= 2; st++) {
         // Heller als jede Farbe des Rahmens: Ein gleicher Wert heisst sicher "nicht gefuellt"
         for (y = 0; y < rows; y++)
@@ -571,8 +482,8 @@ static void scenario_raw(const char *root)
         conf.film_frame = 0;
         // Der Rahmen beginnt bis zu 8 Pixel ausserhalb des Ausschnitts (aktiver Bereich) und
         // ist von dort aus gemessen: Auf dem Bild mindestens so breit wie diese Werte.
-        int bh = jh / 48 - 8, bv = (st == 2 ? jh / 11 : jh / 48) - 8, bad = 0, ob = 0, pic = 0;
-        int ih = jh / 48 + 8, iv = (st == 2 ? jh / 11 : jh / 48) + 8;
+        int bh = jh / 48 - 8, bv = jh / 48 - 8, bad = 0, ob = 0, pic = 0;
+        int ih = jh / 48 + 8, iv = jh / 48 + 8;
         for (y = 0; y < rows; y++)
             for (x = 0; x < rowpix; x++) {
                 int v = get_raw_pixel(x, y), o;
@@ -583,7 +494,7 @@ static void scenario_raw(const char *root)
                 int rim = x >= jx && x < jx + jw && y >= jy && y < jy + jh &&
                           !(x >= jx + bh && x < jx + jw - bh && y >= jy + bv && y < jy + jh - bv);
                 if (ii && v != o) pic++;        // Bild selbst bleibt
-                if (rim && v == o) bad++;       // Rand: schwarz, Perforation oder Schrift, nie Bild
+                if (rim && v == o) bad++;       // Rand: schwarz, nie Bild
             }
         CHECK(ob == 0, "Rahmen %d: %d Pixel ausserhalb des aktiven Bereichs veraendert", st, ob);
         CHECK(pic == 0, "Rahmen %d: %d Pixel im Bild veraendert", st, pic);
@@ -592,7 +503,7 @@ static void scenario_raw(const char *root)
 
     // Alle neuen Looks mit allem an: laeuft durch, nichts wird 0, Bild aendert sich
     conf.film_grain = 1;
-    conf.film_frame = 2;
+    conf.film_frame = 1;
     conf.film_datestamp = 1;
     conf.film_vignette = 1;
     conf.film_mist = 1;
@@ -726,10 +637,8 @@ static void scenario_develop(void)
     filmsim_develop_select(0);          // Dateiauswahl abgebrochen
     CHECK(!filmsim_develop_armed(), "Abbruch stellt scharf");
 
-    // Halbvolle Rolle, Look 5: Auswahl geht trotz Sperre, der Film kommt danach zurueck
+    // Look 5 eingelegt: der Film kommt danach zurueck
     filmsim_set(5);
-    filmsim_roll_enum(1, 0);
-    for (m = 0; m < 3; m++) { filmsim_log_shot(); ticks(30); }
     saves = conf_saves;
     cur_mode = 0;
     filmsim_develop_select(good);
@@ -751,7 +660,6 @@ static void scenario_develop(void)
     CHECK(RAW10(cx, cy + r0) == 31 + 369 * 2, "R: %d", RAW10(cx, cy + r0));
     CHECK(RAW10(cx + 1, cy + r0) == 400, "G: %d", RAW10(cx + 1, cy + r0));
     CHECK(RAW10(cx + 1, cy + r0 + 1) == 31 + 185, "B: %d", RAW10(cx + 1, cy + r0 + 1));
-    CHECK(conf.film_roll_used == 3, "Rolle zaehlt mit: %d", conf.film_roll_used);
     {
         int li = fs_find("A/CHDK/FILMLOG.CSV");
         card[li].data[card[li].size] = 0;
@@ -764,23 +672,19 @@ static void scenario_develop(void)
     camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_NONE;
     ticks(60);
     CHECK(conf.film_sim == 5, "eingelegter Film nicht zurueck: %d", conf.film_sim);
-    filmsim_open_menu(); press(KEY_RIGHT); press(KEY_SET);
-    CHECK(conf.film_sim == 5, "Rolle danach nicht mehr gesperrt: %d", conf.film_sim);
     cur_mode = 0;
 
-    // Normales Foto danach: zaehlt wieder, keine dritte Spalte, Ueberschreiben klappt
+    // Normales Foto danach: keine dritte Spalte, Ueberschreiben klappt
     host_wb[0] = host_wb[1] = host_wb[2] = 1000;
     filmsim_set(5);
     mark = card[fs_find("A/CHDK/FILMLOG.CSV")].size;
     filmsim_log_shot();
     ticks(30);
-    CHECK(conf.film_roll_used == 4, "normales Foto: %d", conf.film_roll_used);
     {
         int li = fs_find("A/CHDK/FILMLOG.CSV");
         card[li].data[card[li].size] = 0;
         CHECK(strstr(card[li].data + mark, ".DNG") == 0, "normales Foto mit Quelle: [%s]", card[li].data + mark);
     }
-    filmsim_roll_enum(-1, 0);
 
     // Abbrechen: Look und Zustand zurueck
     filmsim_develop_select(good);
@@ -890,8 +794,6 @@ int main(int argc, char **argv)
     const char *root = argc > 2 ? argv[2] : ".";
     if (strcmp(what, "names") == 0) scenario_names(argc > 3 ? argv[3] : "0");
     else if (strcmp(what, "picker") == 0) scenario_picker();
-    else if (strcmp(what, "roll") == 0) scenario_roll();
-    else if (strcmp(what, "surprise") == 0) scenario_surprise();
     else if (strcmp(what, "raw") == 0) scenario_raw(root);
     else if (strcmp(what, "develop") == 0) scenario_develop();
     else { printf("Szenario?\n"); return 2; }
