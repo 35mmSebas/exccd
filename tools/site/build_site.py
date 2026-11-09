@@ -14,8 +14,9 @@ Download. Dafuer wird jedes Firmware-ZIP hier zerlegt:
     data/<kamera>/base.zip           alles ausser den Look-Dateien
     data/<kamera>/looks/<ID>.zip     je Look: Kurve + DR-Varianten, Lasche (.FLM)
     data/<kamera>/looks/<ID>.png     Laschen-Vorschau
-    data/<kamera>/vers.req           zum Pruefen der Firmware-Version
-    data/samples/<ID>-*.jpg          Beispielfotos aus site/samples (falls vorhanden)
+    data/<kamera>/ver.req, vers.req  zum Pruefen der Firmware-Version
+    data/samples/<ID>-*.jpg          Beispielfotos aus site/samples (falls vorhanden),
+                                     <ID>-sim-<n>.jpg = am PC simuliert, die Seite markiert sie
     data/site.json                   Version, Kameras, Looks mit FILMS.TXT-Zeile und
                                      Kurvenrezept (fuer die WB-Verschiebung, site/curves.js)
 
@@ -173,9 +174,12 @@ def build_camera(cam, fw_zip, out, site_src, meta):
         copy_entries(fw, base, os.path.join(cam_dir, "base.zip"))
         base_size = os.path.getsize(os.path.join(cam_dir, "base.zip"))
 
-        # Einzeln ladbar, um vorab die Firmware-Version der Kamera zu pruefen
-        with open(os.path.join(cam_dir, "vers.req"), "wb") as f:
-            f.write(fw.read("vers.req"))
+        # Einzeln ladbar, um vorab die Firmware-Version der Kamera zu pruefen.
+        # Aeltere Kameras lesen VER.REQ, neuere VERS.REQ (wie tools/installer)
+        req = fw.read("vers.req")
+        for name in ("ver.req", "vers.req"):
+            with open(os.path.join(cam_dir, name), "wb") as f:
+                f.write(req)
 
     samples_out = os.path.join(out, "data", "samples")
     for look in looks:

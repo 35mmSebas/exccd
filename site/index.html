@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EXCCD – film looks for old Canon digicams</title>
-<meta name="description" content="A small CHDK add-on that gives old Canon digicams a set of film looks. Pick the looks you want and download a ZIP for the SD card. Free.">
+<meta name="description" content="A small CHDK add-on that gives old Canon digicams a set of film looks. Pick the looks you want and download a ZIP for the SD card. Free, open source, public beta.">
 <meta name="theme-color" content="#000000">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="app.js"></script>
@@ -20,6 +20,7 @@
       <ul class="nav-sub">
         <li><a href="#why">why</a></li>
         <li><a href="#how">how it works</a></li>
+        <li><a href="#status">beta status</a></li>
         <li><a href="#support">it's free</a></li>
       </ul>
     </div>
@@ -48,9 +49,10 @@
         <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 4h15l6 6v26H10z"/><path d="M15 4v6M19 4v6M23 4v5"/><path d="M15 27h11"/></svg>
         <span>install</span></a>
       <ul class="nav-sub">
-        <li><a href="#install-steps">sd card</a></li>
+        <li><a href="#install-steps">step by step</a></li>
+        <li><a href="#trouble">if it doesn't work</a></li>
         <li><a href="#faq">questions</a></li>
-        <li><a class="repo-link" href="https://github.com/35mmSebas/exccd">source code</a></li>
+        <li><a href="#contribute">help out</a></li>
       </ul>
     </div>
   </nav>
@@ -136,6 +138,7 @@
       </div>
     </figure>
     <div class="claim">
+      <a class="beta-pill" href="#status">public beta · work in progress</a>
       <h1>Film looks for old Canon digicams.</h1>
       <p class="claim-for">a CHDK add-on for Canon point-and-shoots from the 2000s</p>
       <p class="claim-facts" id="facts"></p>
@@ -180,6 +183,29 @@
       </ol>
     </section>
 
+    <section class="status wrap" id="status">
+      <div>
+        <p class="eyebrow">Public beta</p>
+        <h2>Work in progress, and that's fine.</h2>
+      </div>
+      <div>
+        <p>EXCCD is a hobby project, not a finished product. I use it on my IXUS 60 all the time, but every old
+          camera model is a little different: another sensor, another colour matrix, another firmware. So the
+          looks get re-tuned whenever real photos from a camera come in, and things will keep changing
+          between versions.</p>
+        <ul class="status-list">
+          <li><span class="dot ok" aria-hidden="true"></span><b>Tested</b> – IXUS 60 / SD600. Used day to day; the newest
+            features are still being checked.</li>
+          <li><span class="dot wip" aria-hidden="true"></span><b>In testing</b> – IXUS 132 / ELPH 115 IS and PowerShot SX110 IS.
+            Built and partly tested on real cameras.</li>
+          <li><span class="dot todo" aria-hidden="true"></span><b>Ported, not tested</b> – IXUS 145 / ELPH 135.
+            Built, but nobody has run it on a real camera yet.</li>
+        </ul>
+        <p class="muted small">The download only offers cameras that are ready for it. Some sample photos are
+          simulated on a PC until I've shot real ones; they're marked as such.</p>
+      </div>
+    </section>
+
     <div class="wrap">
       <section class="support" id="support">
         <div>
@@ -189,7 +215,9 @@
         <div>
           <p>EXCCD is free to download and use. It's a fun project, so there's nothing to pay.</p>
           <p>The code is GPL v2 like CHDK, the looks (curves, labels, film table) are CC BY-SA 4.0.
-            Everything is on <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>.</p>
+            Everything is on <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>.
+            Feedback, bug reports and pull requests are welcome, and so is help with
+            <a href="#contribute">more camera models</a>.</p>
         </div>
       </section>
     </div>
@@ -288,12 +316,18 @@
           <p class="fw-note" id="fw-note" role="status"></p>
           <details class="help">
             <summary>How do I find my firmware version?</summary>
+            <p><b>With the installer (Windows):</b> start the <a href="#install-steps">EXCCD installer</a>, choose your
+              camera, insert a card formatted in the camera and click <i>Check firmware…</i>. It tells you
+              what to do next.</p>
+            <p><b>By hand:</b></p>
             <ol>
-              <li>Download <a id="vers-link" href="#" download="vers.req">vers.req</a> and copy it to the root of the SD card.</li>
-              <li>Put the card in the camera and switch it on in <b>playback</b> mode.</li>
+              <li>Download <a id="ver-link" href="#" download="ver.req">ver.req</a> and
+                <a id="vers-link" href="#" download="vers.req">vers.req</a> and copy both to the top level of the SD card.
+                Older models read the first one, newer ones the second.</li>
+              <li>Put the card in the camera (not locked) and switch it on in <b>playback</b> mode.</li>
               <li>Hold <b>FUNC/SET</b> and press <b>DISP</b>. The camera shows a line like
                 <code id="fw-example">Firmware Ver GM1.00D</code>. The letter at the end is the one that counts.</li>
-              <li>You can delete <code>vers.req</code> from the card afterwards.</li>
+              <li>Delete both files from the card afterwards.</li>
             </ol>
           </details>
         </div>
@@ -335,35 +369,83 @@
   <section class="view" id="install" data-view hidden>
     <div class="wrap">
       <section class="step first" id="install-steps">
-        <header class="step-head"><span class="num">01</span><h2>Install</h2></header>
+        <header class="step-head"><span class="num">01</span><h2>Install, step by step</h2></header>
+        <p class="lead-in">About ten minutes, no camera firmware is changed. Instructions for
+          <b class="cam-short"></b> · <a href="#camera-step">other camera</a></p>
+        <div class="need">
+          <h3>You need</h3>
+          <ul>
+            <li>the camera, with a charged battery</li>
+            <li><span id="card-need">an SD card</span></li>
+            <li>a card reader and a Windows PC (macOS and Linux: <a href="#manual">by hand</a>)</li>
+          </ul>
+        </div>
         <ol class="install">
+          <li><h3>Check the firmware</h3>
+            <p>EXCCD only runs on firmware <b class="cam-fw"></b> of this camera. Not sure which one you have?
+              The installer can check it (<i>Check firmware…</i>), or see
+              <a href="#camera-step">how to find it by hand</a>.</p></li>
+          <li><h3>Download your looks</h3>
+            <p>Pick your films on the <a href="#looks-step">looks page</a> and download the ZIP. Leave it in your
+              Downloads folder; the installer finds it there.</p></li>
           <li><h3>Format the card in the camera</h3>
-            <p>Use the camera's own <i>Format</i> menu. This erases the card, so copy your photos off first.
-              <span id="boot-note"></span></p></li>
+            <p>Use the camera's own <i>Format</i> menu, not the PC. This erases the card, so copy your photos off first.</p></li>
           <li><h3>Run the installer</h3>
-            <p><a class="button outline" href="exccd-installer.exe" download>EXCCD installer for Windows</a></p>
-            <p>It finds your download, lists only SD cards, unpacks EXCCD and makes the card bootable.
-              Windows will warn about an unknown app: click <i>More info → Run anyway</i>. The installer is
-              open source but not signed, and it asks for administrator rights to write the card's boot sector.</p>
-            <details><summary>Without the installer (macOS, Linux)</summary>
-              <p>Delete an old <code>CHDK</code> folder from the card, then unpack the ZIP to the root of the card,
-                so that <code>DISKBOOT.BIN</code> and the <code>CHDK</code> folder sit at the top level.</p>
-              <p id="manual-firm-update">Start EXCCD once per power-on in playback mode with <i>MENU → Firm Update</i>.
-                To start it automatically, run CHDK's <i>Make Card Bootable</i> from the EXCCD menu once.</p>
-              <p id="manual-bootable" hidden>This camera can only start EXCCD from a bootable card, so the card has to
-                be made bootable once, for example with the tools described in CHDK's guide
-                <a href="https://chdk.fandom.com/wiki/Prepare_your_SD_card">Prepare your SD card</a>.</p></details></li>
+            <p><a class="button outline" href="exccd-installer.exe" download>Installer for Windows</a></p>
+            <p>Choose your camera, check that it picked your download and the right card, then click
+              <i>Install EXCCD on the card</i>. It only lists SD cards, keeps your photos and makes the card bootable.</p>
+            <p class="muted small">Windows warns about an unknown app because the installer isn't signed (signing costs
+              money; the code is open). Click <i>More info → Run anyway</i>. It asks for administrator rights to
+              write the card's boot sector.</p></li>
           <li><h3>Lock the card</h3>
             <p>Slide the card's write-protect switch to <b>LOCK</b> and put it in the camera. That's what makes
               EXCCD start on its own. The camera still saves photos.</p></li>
-          <li><h3>Pick a look</h3>
+          <li><h3>Switch on, pick a look</h3>
             <p>In shooting mode press <b>Print</b>, flip with the arrow keys, confirm with <b>FUNC/SET</b>.
               The active look is shown at the bottom of the screen.</p></li>
         </ol>
+        <details class="manual" id="manual"><summary>Without the installer (macOS, Linux)</summary>
+          <ol>
+            <li>Format the card in the camera.</li>
+            <li>Unpack the ZIP to the top level of the card, so that <code>DISKBOOT.BIN</code> and the
+              <code>CHDK</code> folder sit right there, not inside another folder.</li>
+            <li id="manual-firm-update">Eject the card and put it in the camera <b>unlocked</b>. Switch on in playback
+              mode and choose <i>MENU → Firm Update</i>. That starts EXCCD until you switch off. To make it start on
+              its own, run <i>Make Card Bootable</i> once from the EXCCD menu (<b>MENU</b> → <i>System</i>), then lock the card.</li>
+            <li id="manual-bootable" hidden>This camera only starts EXCCD from a bootable card, so the card has to
+              be made bootable once, for example with the tools from CHDK's guide
+              <a href="https://chdk.fandom.com/wiki/Prepare_your_SD_card">Prepare your SD card</a>. Then lock the card.</li>
+          </ol>
+        </details>
+      </section>
+
+      <section class="step" id="trouble">
+        <header class="step-head"><span class="num">02</span><h2>If it doesn't work</h2></header>
+        <div class="faq">
+          <details><summary>The camera starts normally, EXCCD doesn't show up</summary>
+            <ul>
+              <li>Is the card locked? Without <b>LOCK</b> the camera ignores EXCCD.</li>
+              <li id="trouble-size">Is the card too big? See <i>You need</i> above.</li>
+              <li>Was the card formatted in the camera and then installed with the installer (or made bootable)?</li>
+              <li>Does the firmware match? Other versions simply won't start.</li>
+            </ul></details>
+          <details><summary>Windows won't run the installer</summary>
+            <p>SmartScreen blocks unsigned programs at first: click <i>More info → Run anyway</i>. If your antivirus
+              removes it, you can check the source code and the build log on GitHub, or install by hand.</p></details>
+          <details><summary>The installer doesn't find my card</summary>
+            <p>It only shows removable drives. Use a card reader, close Explorer windows that show the card and click
+              <i>Refresh</i>. Some built-in laptop readers report cards as fixed disks; a cheap USB reader helps.</p></details>
+          <details><summary>A look doesn't match the samples</summary>
+            <p>That's the beta part. Light, white balance and the camera model all play a role, and the looks are
+              still being tuned per camera. Please <a href="#contribute">tell me</a>, ideally with the photo,
+              the look and your camera.</p></details>
+          <details><summary>How do I get the normal camera back?</summary>
+            <p>Unlock the card or take it out. To remove EXCCD for good, format the card in the camera.</p></details>
+        </div>
       </section>
 
       <section class="step" id="faq">
-        <header class="step-head"><span class="num">02</span><h2>Questions</h2></header>
+        <header class="step-head"><span class="num">03</span><h2>Questions</h2></header>
         <div class="faq">
           <details><summary>Can this damage my camera?</summary>
             <p>EXCCD is built on CHDK, which the CHDK community has been developing for Canon compacts since 2007.
@@ -381,18 +463,43 @@
               (<b>MENU</b>).</p></details>
           <details><summary>Which look did I use for a photo?</summary>
             <p>EXCCD writes every shot with its look to <code>A/CHDK/FILMLOG.CSV</code> on the card.</p></details>
-          <details><summary>Can I add looks later?</summary>
-            <p>Yes. Come back, pick a new set and replace the <code>CHDK</code> folder on the card with the new download.</p></details>
+          <details><summary>How do I update, or add looks later?</summary>
+            <p>Come back, pick a new set, download it and run the installer again with the card unlocked. It replaces
+              the <code>CHDK</code> folder and keeps <code>FILMLOG.CSV</code> and your photos. By hand: delete the old
+              <code>CHDK</code> folder first, then unpack the new ZIP.</p></details>
           <details><summary>Which languages are the menus in?</summary>
             <p>English. German is on the card too: <b>MENU</b> → <i>System</i> → <i>Language...</i> →
               <code>german.lng</code>. The film labels stay in English.</p></details>
           <details><summary>What about other cameras?</summary>
             <p>I'd like to bring EXCCD to more old Canon compacts: CCD models first, later maybe CMOS ones
-              too. Each one has to be ported and tested on a real camera, so it takes a while.</p></details>
+              too. Each one has to be ported and tested on a real camera, so it takes a while. If you have one,
+              <a href="#contribute">you can help</a>.</p></details>
+          <details><summary>Is it finished?</summary>
+            <p>No, it's a public beta. It works, but looks get re-tuned and features change as photos from more
+              cameras come in. Your chosen look is stored by name, so updates don't mix it up.</p></details>
           <details><summary>Is it open source?</summary>
             <p>Yes. The code is GPL v2 like CHDK, the looks (curves, labels, film table) are CC BY-SA 4.0.
               Everything is on <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>.</p></details>
         </div>
+      </section>
+
+      <section class="step" id="contribute">
+        <header class="step-head"><span class="num">04</span><h2>Help out</h2></header>
+        <p class="lead-in">EXCCD grows with the people who use it. Every bit of feedback helps, and the project is
+          open for more camera models.</p>
+        <ul class="help-grid">
+          <li><h3>Tell me what happened</h3>
+            <p>Something broken, odd colours, an idea? Open an
+              <a class="repo-link" href="https://github.com/35mmSebas/exccd/issues">issue on GitHub</a>. Camera, firmware,
+              EXCCD version and a photo (of the display, too) make it much easier.</p></li>
+          <li><h3>Test on your camera</h3>
+            <p>Have an IXUS 132, IXUS 145 or SX110 IS, or another old Canon that CHDK supports? Real photos from real
+              cameras are what the looks are tuned with.</p></li>
+          <li><h3>Send a pull request</h3>
+            <p>Fixes, ports and new looks are welcome. The
+              <a class="repo-link" href="https://github.com/35mmSebas/exccd/blob/main/tools/filmsim/cams/README.md">porting guide</a>
+              shows what a new camera needs.</p></li>
+        </ul>
       </section>
     </div>
   </section>
@@ -407,6 +514,9 @@
 
 <footer class="foot">
   <div class="wrap">
+    <p class="foot-hello">EXCCD is a public beta and a hobby project. Feedback and pull requests are always welcome on
+      <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>, and so is help with
+      <a href="#contribute">more camera models</a>.</p>
     <p><a class="repo-link" href="https://github.com/35mmSebas/exccd">Source code on GitHub</a> ·
       Code: GPL v2, built on <a href="https://chdk.fandom.com/">CHDK</a> ·
       Looks: CC BY-SA 4.0</p>

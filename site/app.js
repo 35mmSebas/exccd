@@ -41,7 +41,7 @@ const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`;
 
 function renderHero() {
   const looks = state.camera.looks;
-  $("facts").textContent = `${looks.length} looks · free · open source · ${state.site.version}`;
+  $("facts").textContent = `${looks.length} looks · free · open source · ${state.site.version} beta`;
 
   const box = $("cam-labels");
   const imgs = looks.map((look) => el("img", { src: labelSrc(look), alt: "", width: 600, height: 440 }));
@@ -106,6 +106,7 @@ function setCamera(cam) {
 function renderCamera() {
   const cam = state.camera;
   $("beta-note").hidden = cam.status === "stabil";
+  $("ver-link").href = `data/${cam.id}/ver.req`;
   $("vers-link").href = `data/${cam.id}/vers.req`;
   $("fw-example").textContent = `Firmware Ver GM${cam.firmware.toUpperCase()}`;
   $("fw-note").textContent = "";
@@ -133,9 +134,16 @@ function renderCamera() {
 // Installationshinweise je Kamera (Boot-Regeln wie tools/installer/core.c)
 function renderInstall() {
   const cam = state.camera;
-  $("boot-note").textContent = cam.boot === "fat16"
-    ? `The ${cam.short} starts EXCCD automatically only from cards up to 2 GB.`
-    : `The ${cam.short} starts EXCCD automatically from cards up to 32 GB (FAT32); larger exFAT cards don't work.`;
+  for (const e of document.querySelectorAll(".cam-short")) e.textContent = cam.short;
+  for (const e of document.querySelectorAll(".cam-fw")) e.textContent = cam.firmware;
+  const fat16 = cam.boot === "fat16";
+  $("card-need").textContent = fat16
+    ? "an SD card of 2 GB or less (bigger cards won't start EXCCD on this camera)"
+    : "an SD card of 32 GB or less (SD or SDHC; bigger SDXC cards don't work yet)";
+  $("trouble-size").textContent = fat16
+    ? `Is the card bigger than 2 GB? The ${cam.short} only starts EXCCD on its own from cards up to 2 GB.`
+      + (cam.firm_update ? " On a bigger card you can still start it with MENU → Firm Update in playback mode." : "")
+    : `Is the card bigger than 32 GB? The ${cam.short} can't start EXCCD from SDXC (exFAT) cards.`;
   $("manual-firm-update").hidden = !cam.firm_update;
   $("manual-bootable").hidden = cam.firm_update;
 }
@@ -250,9 +258,13 @@ function renderLooks() {
     });
 
     // Beispielfotos zuerst, die Lasche dahinter
-    const media = el("div", { className: "look-media" }, ...look.samples.map((src) =>
-      el("div", { className: "sample" },
-        el("img", { src, alt: `Sample photo, ${look.name}`, loading: "lazy" }))));
+    // Simulierte Beispielfotos (Dateiname *-sim-*) offen als solche kennzeichnen
+    const media = el("div", { className: "look-media" }, ...look.samples.map((src) => {
+      const sim = /-sim-/.test(src);
+      return el("div", { className: "sample" },
+        el("img", { src, alt: `${sim ? "Simulated sample" : "Sample photo"}, ${look.name}`, loading: "lazy" }),
+        ...(sim ? [el("span", { className: "sim-tag", textContent: "simulated", title: "Rendered on a PC from another photo, not shot on the camera yet" })] : []));
+    }));
     media.append(el("img", { src: labelSrc(look), alt: `${look.name} film label`, loading: "lazy", width: 600, height: 440 }));
 
     // Nur die Auswahl ist ein <label>; die WB-Regler liegen daneben, sonst
@@ -412,8 +424,11 @@ async function main() {
   }
   state.camera = initialCamera();
   for (const l of state.camera.looks) { state.selected.add(l.id); state.knownLooks.add(l.id); }
-  $("version").textContent = state.site.version;
-  for (const a of document.querySelectorAll(".repo-link")) a.href = a.href.endsWith("/issues") ? `${state.config.repo}/issues` : state.config.repo;
+  $("version").textContent = `${state.site.version} · beta`;
+  // Repo-Links zeigen auf das Repo aus config.json, Unterpfade (issues, Dateien) bleiben
+  for (const a of document.querySelectorAll(".repo-link")) {
+    a.href = a.getAttribute("href").replace(/^https:\/\/github\.com\/[^/]+\/[^/]+/, state.config.repo);
+  }
   renderHero();
   renderCameras();
   renderCamera();

@@ -7,8 +7,16 @@ film labels and pick a look. Each look combines Canon's own *My Colors* settings
 tone curve that is applied to the raw data before the JPEG is created, so the pictures
 come out of the camera finished.
 
-Supported camera: **Canon Digital IXUS 60 / PowerShot SD600, firmware 1.00d**.
-More cameras are planned.
+> **Public beta, work in progress.** EXCCD is a hobby project. Every old camera model behaves a
+> little differently, so looks get re-tuned as real photos come in and things change between
+> versions. Feedback and pull requests are very welcome.
+
+| Camera | Firmware | Status |
+|---|---|---|
+| Digital IXUS 60 / PowerShot SD600 | 1.00d | tested, offered on the website |
+| IXUS 132 / PowerShot ELPH 115 IS | 1.00b | in testing (built, partly tested) |
+| PowerShot SX110 IS | 1.00b | in testing (built, partly tested) |
+| IXUS 145 / PowerShot ELPH 135 | 1.00c | ported, never run on a real camera |
 
 > The camera menus are in English. For German: *MENU → System → Language... → `german.lng`*.
 
@@ -48,21 +56,20 @@ highlights and lift the shadows with the curve.
 
 ## Installation
 
-1. Check the firmware version of your camera. EXCCD only runs on firmware **1.00d**.
-   See the [CHDK wiki](https://chdk.fandom.com/wiki/FAQ#Q._How_can_I_get_the_original_firmware_version_number_of_my_camera.3F)
-   for how to find it.
-2. Download `exccd-<version>-ixus60_sd600-100d-full.zip` from the
-   [Releases](../../releases) page.
-3. Delete an old `CHDK` folder from the SD card, if there is one.
-   Old files (for example a previous `FILMS.TXT`) can point to labels or curves that no
-   longer exist.
-4. Unpack the ZIP to the root of the SD card.
-5. Start EXCCD, either
-   - **once per power-on:** switch on in playback mode, open *MENU → Firm Update* and
-     confirm, or
-   - **automatically:** make the card bootable (for example with
-     [STICK](https://chdk.fandom.com/wiki/STICK) or CHDK's own *Make Card Bootable* option)
-     and lock the card's write-protect switch.
+The easy way is the download page (GitHub Pages of this repository): pick your camera and
+looks, download the ZIP and follow the step-by-step guide there. In short:
+
+1. Check the firmware version. The Windows installer can do it (*Check firmware…*), or copy
+   `ver.req` and `vers.req` to the card and press *FUNC/SET + DISP* in playback mode.
+2. Format the SD card **in the camera**. IXUS 60 and SX110 only start EXCCD automatically from
+   cards up to 2 GB, IXUS 132/145 from cards up to 32 GB.
+3. Run `exccd-installer.exe` (from the page or the [Releases](../../releases)): it unpacks the
+   ZIP and makes the card bootable. It is not signed, so Windows asks *More info → Run anyway*.
+4. Lock the card's write-protect switch and put it in the camera.
+
+Without the installer (macOS, Linux): delete an old `CHDK` folder, unpack the ZIP to the top
+level of the card and, on the IXUS 60, start EXCCD in playback mode with *MENU → Firm Update*.
+*MENU → System → Make Card Bootable...* then makes it start on its own from a locked card.
 
 EXCCD runs from the SD card only. Nothing is written to the camera's firmware; without the
 card the camera is unchanged.
@@ -162,6 +169,14 @@ The first commit of this repository is unchanged CHDK 1.6.1 (GitHub mirror
 ```sh
 git diff $(git rev-list --max-parents=0 HEAD) HEAD
 ```
+
+## Contributing
+
+Bug reports, test results and pull requests are welcome. For a bug, please open an issue with
+the camera, firmware, EXCCD version and, if possible, a photo (a photo of the display helps too).
+New camera models are especially welcome: [`tools/filmsim/cams/README.md`](tools/filmsim/cams/README.md)
+describes what a port needs. Code comments and internal notes are partly in German; English
+issues and pull requests are perfectly fine.
 
 ## License
 
