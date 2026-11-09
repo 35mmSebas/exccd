@@ -454,6 +454,39 @@ static void test_wb(void)
     }
 }
 
+// raw_gain: Belichtung und Weissabgleich, ausgefressene Bloecke neutral
+static void test_raw_gain(void)
+{
+    int row0, x, y;
+    for (row0 = 0; row0 < 2; row0++) {
+        for (y = 0; y < ROWS; y++)
+            for (x = 0; x < ROWPIX; x++)
+                set_px(buf, x, y, (unsigned short)(400 << (BPP - 10)));
+        set_px(buf, 8, row0, 0);                                    // Defekt auf einem R-Pixel
+        set_px(buf, 17, row0, (unsigned short)(1023 << (BPP - 10)));  // G voll: Block x 16..17 neutral
+        set_px(buf, 20, row0, (unsigned short)(1023 << (BPP - 10)));  // nur R voll: Farbe, normal skaliert
+        // eine Blende dunkler, R * 1,5, B * 0,5; Grau bei R = G / 2, B = G / 1,5
+        raw_gain(buf, ROWS, ROWPIX, ROWLEN, row0, 31, 3072, 2048, 1024, 1000, 2048, 2731);
+        int gw = 31 + ((992 * 2048 + 2048) >> 12);                  // 527
+        for (y = 0; y < ROWS; y++)
+            for (x = 0; x < ROWPIX; x++) {
+                int rrow = ((y ^ row0) & 1) == 0;
+                int want = 31 + ((369 * 2048 + 2048) >> 12);        // G
+                if (rrow && !(x & 1)) want = 31 + ((369 * 3072 + 2048) >> 12);
+                if (!rrow && (x & 1)) want = 31 + ((369 * 1024 + 2048) >> 12);
+                if ((x == 16 || x == 17) && y - row0 < 2)
+                    want = (rrow && x == 16) ? 31 + (((gw - 31) * 2048 + 2048) >> 12)
+                         : (!rrow && x == 17) ? 31 + (((gw - 31) * 2731 + 2048) >> 12) : gw;
+                if (y == row0 && x == 8) want = 0;
+                if (y == row0 && x == 20) want = 31 + ((992 * 3072 + 2048) >> 12);
+                if (y < row0) continue;
+                if (y - row0 >= ((ROWS - row0) & ~1)) continue;
+                CHECK((int)(get_px(buf, x, y) >> (BPP - 10)) == want, "raw_gain row0 %d x%d y%d: %d statt %d",
+                      row0, x, y, (int)(get_px(buf, x, y) >> (BPP - 10)), want);
+            }
+    }
+}
+
 int main(void)
 {
     unsigned i;
@@ -470,6 +503,7 @@ int main(void)
     test_grain();
     test_frame();
     test_wb();
+    test_raw_gain();
 #if BPP == 12
     test_curves();
 #endif

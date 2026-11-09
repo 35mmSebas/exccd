@@ -860,8 +860,26 @@
 #define LANG_EXCCD_DEV_OSD                      728
 #define LANG_EXCCD_DEV_BAD                      729
 #define LANG_EXCCD_DEV_CANCELLED                730
+#define LANG_EXCCD_DEV_FX                       731
+#define LANG_EXCCD_DEV_FX_DONE                  732
+#define LANG_EXCCD_DEV_PROGRESS                 733
+#define LANG_EXCCD_DEV_LOAD                     734
+#define LANG_EXCCD_DEV_JPEG                     735
+#define LANG_EXCCD_DEV_HOTPIX                   736
+#define LANG_EXCCD_DEV_CURVE                    737
+#define LANG_EXCCD_DEV_MIX                      738
+#define LANG_EXCCD_DEV_FULL_HINT                739
+#define LANG_EXCCD_DEV_ADJ                      740
+#define LANG_EXCCD_DEV_NEXT                     741
+#define LANG_EXCCD_DEV_EV                       742
+#define LANG_EXCCD_DEV_TEMP                     743
+#define LANG_EXCCD_DEV_WARM                     744
+#define LANG_EXCCD_DEV_COOL                     745
+#define LANG_EXCCD_DEV_TINT                     746
+#define LANG_EXCCD_DEV_GREEN                    747
+#define LANG_EXCCD_DEV_MAGENTA                  748
 
-#define GUI_LANG_ITEMS                          730
+#define GUI_LANG_ITEMS                          748
 
 //-------------------------------------------------------------------
 extern void gui_lang_init();

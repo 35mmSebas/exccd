@@ -90,5 +90,7 @@
     #define FILMSIM_COLOR_BG            0xFF    // Palettenindizes wie in den Laschen
     #define FILMSIM_COLOR_GREY          0xA3
     #define FILMSIM_COLOR_RULE          0xFA
+    // Graustufen fuer das DNG-Vorschaubild (tools/filmsim/make_thumbpal.py): Index, Helligkeit
+    #define FILMSIM_THUMB_GREYS         { 0xFF,0, 0xFA,71, 0x3F,122, 0x1F,168, 0x11,197 }
     #define FILMSIM_WB_R                486     // R 1.9 (Tageslicht)
     #define FILMSIM_WB_B                371     // B 1.45

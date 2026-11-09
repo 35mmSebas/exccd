@@ -24,6 +24,7 @@ extern int printf(const char *, ...);
 extern int _open(const char *, int, ...);        // Windows-Dateizugriff fuer die echten Kurven
 extern int _read(int, void *, unsigned int);
 extern int _close(int);
+extern int _write(int, const void *, unsigned int);
 extern void exit(int);
 
 // --- Pruefen ----------------------------------------------------------------
@@ -41,7 +42,26 @@ unsigned char *chdk_colors = host_colors;
 int canon_menu_active = 0;
 char canon_shoot_menu_active = 0;
 CMenu root_menu;
-gui_handler menuGuiHandler;
+static CMenu *menu_open;                 // zuletzt geoeffnetes CHDK-Menue
+static void menu_redraw(int f) { (void)f; }
+static int menu_kbd(void) { return 0; }
+gui_handler menuGuiHandler = { .redraw = menu_redraw, .kbd_process = menu_kbd };
+// Eintrag mit diesem Text im offenen Menue
+static const CMenuItem *menu_item(int text)
+{
+    const CMenuItem *i;
+    for (i = menu_open ? menu_open->menu : 0; i && i->text; i++)
+        if (i->text == text) return i;
+    return 0;
+}
+static const char *menu_enum(int text, int change)
+{
+    const CMenuItem *i = menu_item(text);
+    return i ? ((const char *(*)(int, int))i->value)(change, i->arg) : "?";
+}
+extern void filmsim_develop_prepare(void);
+extern void filmsim_develop_end(char *raw);
+extern void filmsim_prog_step(int k);
 
 static int now_ms = 10000;
 long get_tick_count() { return now_ms; }
@@ -146,12 +166,20 @@ static void drawn_add(const char *s)
 int draw_string(coord x, coord y, const char *s, twoColors c) { (void)x; (void)y; (void)c; drawn_add(s); return 0; }
 void draw_string_scaled(coord x, coord y, const char *s, twoColors c, int a, int b) { (void)x; (void)y; (void)c; (void)a; (void)b; drawn_add(s); }
 void draw_rectangle(coord a, coord b, coord c, coord d, twoColors e, int f) { (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; }
-void draw_hline(coord a, coord b, int c, color d) { (void)a; (void)b; (void)c; (void)d; }
+// Bildschirm fuer das Vorschaubild-Szenario: Palettenindex je Pixel, -1 = nicht gezeichnet
+#define FB_W 480
+#define FB_H 270
+static short fb[FB_H][FB_W];
+void draw_hline(coord a, coord b, int c, color d)
+{
+    for (; c > 0; c--, a++)
+        if (a >= 0 && a < FB_W && b >= 0 && b < FB_H) fb[b][a] = d;
+}
 twoColors user_color(confColor c) { (void)c; return 0; }
 
 static gui_handler *cur_mode = 0;
 gui_handler *gui_set_mode(gui_handler *h) { cur_mode = h; return h; }
-void gui_menu_init(CMenu *m) { (void)m; }
+void gui_menu_init(CMenu *m) { menu_open = m; }
 static int alt_exits = 0;
 void exit_alt(void) { alt_exits++; }
 void exit_alt_on_release(void) { alt_exits++; }
@@ -160,7 +188,8 @@ void conf_save(void) { conf_saves++; }
 
 static long next_key = 0;
 long kbd_get_autoclicked_key(void) { long k = next_key; next_key = 0; return k; }
-long kbd_is_key_pressed(long k) { (void)k; return 0; }
+static long key_held = 0;               // gedrueckt gehaltene Taste
+long kbd_is_key_pressed(long k) { return k == key_held; }
 long get_jogdial_direction(void) { return 0; }
 // Modulstummel
 #ifdef OPT_CURVES
@@ -263,6 +292,7 @@ extern void filmsim_curve_apply(char *);
 #endif
 
 // Reihenfolge wie raw_process() in core/raw.c
+static int dev_shot = 0;                // raw.c: Entwickeln (filmsim_develop_prepare / _end)
 static void shoot(char *raw)
 {
     filmsim_time_mark(0);
@@ -281,6 +311,7 @@ static void shoot(char *raw)
     filmsim_time_mark(5);
     filmsim_effects_apply(raw);
     filmsim_time_mark(6);
+    if (dev_shot) filmsim_develop_end(raw);
     filmsim_log_shot();
     filmsim_time_log();
     filmsim_dr_curve_hook(1);
@@ -590,6 +621,7 @@ static void make_dng(const char *name, int w, int h, int bits, int wr, int wg, i
 static void develop_shot(void)
 {
     struct stat st;
+    filmsim_develop_prepare();
     int fd = open(prep_fn, O_RDONLY, 0);
     CHECK(fd >= 0, "Entwickeln ohne Datei");
     stat(prep_fn, &st);
@@ -599,7 +631,9 @@ static void develop_shot(void)
     prep_fn[0] = 0;
     camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_PROCESSING;
     filmsim_develop_begin((char *)rawbuf);
+    dev_shot = 1;
     shoot((char *)rawbuf);
+    dev_shot = 0;
 }
 
 static void fill_flat(int v)
@@ -649,6 +683,14 @@ static void scenario_develop(void)
     press(KEY_SET);
     CHECK(conf.film_sim == 1, "Look: %d", conf.film_sim);
     CHECK(conf_saves == saves, "Probierlook gespeichert");
+    CHECK(cur_mode && cur_mode->redraw == menu_redraw && menu_open && menu_open->title == LANG_EXCCD_DEV_FX, "Effekt-Menue nicht offen");
+    {   // Ausloeser im Effekt-Menue: Menue zu, scharf bleibt es
+        int pc = alt_exits;
+        key_held = KEY_SHOOT_HALF;
+        cur_mode->kbd_process();
+        key_held = 0;
+        CHECK(alt_exits == pc + 1 && filmsim_develop_armed(), "Ausloeser schliesst das Effekt-Menue nicht");
+    }
     CHECK(strstr(osd_text(), "Develop CRW_0012.DNG: Daylight 100") != 0, "Statuszeile: [%s]", drawn);
 
     // Hilfsschuss in anderem Licht: Rohdaten so umrechnen, dass der WB der Aufnahme herauskommt
@@ -732,6 +774,148 @@ static void scenario_develop(void)
     CHECK(memcmp(a, rawbuf, rows * rowlen) == 0, "Datum: nicht der Aufnahmetag");
     conf.film_datestamp = 0;
 
+    // Effekte nur fuer die Entwicklung: im RAW-Hook aktiv, danach wieder die der Optionen
+    {
+        filmsim_set(1);
+        conf.film_grain = 0; conf.film_vignette = 2;
+        make_dng(good, rowpix, rows, bits, 1000, 1000, 1000, 100, "2025:03:04 10:11:12");
+        filmsim_develop_select(good);
+        filmsim_open_menu(); press(KEY_SET);
+        CHECK(menu_open && menu_open->title == LANG_EXCCD_DEV_FX, "Effekt-Menue nicht offen");
+        CHECK(strcmp(menu_enum(LANG_EXCCD_GRAIN, 0), lang_str(LANG_EXCCD_OFF)) == 0, "Korn startet nicht mit den Optionen");
+        menu_enum(LANG_EXCCD_GRAIN, 4); // Grob
+        menu_enum(LANG_EXCCD_VIGNETTE, 1);  // Stark -> Aus
+        CHECK(menu_item(LANG_EXCCD_DOUBLE) == 0, "Doppelbelichtung im Effekt-Menue");
+        CHECK(conf.film_grain == 0 && conf.film_vignette == 2, "Menue aendert die Optionen");
+        CHECK(strstr(osd_text(), "| FX") != 0, "Statuszeile ohne FX: [%s]", drawn);
+        int pc = alt_exits;
+        const CMenuItem *done = menu_item(LANG_EXCCD_DEV_FX_DONE);
+        CHECK(done != 0, "Eintrag Fertig fehlt");
+        if (done) ((void (*)(int))done->value)(done->arg);
+        CHECK(alt_exits == pc + 1, "Fertig schliesst nicht");
+        drawn[0] = 0;
+        filmsim_develop_prepare();
+        CHECK(conf.film_grain == 4 && conf.film_vignette == 0, "Hook ohne Entwicklungs-Effekte: %d %d",
+              conf.film_grain, conf.film_vignette);
+        CHECK(strstr(drawn, "Loading RAW") != 0, "Balken beim Laden: [%s]", drawn);
+        drawn[0] = 0;
+        filmsim_prog_step(7);           // Korn
+        CHECK(strstr(drawn, "%") != 0, "Prozent fehlen: [%s]", drawn);
+        CHECK(strstr(drawn, "Developing CRW_0012.DNG") != 0 && strstr(drawn, "Grain") != 0, "Balken: [%s]", drawn);
+        filmsim_develop_end(0);
+        drawn[0] = 0;
+        filmsim_prog_step(7);
+        CHECK(drawn[0] == 0, "Balken nach dem Ende");
+        CHECK(conf.film_grain == 0 && conf.film_vignette == 2, "Optionen nicht zurueck: %d %d",
+              conf.film_grain, conf.film_vignette);
+        filmsim_develop_cancel();
+        ticks(60);
+        conf.film_vignette = 0;
+        cur_mode = 0;
+    }
+
+    // Dritter Schritt: Belichtung und Farbtemperatur nur fuer die Entwicklung
+    {
+        filmsim_set(1);
+        host_wb[0] = host_wb[1] = host_wb[2] = 1000;
+        fill_flat(400);
+        make_dng(good, rowpix, rows, bits, 1000, 1000, 1000, 100, "2025:03:04 10:11:12");
+        filmsim_develop_select(good);
+        filmsim_open_menu(); press(KEY_SET);
+        const CMenuItem *next = menu_item(LANG_EXCCD_DEV_NEXT);
+        CHECK(next != 0 && (next->type & MENUITEM_MASK) == MENUITEM_SUBMENU, "Weiter fehlt");
+        if (next) {
+            CMenu *fx = menu_open;
+            menu_open = (CMenu *)next->value;
+            CHECK(strcmp(menu_enum(LANG_EXCCD_DEV_EV, -3), "-1 EV") == 0, "EV: [%s]", menu_enum(LANG_EXCCD_DEV_EV, 0));
+            CHECK(strcmp(menu_enum(LANG_EXCCD_DEV_EV, 1), "-2/3 EV") == 0, "EV: [%s]", menu_enum(LANG_EXCCD_DEV_EV, 0));
+            menu_enum(LANG_EXCCD_DEV_EV, -1);
+            CHECK(strcmp(menu_enum(LANG_EXCCD_DEV_TEMP, 1), "warm +1") == 0, "Temperatur: [%s]", menu_enum(LANG_EXCCD_DEV_TEMP, 0));
+            CHECK(strcmp(menu_enum(LANG_EXCCD_DEV_TINT, -1), "magenta -1") == 0, "Toenung: [%s]", menu_enum(LANG_EXCCD_DEV_TINT, 0));
+            menu_enum(LANG_EXCCD_DEV_TINT, 1);
+            CHECK(strcmp(menu_enum(LANG_EXCCD_DYNAMIC, 0), "Auto") == 0, "Dynamik: [%s]", menu_enum(LANG_EXCCD_DYNAMIC, 0));
+            CHECK(menu_item(LANG_EXCCD_DEV_FX_DONE) != 0, "Fertig fehlt im dritten Schritt");
+            menu_open = fx;
+        }
+        CHECK(strstr(osd_text(), "| -1 EV | warm +1") != 0, "Statuszeile: [%s]", drawn);
+        develop_shot();
+        CHECK(RAW10(cx + 1, cy + r0) == 216, "EV G: %d", RAW10(cx + 1, cy + r0));
+        // Belichtung vor der Kette (185 ueber Schwarz), Temperatur danach: R * 1,07, B / 1,07
+        CHECK(RAW10(cx, cy + r0) == 31 + ((185 * 4383 + 2048) >> 12), "EV R: %d", RAW10(cx, cy + r0));
+        CHECK(RAW10(cx + 1, cy + r0 + 1) == 31 + ((185 * 3827 + 2048) >> 12), "EV B: %d", RAW10(cx + 1, cy + r0 + 1));
+        camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_NONE;
+        ticks(60);
+        // Toenung gruener: G * 1,05, R und B / Wurzel(1,05)
+        fill_flat(400);
+        make_dng(good, rowpix, rows, bits, 1000, 1000, 1000, 100, "2025:03:04 10:11:12");
+        filmsim_develop_select(good);
+        filmsim_open_menu(); press(KEY_SET);
+        if (next) {
+            CMenu *fx = menu_open;
+            menu_open = (CMenu *)next->value;
+            menu_enum(LANG_EXCCD_DEV_TINT, 1);
+            menu_open = fx;
+        }
+        CHECK(strstr(osd_text(), "| green +1") != 0, "Statuszeile Toenung: [%s]", drawn);
+        develop_shot();
+        CHECK(RAW10(cx + 1, cy + r0) == 418, "Toenung G: %d", RAW10(cx + 1, cy + r0));
+        CHECK(RAW10(cx, cy + r0) == 391 && RAW10(cx + 1, cy + r0 + 1) == 391, "Toenung R/B: %d %d",
+              RAW10(cx, cy + r0), RAW10(cx + 1, cy + r0 + 1));
+        camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_NONE;
+        ticks(60);
+        // naechste Entwicklung beginnt wieder neutral
+        filmsim_develop_select(good);
+        filmsim_open_menu(); press(KEY_SET);
+        if (next) {
+            CMenu *fx = menu_open;
+            menu_open = (CMenu *)next->value;
+            CHECK(strcmp(menu_enum(LANG_EXCCD_DEV_EV, 0), "0 EV") == 0 && strcmp(menu_enum(LANG_EXCCD_DEV_TEMP, 0), "0") == 0
+                  && strcmp(menu_enum(LANG_EXCCD_DEV_TINT, 0), "0") == 0 && strcmp(menu_enum(LANG_EXCCD_DYNAMIC, 0), "Auto") == 0,
+                  "nicht zurueckgesetzt");
+            menu_open = fx;
+        }
+        filmsim_develop_cancel();
+        ticks(60);
+        cur_mode = 0;
+    }
+
+    // Halation: Der Glow kommt beim Entwickeln in derselben Farbe heraus wie beim echten Foto, auch
+    // wenn der Hilfsschuss unter anderem Licht entsteht (Weissabgleich erst nach den Effekten)
+    {
+        int x, y, sq = 64, gx = cx + sq / 2 + 8, gy = cy + r0;
+        unsigned char *norm = malloc(rows * rowlen);
+        filmsim_set(1);
+        conf.film_halation = 1;
+        host_wb[0] = host_wb[1] = host_wb[2] = 1000;
+        fill_flat(200);
+        for (y = cy - sq / 2; y < cy + sq / 2; y++)
+            for (x = cx - sq / 2; x < cx + sq / 2; x++)
+                set_raw_pixel(x, y, (unsigned short)(1023 << (CAM_SENSOR_BITS_PER_PIXEL - 10)));
+        memcpy(norm, rawbuf, rows * rowlen);
+        make_dng(good, rowpix, rows, bits, 1000, 1000, 1000, 100, "2025:03:04 10:11:12");
+        shoot((char *)rawbuf);                  // echtes Foto mit Halation
+        ticks(60);
+        int nR = RAW10(gx, gy), nG = RAW10(gx + 1, gy);
+        CHECK(nR > 200 + 20 && nR - 200 > 3 * (nG - 200), "kein roter Glow im Foto: R %d G %d", nR, nG);
+        memcpy(a, rawbuf, rows * rowlen);
+        memcpy(rawbuf, norm, rows * rowlen);
+        // Hilfsschuss unter warmem Licht: Canon gibt Rot nur halb so stark aus
+        host_wb[1] = 500;
+        filmsim_develop_select(good);
+        filmsim_open_menu(); press(KEY_SET);
+        develop_shot();
+        int dR = RAW10(gx, gy), dG = RAW10(gx + 1, gy);
+        int want = 31 + (((nR - 31) * 8192 + 2048) >> 12);
+        CHECK(abs(dR - (want > 1023 ? 1023 : want)) <= 2 && abs(dG - nG) <= 1, "Glow beim Entwickeln: R %d (soll %d) G %d (soll %d)",
+              dR, want, dG, nG);
+        camera_info.state.state_shooting_progress = SHOOTING_PROGRESS_NONE;
+        ticks(60);
+        host_wb[1] = 1000;
+        conf.film_halation = 0;
+        cur_mode = 0;
+        free(norm);
+    }
+
     // Farbrauschen Auto richtet sich nach der ISO der Aufnahme, nicht nach dem Hilfsschuss
     {
         int x, y;
@@ -781,11 +965,148 @@ static void scenario_develop(void)
 #endif
         filmsim_log_shot();
         filmsim_dr_curve_hook(1);
+        ticks(60);
+        // Dynamik+ beim Entwickeln fest gewaehlt: gilt statt des Vermerks, die Optionen bleiben
+        filmsim_develop_select(good);
+        filmsim_open_menu(); press(KEY_SET);
+        {
+            const CMenuItem *nx = menu_item(LANG_EXCCD_DEV_NEXT);
+            CMenu *fx = menu_open;
+            if (nx) {
+                menu_open = (CMenu *)nx->value;
+                CHECK(strcmp(menu_enum(LANG_EXCCD_DYNAMIC, 2), "+1") == 0, "Dynamik +1: [%s]", menu_enum(LANG_EXCCD_DYNAMIC, 0));
+            }
+            menu_open = fx;
+        }
+        CHECK(strstr(osd_text(), "| DR+1") != 0, "Statuszeile Dynamik: [%s]", drawn);
+        filmsim_develop_begin((char *)rawbuf);
+        filmsim_dr_curve_hook(0);
+#if CAM_SENSOR_BITS_PER_PIXEL == 12
+        CHECK(strstr(conf.curve_file, "DR1.CV") != 0, "Kurve gewaehlt: [%s]", conf.curve_file);
+#endif
+        filmsim_log_shot();
+        filmsim_dr_curve_hook(1);
         CHECK(conf.film_dr == 0, "Einstellung geaendert");
         ticks(60);
     }
     free(a);
     free(rawbuf);
+}
+
+// Vorschaubild in der Dateiauswahl (filmsim_dng_thumb). Ohne Datei: kuenstliche DNG mit
+// Verlauf. Mit Datei (argv[3]) wird zusaetzlich das Ergebnis als PGM geschrieben (argv[4]).
+extern int filmsim_dng_thumb(const char *fn, int x, int y, int w, int h, int (*still_wanted)(void));
+static int fb_luma(int col)
+{
+#ifdef FILMSIM_THUMB_GREYS
+    static const unsigned char g[] = FILMSIM_THUMB_GREYS;
+    int i;
+    for (i = 0; i < (int)sizeof(g); i += 2) if (g[i] == col) return g[i + 1] * 255 / g[sizeof(g) - 1];
+    return -1;
+#else
+    return col == COLOR_BLACK ? 0 : col == COLOR_WHITE ? 255 : col == COLOR_GREY ? 128 : -1;
+#endif
+}
+static int stop_calls;
+static int stop_after_one(void) { return ++stop_calls < 2; }
+static void scenario_thumb(const char *dng, const char *pgm)
+{
+    int x, y, n = 0, bad = 0;
+    memset(fb, 0xff, sizeof(fb));
+    if (!dng) {
+        // 128 x 96, waagrechter Verlauf schwarz -> weiss
+        int w = 128, h = 96, off = 512, len = off + w * h * 3;
+        unsigned char *f = malloc(len);
+        memset(f, 0, len);
+        f[0] = 'I'; f[1] = 'I'; f[2] = 42; put32(f + 4, 8);
+        put16(f + 8, 6);
+        put_entry(f + 8, 0, 0x100, 4, 1, w);
+        put_entry(f + 8, 1, 0x101, 4, 1, h);
+        put_entry(f + 8, 2, 0x103, 3, 1, 1);
+        put_entry(f + 8, 3, 0x111, 4, 1, off);
+        put_entry(f + 8, 4, 0x115, 3, 1, 3);
+        put_entry(f + 8, 5, 0x117, 4, 1, w * h * 3);
+        for (y = 0; y < h; y++)
+            for (x = 0; x < w; x++)
+                memset(f + off + (y * w + x) * 3, x * 2, 3);
+        fs_put("A/T.DNG", (char *)f, len);
+        CHECK(filmsim_dng_thumb("A/T.DNG", 10, 20, 228, 171, 0), "Vorschaubild fehlt");
+        // 228 x 171 im Kasten, nichts ausserhalb, unbekannte Farben gibt es nicht
+        for (y = 0; y < FB_H; y++)
+            for (x = 0; x < FB_W; x++) {
+                if (fb[y][x] < 0) continue;
+                n++;
+                if (x < 10 || x >= 238 || y < 20 || y >= 191 || fb_luma(fb[y][x]) < 0) bad++;
+            }
+        CHECK(n == 228 * 171 && bad == 0, "gezeichnet %d, falsch %d", n, bad);
+        // Verlauf: links dunkel, rechts hell, im Mittel gleichmaessig steigend
+        int col[4] = { 0, 0, 0, 0 };
+        for (y = 20; y < 191; y++)
+            for (x = 0; x < 228; x++) col[x * 4 / 228] += fb_luma(fb[y][10 + x]);
+        for (x = 0; x < 4; x++) col[x] /= 171 * 57;
+#ifdef FILMSIM_THUMB_GREYS             // ohne Tabelle: CHDK-Farben, am PC nicht unterscheidbar
+        CHECK(col[0] < 50 && col[3] > 200 && col[1] < col[2], "Verlauf %d %d %d %d", col[0], col[1], col[2], col[3]);
+#endif
+        // Ohne Vorschaubild (z. B. reines CHDK-RAW): nichts zeichnen
+        put16(f + 8, 3);
+        fs_put("A/T.DNG", (char *)f, len);
+        memset(fb, 0xff, sizeof(fb));
+        CHECK(!filmsim_dng_thumb("A/T.DNG", 10, 20, 228, 171, 0) && fb[100][100] < 0, "ohne Vorschaubild gezeichnet");
+        CHECK(!filmsim_dng_thumb("A/FEHLT.DNG", 10, 20, 228, 171, 0), "fehlende Datei");
+        free(f);
+
+        // Schaerferes Bild aus den Rohdaten: DNG dieser Kamera mit waagrechtem Verlauf im
+        // JPEG-Ausschnitt, Bytepaare vertauscht wie in modules/dng.c
+        {
+            int rows = camera_sensor.raw_rows, rowpix = camera_sensor.raw_rowpix, rowlen = camera_sensor.raw_rowlen;
+            int jx = camera_sensor.active_area.x1 + camera_sensor.jpeg.x, jw = camera_sensor.jpeg.width;
+            rawbuf = malloc(rows * rowlen + 8);
+            for (y = 0; y < rows; y++)
+                for (x = 0; x < rowpix; x++) {
+                    int v = x < jx ? 0 : x >= jx + jw ? 1023 : 31 + (x - jx) * 900 / jw;
+                    set_raw_pixel(x, y, (unsigned short)(v << (CAM_SENSOR_BITS_PER_PIXEL - 10)));
+                }
+            make_dng("A/R.DNG", rowpix, rows, camera_sensor.bits_per_pixel, 1000, 1000, 1000, 100, "2025:03:04 10:11:12");
+            int ci = fs_find("A/R.DNG");
+            unsigned char *d = (unsigned char *)card[ci].data + card[ci].size - rows * rowlen;
+            for (x = 0; x < rows * rowlen; x += 2) { unsigned char t = d[x]; d[x] = d[x + 1]; d[x + 1] = t; }
+            memset(fb, 0xff, sizeof(fb));
+            CHECK(filmsim_dng_thumb("A/R.DNG", 10, 20, 228, 171, 0), "Rohdaten-Vorschau fehlt");
+            int col[4] = { 0, 0, 0, 0 }, cnt[4] = { 0, 0, 0, 0 }, up = 0, nn = 0;
+            for (y = 0; y < FB_H; y++)
+                for (x = 0; x < FB_W; x++)
+                    if (fb[y][x] >= 0) { nn++; col[(x - 10) * 4 / 228] += fb_luma(fb[y][x]); cnt[(x - 10) * 4 / 228]++; }
+            for (x = 0; x < 4; x++) col[x] = cnt[x] ? col[x] / cnt[x] : -1;
+            for (x = 1; x < 4; x++) up += col[x] > col[x - 1];
+            CHECK(nn > 228 * 160 && nn <= 228 * 171, "Rohdaten-Vorschau: %d Pixel", nn);
+#ifdef FILMSIM_THUMB_GREYS
+            CHECK(up == 3 && col[0] < 80 && col[3] > 180, "Rohdaten-Verlauf %d %d %d %d", col[0], col[1], col[2], col[3]);
+#endif
+            // Abbrechen, sobald der Cursor weiter ist
+            memset(fb, 0xff, sizeof(fb));
+            stop_calls = 0;
+            filmsim_dng_thumb("A/R.DNG", 10, 20, 228, 171, stop_after_one);
+            CHECK(stop_calls == 2, "Abbruch: %d Abfragen", stop_calls);
+            free(rawbuf);
+        }
+        return;
+    }
+    static char big[24 << 20];
+    int fh = _open(dng, 0x8000);
+    if (fh < 0) { printf("Datei fehlt: %s\n", dng); exit(2); }
+    int len = _read(fh, big, sizeof(big));
+    _close(fh);
+    fs_put("A/T.DNG", big, len);
+    CHECK(filmsim_dng_thumb("A/T.DNG", 0, 0, 228, 171, 0), "Vorschaubild fehlt");
+    if (pgm) {
+        static char img[16 + 228 * 171];
+        int hl = sprintf(img, "P5 228 171 255\n");
+        for (y = 0; y < 171; y++)
+            for (x = 0; x < 228; x++) img[hl + y * 228 + x] = fb[y][x] < 0 ? 0 : fb_luma(fb[y][x]);
+        int o = _open(pgm, 0x8000 | 0x0001 | 0x0100 | 0x0200, 0600);   // binaer, schreiben, anlegen, leeren
+        _write(o, img, hl + 228 * 171);
+        _close(o);
+    }
 }
 
 int main(int argc, char **argv)
@@ -796,6 +1117,7 @@ int main(int argc, char **argv)
     else if (strcmp(what, "picker") == 0) scenario_picker();
     else if (strcmp(what, "raw") == 0) scenario_raw(root);
     else if (strcmp(what, "develop") == 0) scenario_develop();
+    else if (strcmp(what, "thumb") == 0) scenario_thumb(argc > 3 ? argv[3] : 0, argc > 4 ? argv[4] : 0);
     else { printf("Szenario?\n"); return 2; }
     printf("%s (%d Fehler)\n", fails ? "FEHLER" : "ok", fails);
     return fails != 0;

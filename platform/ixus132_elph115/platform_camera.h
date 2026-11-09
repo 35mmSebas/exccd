@@ -159,6 +159,8 @@
     #define FILMSIM_COLOR_BG            0xFF    // Schwarz
     #define FILMSIM_COLOR_GREY          0x0C    // neutrales Grau
     #define FILMSIM_COLOR_RULE          0x63    // Schiefer (EXCCD_PAL_EXTRA)
+    // Graustufen fuer das DNG-Vorschaubild (tools/filmsim/make_thumbpal.py): Index, Helligkeit
+    #define FILMSIM_THUMB_GREYS         { 0xFF,0, 0x30,36, 0x18,69, 0x14,104, 0x0F,144, 0x0B,175, 0x06,213, 0x01,249 }
     // Laschenfarben, die Canon nicht hat (geladen in lib.c, load_chdk_palette):
     // Rosa, Lavendel, Flieder-Grau, Schieferblau, Karmin, Schiefer
     #define EXCCD_PAL_BASE              0x5E

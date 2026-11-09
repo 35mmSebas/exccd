@@ -68,12 +68,19 @@ Der offene Punkt ist Canons Rauschfilter: Er laeuft nach EXCCD und kann feines K
 
 Vorher: Optionen -> RAW auf DNG, ein paar Fotos machen. Dann DNG waehlen, Look waehlen, einmal ausloesen.
 
-- [ ] **Laeuft es durch?** Datei-Auswahl oeffnet sich, danach die Filmauswahl, Statuszeile zeigt `Develop CRW_0012.DNG: Look`
+- [ ] **Laeuft es durch?** Datei-Auswahl oeffnet sich, danach die Filmauswahl, nach SET das Menue `Develop: effects`, nach `Done - press shutter` zeigt die Statuszeile `Develop CRW_0012.DNG: Look` (mit `| FX`, wenn Effekte an sind)
+- [ ] **Dateiauswahl:** startet im neuesten Kameraordner auf der neuesten DNG, JPEGs sind ausgeblendet. Rechts nach kurzem Stehen das Vorschaubild in Graustufen und das Aufnahmedatum. Erkennt man das Motiv? Bleibt das Blaettern fluessig (auch bei gehaltener Taste)? Erst kommt sofort das kleine Bild, kurz danach das schaerfere aus den Rohdaten: Wie lange dauert das, und ist das scharfe gerade (nicht verschoben, nicht verrauscht)?
+- [ ] **Vollbild:** In der Dateiauswahl Rechts (oder Zoom): DNG bildschirmfuellend, unten Name, Zeit, Nummer. Links/Rechts blaettert (Ordner werden uebersprungen), SET entwickelt, Hoch/Runter/Zoom/MENU zurueck zur Liste (Cursor auf dem zuletzt gezeigten Bild, keine Reste vom Vollbild)
+- [ ] **Belichtung und Farbtemperatur** (Effekt-Menue -> Weiter): -1 EV macht das JPEG eine Blende dunkler, +1 EV heller; waermer/kuehler verschiebt nach Gelb/Blau. Ausgefressene Stellen (Himmel, Lampen) bleiben beim Abdunkeln und Waermer-Machen neutral grau/weiss, ohne rosa oder gelben Fleck. Statuszeile zeigt `| -1 EV | warm +1`. Die naechste Entwicklung beginnt wieder bei 0
+- [ ] **Toenung und Dynamik+** (gleiches Menue): Toenung gruener/magenta wirkt sichtbar, ohne die Helligkeit stark zu aendern (Test unter Leuchtstoffroehre). Dynamik+ Auto nimmt die Stufe der Aufnahme; fest +1/+2 hellt Schatten auf. Lichterrettung: Foto mit ausgefressenem Himmel, entwickeln mit -1 EV und Dynamik +1: Himmel bekommt Zeichnung, Schatten bleiben hell
+- [ ] Effekt-Menue: startet mit den Effekten aus den Optionen. Dort z. B. Korn aendern, entwickeln: Korn wirkt im JPEG, in Optionen -> Effects steht danach der alte Wert, auch nach Aus/Ein
+- [ ] **Fortschrittsbalken:** Nach dem Ausloesen erscheint mittig ein Kasten `Developing CRW_....DNG` mit Schritt, Prozent und Balken, der sichtbar waechst (Halation, Korn). Am Ende `Canon saves JPEG...`, danach verschwindet er. Falls nichts zu sehen ist: Canon verdeckt oder loescht die Bitmap waehrend der Verarbeitung
 - [ ] Das neue JPEG zeigt das Motiv der DNG, nicht den Hilfsschuss, und mit dem gewaehlten Look. Die DNG ist unveraendert, es entsteht keine neue DNG
 - [ ] **Weissabgleich, die wichtigste Pruefung:** Foto bei Tageslicht mit DNG und Look. Dieselbe DNG mit demselben Look einmal bei Tageslicht und einmal bei Kunstlicht entwickeln. Beide JPEGs sollen wie das Original aussehen. Falls nicht: Canon nutzt zur JPEG-Zeit andere Werte als `wb_adj` beim RAW-Hook, dann `filmsim_develop_begin` pruefen
 - [ ] Hilfsschuss im Dunkeln und mit Blitz: Ergebnis gleich? Lange Belichtung kostet nur Zeit (Canons Dunkelbild)
 - [ ] Danach ist wieder der vorher eingelegte Film aktiv
 - [ ] Korn, Rahmen, Vignette, Datum wirken; der Datumsstempel zeigt den Aufnahmetag
+- [ ] **Halation beim Entwickeln** (Tungsten 800, Nachtfoto mit Lichtern): Der Glow ist so rot wie beim direkt fotografierten Bild, auch wenn der Hilfsschuss abends unter warmem Licht entsteht. Ebenso Turquoise/Infra/Light Leak: Farben wie beim echten Foto
 - [ ] Dynamik+: Foto mit DR+2 und DNG. Entwickeln bei Dynamik+ Off: gleiche Helligkeit wie das Original? Die DNG oeffnet sich weiter normal am PC
 - [ ] Abbrechen: Optionen -> RAW develop nochmal. Meldung, Film zurueck, naechstes Foto ist normal
 - [ ] Ablehnen: JPEG oder DNG einer anderen Kamera waehlen. Meldung, nichts passiert
@@ -82,4 +89,4 @@ Vorher: Optionen -> RAW auf DNG, ein paar Fotos machen. Dann DNG waehlen, Look w
 
 ## 8. Sprache
 
-- [ ] `german.lng`: Filmkorn, Filmrahmen, RAW-Entwicklung passen in die Menuezeile
+- [ ] `german.lng`: Filmkorn, Filmrahmen, RAW-Entwicklung passen in die Menuezeile; `Fertig - Ausloeser druecken` und `Entwickle CRW_....DNG` passen in Menue und Kasten

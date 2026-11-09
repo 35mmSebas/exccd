@@ -103,6 +103,22 @@ static char marked_operation;   // info for paste: MARKED_OP_NONE, MARKED_OP_CUT
 #define MAIN_H  (FONT_HEIGHT + TAB_DIVIDER + BODY_FONT_LINES + TAB_DIVIDER + FONT_HEIGHT)   // Constant
 
 static coord main_x, main_y, main_w; //main browser window coord (without BORDERs)
+static coord list_w;                 // Filmsim: Breite der Dateiliste (sonst = main_w)
+
+// Filmsim: Dateiauswahl fuer "RAW entwickeln" (erkannt am Titel). Nur RAW-Dateien und
+// Ordner, rechts das Vorschaubild der markierten DNG (filmsim_dng_thumb in core/filmsim.c).
+// Das Bild kommt erst, wenn der Cursor kurz steht, damit das Blaettern schnell bleibt.
+static int dev_mode;
+static void *thumb_for;              // fuer welche Datei das Vorschaubild gezeichnet ist
+static int thumb_since;              // seit wann der Cursor auf dieser Datei steht
+static void *thumb_sel;
+#define THUMB_WAIT_MS   250
+#define FULL_WAIT_MS    80
+// Vollbild (Rechts oder Zoom in der Liste): eine DNG bildschirmfuellend, Links/Rechts blaettern,
+// SET entwickelt, Hoch/Runter/Zoom/MENU zurueck zur Liste
+static int fullview;                 // 1 = Vollbild, 2 = gerade verlassen (Bildschirm leeren)
+extern int filmsim_dng_thumb(const char *fn, int x, int y, int w, int h, int (*still_wanted)(void));
+extern long get_tick_count();
 static coord body_y; //main body window coord
 static coord foot_y; //footer window coord
 
@@ -633,7 +649,8 @@ static void gui_fselect_read_dir()
     {
         while (fs_readdir(d, &de, items.dir))
         {
-            if (!de.deleted && !de.iscurrent && (conf.show_hiddenfiles || !de.ishidden))
+            if (!de.deleted && !de.iscurrent && (conf.show_hiddenfiles || !de.ishidden)
+                && (!dev_mode || de.isdir || chk_ext(de.de->d_name, "dng") || chk_ext(de.de->d_name, "crw")))
             {
                 add_item(&items, de.de->d_name, de.size, de.mtime, 0, de.isdir, de.isparent, de.isvalid);
                 if (de.isparent)
@@ -652,6 +669,16 @@ static void gui_fselect_read_dir()
     sort_list(&items);
 
     top = selected = items.head;
+    thumb_for = 0;
+}
+
+// Filmsim: Cursor auf den letzten Eintrag (im Kameraordner die neueste Aufnahme)
+static void fselect_select_tail()
+{
+    if (!items.tail) return;
+    selected = top = items.tail;
+    while (((selected->n - top->n) < (BODY_LINES - 1)) && top->prev)
+        top = top->prev;
 }
 
 //-------------------------------------------------------------------
@@ -701,6 +728,16 @@ void gui_fselect_init(int title, const char* prev_dir, const char* default_dir, 
     running = 1;
 
     main_w = SPACING + NAME_FONT_SIZE + FONT_WIDTH + SIZE_FONT_SIZE + FONT_WIDTH + TIME_FONT_SIZE + SPACING + SCROLLBAR;
+    list_w = main_w;
+    dev_mode = (title == LANG_RAW_DEVELOP_SELECT_FILE);
+    if (dev_mode)
+    {
+        // schmale Liste (nur Namen), daneben das Vorschaubild, fast die ganze Breite
+        list_w = SPACING + NAME_FONT_SIZE + SPACING + SCROLLBAR;
+        main_w = camera_screen.width - 2 * BORDER - 8;
+    }
+    thumb_for = thumb_sel = 0;
+    fullview = 0;
     main_x = (camera_screen.width  - main_w) >> 1;
     main_y = (camera_screen.height - MAIN_H) >> 1;
 
@@ -715,6 +752,14 @@ void gui_fselect_init(int title, const char* prev_dir, const char* default_dir, 
             gui_fselect_find_start_dir("A");
 
     gui_fselect_read_dir();
+
+    // Filmsim: ohne gemerkte Datei im neuesten Kameraordner beginnen
+    if (dev_mode && !selected_file[0] && items.tail && items.tail->isdir && !items.tail->isparent
+        && strlen(items.dir) >= 6 && chk_name(items.dir + strlen(items.dir) - 4, "DCIM"))
+    {
+        sprintf(items.dir + strlen(items.dir), "/%s", items.tail->name);
+        gui_fselect_read_dir();
+    }
 
     // Find selected file if it exists in list
     if (selected_file[0])
@@ -731,12 +776,102 @@ void gui_fselect_init(int title, const char* prev_dir, const char* default_dir, 
         }
         if (!p) selected_file[0] = 0;
     }
+    if (dev_mode && !selected_file[0])
+        fselect_select_tail();
 
     fselect_on_select = on_select;
     marked_operation = MARKED_OP_NONE;
     gui_fselect_redraw = 2;
     gui_fselect_readdir = 0;
     gui_fselect_mode_old = gui_set_mode(&GUI_MODE_FSELECT_MODULE);
+}
+
+//-------------------------------------------------------------------
+// Filmsim: Vorschaubild und Aufnahmezeit rechts neben der Liste
+// Steht der Cursor noch auf der Datei? Sonst bricht das Lesen der Rohdaten ab.
+static int thumb_still_wanted(void)
+{
+    return selected == thumb_for;
+}
+
+// Vollbild: Bild ueber den ganzen Schirm, unten Name, Aufnahmezeit, Nummer
+static void fselect_draw_full()
+{
+    char tbuf[64];
+    coord w = camera_screen.width, h = camera_screen.height, ih = h - FONT_HEIGHT - 2;
+    fitem *p;
+    int k = 0, n = 0;
+    thumb_for = selected;
+    draw_rectangle(0, 0, w-1, h-1, MAKE_COLOR(COLOR_BLACK, COLOR_BLACK), RECT_BORDER0|DRAW_FILLED);
+    if (!selected || selected->isdir)
+        return;
+    for (p = items.head; p; p = p->next)
+        if (!p->isdir)
+        {
+            n++;
+            if (p == selected) k = n;
+        }
+    sprintf(tbuf, "%s", selected->name);
+    if (selected->mtime)
+    {
+        struct tm *t = localtime(&(selected->mtime));
+        sprintf(tbuf + strlen(tbuf), "  %02u.%02u.%04u %02u:%02u", t->tm_mday, t->tm_mon+1, t->tm_year+1900, t->tm_hour, t->tm_min);
+    }
+    sprintf(tbuf + strlen(tbuf), "  %d/%d", k, n);
+    draw_string_justified(0, h - FONT_HEIGHT, tbuf, MAKE_COLOR(COLOR_BLACK, COLOR_WHITE), 0, w, TEXT_CENTER|TEXT_FILL);
+    sprintf(buf, "%s/%s", items.dir, selected->name);
+    if (!filmsim_dng_thumb(buf, 0, 0, w, ih, thumb_still_wanted))
+        draw_string_justified(0, ih / 2, "-", MAKE_COLOR(COLOR_BLACK, COLOR_WHITE), 0, w, TEXT_CENTER);
+}
+
+// Vollbild: zur naechsten / vorigen Datei, Ordner ueberspringen
+static void fselect_full_step(int dir)
+{
+    int i;
+    for (i = 0; i < items.count && selected; i++)
+    {
+        if (dir < 0) fselect_goto_prev(1);
+        else fselect_goto_next(1);
+        if (!selected->isdir) break;
+    }
+}
+
+static void fselect_draw_thumb()
+{
+    int now = get_tick_count();
+    if (selected != thumb_sel)
+    {
+        thumb_sel = selected;
+        thumb_since = now;
+    }
+    if (thumb_for == selected || now - thumb_since < (fullview ? FULL_WAIT_MS : THUMB_WAIT_MS))
+        return;
+
+    if (fullview)
+    {
+        fselect_draw_full();
+        return;
+    }
+
+    coord px = main_x + list_w + 1, pw = main_w - list_w - 1;
+    coord ph = BODY_FONT_LINES - FONT_HEIGHT - 2;
+    draw_rectangle(px, body_y, px+pw-1, body_y+BODY_FONT_LINES-1, MAKE_COLOR(COLOR_BLACK, COLOR_BLACK), RECT_BORDER0|DRAW_FILLED);
+    thumb_for = selected;
+    if (!selected || selected->isdir)
+        return;
+
+    sprintf(buf, "%s/%s", items.dir, selected->name);
+    if (!filmsim_dng_thumb(buf, px + 2, body_y + 2, pw - 4, ph - 2, thumb_still_wanted))
+    {
+        draw_string_justified(px, body_y + ph / 2, "-", MAKE_COLOR(COLOR_BLACK, COLOR_WHITE), 0, pw, TEXT_CENTER);
+    }
+    if (selected->mtime)
+    {
+        char tbuf[24];
+        struct tm *t = localtime(&(selected->mtime));
+        sprintf(tbuf, "%02u.%02u.%04u %02u:%02u", t->tm_mday, t->tm_mon+1, t->tm_year+1900, t->tm_hour, t->tm_min);
+        draw_string_justified(px, body_y + BODY_FONT_LINES - FONT_HEIGHT, tbuf, MAKE_COLOR(COLOR_BLACK, COLOR_WHITE), 0, pw, TEXT_CENTER);
+    }
 }
 
 //-------------------------------------------------------------------
@@ -749,10 +884,26 @@ void gui_fselect_draw(int enforce_redraw)
     {
         gui_fselect_readdir = 0;
         gui_fselect_read_dir();
+        if (dev_mode)
+            fselect_select_tail();
     }
 
     if (enforce_redraw)
         gui_fselect_redraw = 2;
+
+    if (fullview == 2)                  // Vollbild verlassen: Schirm leeren, Liste neu
+    {
+        fullview = 0;
+        draw_restore();
+        gui_fselect_redraw = 2;
+    }
+    if (fullview)
+    {
+        if (gui_fselect_redraw == 2) thumb_for = 0;
+        gui_fselect_redraw = 0;
+        fselect_draw_thumb();
+        return;
+    }
 
     if (gui_fselect_redraw)
     {
@@ -766,6 +917,9 @@ void gui_fselect_draw(int enforce_redraw)
             draw_rectangle(main_x-BORDER, main_y-BORDER, main_x+main_w+BORDER-1, main_y+MAIN_H+BORDER-1, MAKE_COLOR(COLOR_WHITE, COLOR_WHITE), RECT_BORDER2); //border frame
             draw_line(main_x, body_y-1, main_x+main_w-1, body_y-1, COLOR_WHITE); //border head-body
             draw_line(main_x, foot_y-1, main_x+main_w-1, foot_y-1, COLOR_WHITE); //border body-foot
+            if (dev_mode)
+                draw_line(main_x+list_w, body_y, main_x+list_w, foot_y-2, COLOR_WHITE); //Liste | Vorschau
+            thumb_for = 0;
         }
 
         int off_body_y = body_y;
@@ -864,18 +1018,20 @@ void gui_fselect_draw(int enforce_redraw)
             }
             j += TIME_SIZE;
             dbuf[j] = 0;
+            if (dev_mode)
+                dbuf[NAME_SIZE] = 0;    // nur der Name, Zeit steht unter dem Vorschaubild
 
-            draw_string_justified(main_x, off_body_y, dbuf, cl_marked, SPACING, main_w-SCROLLBAR, TEXT_LEFT|TEXT_FILL);
+            draw_string_justified(main_x, off_body_y, dbuf, cl_marked, SPACING, list_w-SCROLLBAR, TEXT_LEFT|TEXT_FILL);
         }
 
         //fill the rest of body
         if (i>0 && i<BODY_LINES)
         {
-            draw_rectangle(main_x, off_body_y, main_x+main_w-SCROLLBAR-1, body_y+BODY_FONT_LINES-1, MAKE_COLOR(COLOR_GREY, COLOR_GREY), RECT_BORDER0|DRAW_FILLED);
+            draw_rectangle(main_x, off_body_y, main_x+list_w-SCROLLBAR-1, body_y+BODY_FONT_LINES-1, MAKE_COLOR(COLOR_GREY, COLOR_GREY), RECT_BORDER0|DRAW_FILLED);
         }
 
         // scrollbar
-        int off_sbar_x = main_x + main_w - SCROLLBAR;
+        int off_sbar_x = main_x + list_w - SCROLLBAR;
         draw_rectangle(off_sbar_x, body_y, off_sbar_x+SCROLLBAR-1, body_y+BODY_FONT_LINES-1, MAKE_COLOR(COLOR_BLACK, COLOR_BLACK), RECT_BORDER0|DRAW_FILLED);
         if (items.count > BODY_LINES)
         {
@@ -901,7 +1057,11 @@ void gui_fselect_draw(int enforce_redraw)
         }
         draw_string_justified(main_x, foot_y, dbuf, MAKE_COLOR(COLOR_GREY, COLOR_WHITE), SPACING, main_w, TEXT_LEFT|TEXT_FILL);
 
-        if (sum_size)
+        if (dev_mode)
+        {
+            strcpy(dbuf, lang_str(LANG_EXCCD_DEV_FULL_HINT));    // Filmsim: Hinweis aufs Vollbild
+        }
+        else if (sum_size)
         {
             sprintf(dbuf, "%d b", sum_size); //selected size
         }
@@ -921,6 +1081,9 @@ void gui_fselect_draw(int enforce_redraw)
 
         gui_fselect_redraw = 0;
     }
+
+    if (dev_mode)
+        fselect_draw_thumb();
 }
 
 //-------------------------------------------------------------------
@@ -1474,12 +1637,42 @@ static void exit_fselect(char* file)
 }
 
 //-------------------------------------------------------------------
+// Filmsim: ohne Sprungtabellen, elf2flt kennt deren Hilfsfunktion (__gnu_thumb1_case_*) nicht
+__attribute__((optimize("no-jump-tables")))
 int gui_fselect_kbd_process()
 {
     int i;
     int do_exit = 0;
 
-    switch (kbd_get_autoclicked_key() | get_jogdial_direction())
+    long key = kbd_get_autoclicked_key() | get_jogdial_direction();
+
+    // Filmsim: Vollbild beim Entwickeln
+    if (dev_mode && fullview == 1)
+    {
+        // if-Kette statt switch: elf2flt kennt die Sprungtabellen-Hilfe des Compilers nicht
+        if (key == KEY_LEFT || key == JOGDIAL_LEFT)
+            fselect_full_step(-1);
+        else if (key == KEY_RIGHT || key == JOGDIAL_RIGHT)
+            fselect_full_step(1);
+        else if (key == KEY_UP || key == KEY_DOWN || key == KEY_ZOOM_IN || key == KEY_ZOOM_OUT)
+            fullview = 2;
+        if (key != KEY_SET)
+            return 0;
+        fullview = 2;                   // SET: weiter wie in der Liste, also entwickeln
+        gui_fselect_redraw = 0;
+    }
+    else if (dev_mode && (key == KEY_RIGHT || key == KEY_ZOOM_IN))
+    {
+        if (selected && !selected->isdir)
+        {
+            fullview = 1;
+            thumb_for = 0;
+            thumb_since = 0;
+        }
+        return 0;
+    }
+
+    switch (key)
     {
         case JOGDIAL_LEFT:
         case KEY_UP:
@@ -1633,6 +1826,11 @@ int gui_fselect_kbd_process()
 
 void gui_fselect_kbd_process_menu_btn()
 {
+    if (dev_mode && fullview == 1)      // Filmsim: MENU im Vollbild zurueck zur Liste
+    {
+        fullview = 2;
+        return;
+    }
     // just free resource. callback called with NULL ptr
     exit_fselect(0);
 }

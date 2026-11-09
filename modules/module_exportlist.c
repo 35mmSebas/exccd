@@ -96,6 +96,9 @@
             log
 
             lang_str
+
+            // Filmsim: DNG-Vorschaubild in der Dateiauswahl (RAW entwickeln)
+            filmsim_dng_thumb
             sprintf
             strlen
             strcpy

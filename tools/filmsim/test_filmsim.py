@@ -70,7 +70,7 @@ def main():
             print(plat, "Uebersetzen fehlgeschlagen:\n", r.stdout[-6000:])
             fails += 1
             continue
-        for scenario in [("names", str(v)) for v in range(6)] + [("picker",), ("raw",), ("develop",)]:
+        for scenario in [("names", str(v)) for v in range(6)] + [("picker",), ("raw",), ("develop",), ("thumb",)]:
             r = subprocess.run([exe, scenario[0], ROOT] + list(scenario[1:]), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                text=True, encoding="ascii", errors="replace", timeout=600)
             tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else "(keine Ausgabe)"

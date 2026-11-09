@@ -1,6 +1,12 @@
 #ifndef FILMSIM_RAW_H
 #define FILMSIM_RAW_H
 
+// Fortschritt der langen Schleifen melden (Zeile y von n). filmsim.c zeigt damit beim
+// RAW-Entwickeln einen Balken, die PC-Tests brauchen das nicht.
+#ifndef FS_PROG_ROW
+#define FS_PROG_ROW(y, n) ((void)0)
+#endif
+
 // Rohdaten-Codec und 12-Bit-Tonkurven von EXCCD, ohne CHDK-Abhaengigkeiten.
 // Eingebunden von core/filmsim.c und vom PC-Test tools/filmsim/test_raw.c
 // (dort einmal mit CAM_SENSOR_BITS_PER_PIXEL=10 und einmal mit 12 gebaut).
@@ -163,6 +169,46 @@ static void wb_rescale(unsigned char *raw, int rows, int rowpix, int rowlen, int
     }
 }
 
+// RAW entwickeln: Belichtung und Weissabgleich nachtraeglich. R, G, B ueber Schwarz mit
+// fr / fg / fb (*4096). In 2x2-Bloecken (R G / G B ab row0), die ausgefressen sind (ein Gruen
+// oder zwei Kanaele >= sat), waere das Ergebnis bunt: Beim Abdunkeln oder Waermer-Machen werden
+// aus Weiss sonst rosa oder gelbe Flecken. Ein einzelner voller R- oder B-Kanal zaehlt nicht,
+// das ist Farbe (z. B. der rote Glow der Halation) und wird normal skaliert. Ausgefressene:
+// G = volle Helligkeit mit fg, R und B im Verhaeltnis nr / nb (*4096, Rohwert je G, bei dem
+// Canon Grau ausgibt). Defekt-Markierungen (0) bleiben.
+__attribute__((noinline))
+static void raw_gain(unsigned char *raw, int rows, int rowpix, int rowlen, int row0, int blk,
+                     int fr, int fg, int fb, int sat, int nr, int nb)
+{
+    int y, g, k, groups = rowpix / 8;
+    int gw = clip10(blk + (((1023 - blk) * fg + 2048) >> 12));            // Weiss nach der Belichtung
+    int rw = clip10(blk + (((gw - blk) * nr + 2048) >> 12));
+    int bw = clip10(blk + (((gw - blk) * nb + 2048) >> 12));
+    for (y = row0; y + 1 < rows; y += 2) {
+        FS_PROG_ROW(y, rows);
+        unsigned char *a0 = raw + y * rowlen, *a1 = a0 + rowlen;
+        for (g = 0; g < groups; g++, a0 += CAM_SENSOR_BITS_PER_PIXEL, a1 += CAM_SENSOR_BITS_PER_PIXEL) {
+            int p[8], q[8];
+            dec8(a0, p); dec8(a1, q);
+            for (k = 0; k < 8; k += 2) {
+                if (p[k+1] >= sat || q[k] >= sat || (p[k] >= sat && q[k+1] >= sat)) {
+                    if (p[k])   p[k]   = rw ? rw : 1;
+                    if (p[k+1]) p[k+1] = gw ? gw : 1;
+                    if (q[k])   q[k]   = gw ? gw : 1;
+                    if (q[k+1]) q[k+1] = bw ? bw : 1;
+                    continue;
+                }
+                int n;
+                if (p[k])   { n = clip10(blk + (((p[k]   - blk) * fr + 2048) >> 12)); p[k]   = n ? n : 1; }
+                if (p[k+1]) { n = clip10(blk + (((p[k+1] - blk) * fg + 2048) >> 12)); p[k+1] = n ? n : 1; }
+                if (q[k])   { n = clip10(blk + (((q[k]   - blk) * fg + 2048) >> 12)); q[k]   = n ? n : 1; }
+                if (q[k+1]) { n = clip10(blk + (((q[k+1] - blk) * fb + 2048) >> 12)); q[k+1] = n ? n : 1; }
+            }
+            enc8(a0, p); enc8(a1, q);
+        }
+    }
+}
+
 // Heisse Pixel
 //   Canon ersetzt defekte Pixel erst bei der JPEG-Erzeugung, und nur die aus
 //   seiner Werksliste (in den Rohdaten mit 0 markiert). Andere heisse Pixel
@@ -266,6 +312,7 @@ static int hotpix_fix(unsigned char *raw, int rows, int rowpix, int rowlen, shor
     int groups = rowpix / 8, w = groups * 8, cap = rowpix + 4, y, g, n = 0;
     int cnt[3] = { 0, 0, 0 };
     for (y = 2; y < rows - 2; y++) {
+        FS_PROG_ROW(y, rows);
         int slot = y % 3;
         short *q = buf + slot * cap;
         hp_flush(raw, rowlen, y - 3, q, cnt[slot]);      // Zeile y - 3 wird nicht mehr gelesen
@@ -337,6 +384,7 @@ static void grain_apply(unsigned char *raw, int rows, int rowpix, int rowlen, in
     unsigned int rnd = seed | 1;
     for (i = 0; i < nb; i++) up[i] = 0;
     for (y = row0; y + 1 < rows; y += 2) {
+        FS_PROG_ROW(y, rows);
         unsigned char *a0 = raw + y * rowlen, *a1 = a0 + rowlen;
         int left = 0;
         i = 0;

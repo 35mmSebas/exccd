@@ -229,6 +229,9 @@ void raw_process(void)
     int developing = (develop_raw != RAW_DEVELOP_OFF);
     if (developing)
     {
+        // Effekte der Entwicklung einsetzen, Fortschrittsbalken zeigen (bis filmsim_develop_end)
+        extern void filmsim_develop_prepare(void);
+        filmsim_develop_prepare();
         started();
         if (develop_raw == RAW_DEVELOP_DNG)
         {
@@ -335,6 +338,11 @@ void raw_process(void)
     extern void filmsim_effects_apply(char *raw);
     filmsim_effects_apply(rawadr);
     filmsim_time_mark(6);
+    if (developing)
+    {
+        extern void filmsim_develop_end(char *raw);
+        filmsim_develop_end(rawadr);
+    }
 
     // Filmsim: Film zum Foto ins Logbuch schreiben
     extern void filmsim_log_shot(void);

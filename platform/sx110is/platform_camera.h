@@ -87,5 +87,7 @@
     #define FILMSIM_COLOR_BG            0xFF    // Schwarz
     #define FILMSIM_COLOR_GREY          0xA3    // neutrales Grau
     #define FILMSIM_COLOR_RULE          0xFA    // dunkles Grau
+    // Graustufen fuer das DNG-Vorschaubild (tools/filmsim/make_thumbpal.py): Index, Helligkeit
+    #define FILMSIM_THUMB_GREYS         { 0xFF,0, 0xAF,55, 0x1F,112, 0x3A,126, 0x1A,164, 0x13,177, 0x11,213 }
     // Testkamera mit defektem Power-Schalter: ALT-Taste 3 s halten schaltet aus.
     #define FILMSIM_POWEROFF_HOLD_MS    3000

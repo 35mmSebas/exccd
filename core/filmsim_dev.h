@@ -20,6 +20,9 @@ typedef struct {
 
 #define DNG_TAG_DESCRIPTION 0x10E
 
+// Nicht jede Einheit (Kamera, PC-Tests) braucht jede Funktion
+#define DNG_MAYBE_UNUSED __attribute__((unused))
+
 static unsigned dng_u16(const unsigned char *b) { return b[0] | ((unsigned)b[1] << 8); }
 static unsigned dng_u32(const unsigned char *b) { return dng_u16(b) | (dng_u16(b + 2) << 16); }
 
@@ -45,7 +48,7 @@ static unsigned dng_value(const unsigned char *b, int len, unsigned ifd, unsigne
 }
 
 // 1 = DNG, die zu diesem Sensor passt
-static int dng_parse(const unsigned char *b, int len, int width, int height, int bits, dng_meta_t *m)
+static DNG_MAYBE_UNUSED int dng_parse(const unsigned char *b, int len, int width, int height, int bits, dng_meta_t *m)
 {
     int i, e;
     unsigned ifd0, sub, exif;
@@ -86,10 +89,24 @@ static int dng_parse(const unsigned char *b, int len, int width, int height, int
     return 1;
 }
 
+// Vorschaubild der CHDK-DNG (IFD0: unkomprimiert, 8 Bit RGB, ein Streifen, modules/dng.c).
+// 1 = vorhanden, dann Position im File und Groesse. Fehlt es (z. B. Remote-Aufnahme), 0.
+static DNG_MAYBE_UNUSED int dng_thumb_info(const unsigned char *b, int len, unsigned *off, int *w, int *h)
+{
+    if (len < 16 || b[0] != 'I' || b[1] != 'I' || b[2] != 42 || b[3] != 0) return 0;
+    unsigned ifd0 = dng_u32(b + 4);
+    *w = (int)dng_value(b, len, ifd0, 0x100, 0);
+    *h = (int)dng_value(b, len, ifd0, 0x101, 0);
+    *off = dng_value(b, len, ifd0, 0x111, 0);
+    if (dng_value(b, len, ifd0, 0x103, 0) != 1 || dng_value(b, len, ifd0, 0x115, 0) != 3) return 0;
+    if (*w < 16 || *h < 16 || *w > 256 || *h > 256 || *off < 8) return 0;
+    return dng_value(b, len, ifd0, 0x117, 0) >= (unsigned)(*w * *h * 3);
+}
+
 // Faktor *4096 fuer die Rohdaten eines Kanals, damit das JPEG den Weissabgleich der Aufnahme
 // bekommt, obwohl Canon die Faktoren des Hilfsschusses anwendet. Die Division haelt alles in 32 Bit.
 #define WB_ONE 4096
-static int wb_factor(int shot_x, int shot_g, int now_x, int now_g)
+static DNG_MAYBE_UNUSED int wb_factor(int shot_x, int shot_g, int now_x, int now_g)
 {
     if (shot_x <= 0 || shot_g <= 0 || now_x <= 0 || now_g <= 0) return WB_ONE;
     unsigned a = (unsigned)shot_x * (unsigned)now_g, b = (unsigned)shot_g * (unsigned)now_x;
