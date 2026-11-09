@@ -138,7 +138,7 @@ jobs:
 
       - name: Installer bauen
         run: |
-          sudo apt-get install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+          sudo apt-get update -q && sudo apt-get install -y gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
           make -C tools/installer CROSS=x86_64-w64-mingw32- VERSION=$VERSION
           ls -l tools/installer/exccd-installer.exe
 
@@ -181,7 +181,7 @@ jobs:
 
       - name: Download-Webseite bauen und pruefen
         run: |
-          sudo apt-get install -y python3-pil
+          sudo apt-get update -q && sudo apt-get install -y python3-pil
           gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
           python3 tools/site/build_site.py release/*.zip _site --version "$VERSION"
           node tools/site/test_zipjoin.mjs _site "$RUNNER_TEMP/zipjoin"
