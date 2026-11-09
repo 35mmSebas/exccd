@@ -2,3 +2,5 @@ exccd-installer.exe
 installer.res.o
 test_core
 test_core.exe
+probes/
+probes.rc

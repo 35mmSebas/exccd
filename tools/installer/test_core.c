@@ -107,6 +107,8 @@ static void test_names(void)
     CHECK(!zip_name_safe(""));
 }
 
+#define MAX_KNOWN 16
+
 static void test_cameras(const char *path)
 {
     FILE *f = fopen(path, "r");
@@ -116,17 +118,57 @@ static void test_cameras(const char *path)
     if (!f)
         return;
     while (fgets(line, sizeof(line), f)) {
-        char plat[64];
-        if (line[0] == '#' || sscanf(line, "%63s", plat) != 1)
+        char plat[64], sub[16], fw[8];
+        const camera *cam;
+        if (line[0] == '#' || sscanf(line, "%63s %15s", plat, sub) != 2)
             continue;
         n++;
-        if (!camera_find(plat)) {
+        if (!(cam = camera_find(plat))) {
             printf("FAIL: camera %s from cameras.txt is missing in core.c\n", plat);
             failures++;
+        } else {
+            /* sub "100d" is firmware "1.00d" */
+            snprintf(fw, sizeof(fw), "%c.%s", sub[0], sub + 1);
+            if (strcmp(cam->fw, fw) != 0) {
+                printf("FAIL: %s: core.c says firmware %s, cameras.txt %s\n", plat, cam->fw, fw);
+                failures++;
+            }
         }
     }
     fclose(f);
     CHECK(n == camera_count);
+
+    /* known_fw against camera_list.csv in the repo root (cameras.txt is in tools/filmsim/) */
+    {
+        char csv[512], known[MAX_KNOWN][128];
+        const char *slash = strrchr(path, '/');
+        snprintf(csv, sizeof(csv), "%.*s../../camera_list.csv", slash ? (int)(slash - path + 1) : 0, path);
+        memset(known, 0, sizeof(known));
+        f = fopen(csv, "r");
+        CHECK(f != NULL);
+        if (f) {
+            while (fgets(line, sizeof(line), f)) {
+                char plat[64], sub[16];
+                if (sscanf(line, "%63[^,],%15[^,]", plat, sub) != 2)
+                    continue;
+                for (int k = 0; k < camera_count && k < MAX_KNOWN; k++)
+                    if (strcmp(cameras[k].platform, plat) == 0) {
+                        char v[8];
+                        snprintf(v, sizeof(v), "%c.%s", sub[0], sub + 1);
+                        if (known[k][0])
+                            strcat(known[k], " ");
+                        strcat(known[k], v);
+                    }
+            }
+            fclose(f);
+            for (int k = 0; k < camera_count && k < MAX_KNOWN; k++)
+                if (strcmp(cameras[k].known_fw, known[k]) != 0) {
+                    printf("FAIL: %s: core.c knows \"%s\", camera_list.csv \"%s\"\n",
+                           cameras[k].platform, cameras[k].known_fw, known[k]);
+                    failures++;
+                }
+        }
+    }
 
     CHECK(camera_detect(NULL, "exccd-v1.9.24-sx110is-100b-7looks.zip") == camera_find("sx110is"));
     CHECK(camera_detect(NULL, "C:\\Users\\x\\Downloads\\exccd-v1.9.24-ixus132_elph115-100b-3looks (1).zip")

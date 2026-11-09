@@ -124,6 +124,25 @@ firsub: platformcheck all
 	@echo "**** Firmware creation completed successfully"
 
 
+# EXCCD: firmware probe for the installer ("Check firmware"). Only the loader,
+# built without the CHDK core: blinks the firmware letter, see
+# loader/generic/check_compat.c. Result: bin/FWPROBE-<platform>.BIN
+.PHONY: fwprobe
+fwprobe: platformcheck
+	$(MAKE) -C $(tools) dancingbits$(EXE)
+	$(MAKE) -C $(camfw) bin_compat.h
+	$(MAKE) -C $(loader) clean
+	$(MAKE) -C $(loader) EXCCD_FW_PROBE=1 main.bin
+	mkdir -p $(bin)
+    ifdef NEED_ENCODED_DISKBOOT
+		$(ENCODE_DISKBOOT) $(loader)/main.bin $(bin)/FWPROBE-$(PLATFORM).BIN $(NEED_ENCODED_DISKBOOT)
+    else
+		cp $(loader)/main.bin $(bin)/FWPROBE-$(PLATFORM).BIN
+    endif
+	$(MAKE) -C $(loader) clean
+	@echo '->' $(bin)/FWPROBE-$(PLATFORM).BIN
+
+
 .PHONY: firbatchsub
 firbatchsub: infoline clean firsub
 

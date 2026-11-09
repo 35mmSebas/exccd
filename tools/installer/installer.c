@@ -36,7 +36,10 @@ enum {
     S_CARD_EXFAT, S_CARD_BAD_FS, S_CARD_SPACE, S_CARD_READ_FAIL, S_CONFIRM, S_CONFIRM_TITLE,
     S_LOG_KEEP_LOG, S_LOG_DELETE, S_LOG_UNPACK, S_LOG_UNPACKED, S_LOG_BOOT, S_LOG_BOOT_OK,
     S_LOG_BOOT_ALREADY, S_LOG_EJECT, S_ERR_DELETE, S_ERR_WRITE, S_ERR_UNPACK, S_ERR_LOCK,
-    S_ERR_BOOT, S_ERR_VERIFY, S_DONE, S_DONE_FILES_ONLY, S_FAILED, S_ZIP_FILTER, S_COUNT
+    S_ERR_BOOT, S_ERR_VERIFY, S_DONE, S_DONE_FILES_ONLY, S_FAILED, S_ZIP_FILTER,
+    S_PROBE, S_PROBE_TITLE, S_PROBE_CONFIRM, S_PROBE_NEED_CAM, S_PROBE_BAD_CARD, S_LOG_PROBE,
+    S_LOG_REQ, S_PROBE_DONE_BLINK, S_PROBE_DONE_REQ, S_PROBE_REQ_HOWTO, S_PROBE_SHORT,
+    S_PROBE_LONG, S_PROBE_OK, S_PROBE_NO, S_COUNT
 };
 
 static const wchar_t *str_en[S_COUNT] = {
@@ -91,6 +94,37 @@ static const wchar_t *str_en[S_COUNT] = {
                           L"Do this after every power-on.",
     [S_FAILED] = L"Installation failed.",
     [S_ZIP_FILTER] = L"ZIP files",
+    [S_PROBE] = L"Check firmware…",
+    [S_PROBE_TITLE] = L"Check firmware",
+    [S_PROBE_CONFIRM] = L"Put a firmware test on %ls?\n\nThe camera will show its firmware version instead of "
+                        L"starting EXCCD. Afterwards install EXCCD as usual, that replaces the test. "
+                        L"Your photos stay untouched.",
+    [S_PROBE_NEED_CAM] = L"Choose your camera first, then insert a card formatted in the camera.",
+    [S_PROBE_BAD_CARD] = L"This card can't be used for the test. Format it in the camera first.",
+    [S_LOG_PROBE] = L"Writing the firmware test (DISKBOOT.BIN)…",
+    [S_LOG_REQ] = L"Writing VER.REQ and VERS.REQ…",
+    [S_PROBE_DONE_BLINK] = L"Ready!\n\n1. Slide the card's write-protect switch to LOCK.\n"
+                           L"2. Put it in the %ls and switch it on.\n"
+                           L"3. The screen stays dark, a lamp blinks in groups with a pause in between. "
+                           L"Count the blinks of one group:\n\n%ls\n\n"
+                           L"Something else: a version we don't know yet, please tell us. "
+                           L"Fast flickering: the version wasn't found.\n\n"
+                           L"4. After about 30 seconds the camera switches itself off. "
+                           L"If it keeps blinking, take the battery out.\n"
+                           L"5. Unlock the card again.\n"
+                           L"6. Is it the version marked ✓? Then put the card back in the card reader, "
+                           L"choose your EXCCD download and click \"Install EXCCD on the card\". "
+                           L"That replaces the test with EXCCD.\n\n"
+                           L"If nothing blinks, unlock the card and check this way:\n%ls",
+    [S_PROBE_SHORT] = L"%d× short",
+    [S_PROBE_LONG] = L"%d× long + ",
+    [S_PROBE_OK] = L"EXCCD works",
+    [S_PROBE_NO] = L"no EXCCD for this version",
+    [S_PROBE_DONE_REQ] = L"Ready!\n\nPut the card in the %ls (not locked).\n\n%ls\n\nEXCCD needs firmware %ls. "
+                         L"If your camera shows it, put the card back in the card reader, choose your EXCCD "
+                         L"download and click \"Install EXCCD on the card\".",
+    [S_PROBE_REQ_HOWTO] = L"Switch the camera on in playback mode, hold FUNC/SET and press DISP. "
+                          L"The camera shows a line like \"Firmware Ver GM1.00D\", the letter at the end counts.",
 };
 
 static const wchar_t *str_de[S_COUNT] = {
@@ -145,6 +179,37 @@ static const wchar_t *str_de[S_COUNT] = {
                           L"Das nach jedem Einschalten wiederholen.",
     [S_FAILED] = L"Installation fehlgeschlagen.",
     [S_ZIP_FILTER] = L"ZIP-Dateien",
+    [S_PROBE] = L"Firmware prüfen…",
+    [S_PROBE_TITLE] = L"Firmware prüfen",
+    [S_PROBE_CONFIRM] = L"Firmware-Test auf %ls schreiben?\n\nDie Kamera zeigt dann ihre Firmware-Version, statt EXCCD "
+                        L"zu starten. Danach EXCCD wie gewohnt installieren, das ersetzt den Test. "
+                        L"Deine Fotos bleiben unberührt.",
+    [S_PROBE_NEED_CAM] = L"Erst die Kamera wählen, dann eine in der Kamera formatierte Karte einlegen.",
+    [S_PROBE_BAD_CARD] = L"Diese Karte geht für den Test nicht. Bitte zuerst in der Kamera formatieren.",
+    [S_LOG_PROBE] = L"Firmware-Test wird geschrieben (DISKBOOT.BIN)…",
+    [S_LOG_REQ] = L"VER.REQ und VERS.REQ werden geschrieben…",
+    [S_PROBE_DONE_BLINK] = L"Fertig!\n\n1. Schreibschutz-Schieber der Karte auf LOCK stellen.\n"
+                           L"2. Karte in die %ls, Kamera einschalten.\n"
+                           L"3. Der Bildschirm bleibt dunkel, eine Lampe blinkt in Gruppen mit Pause dazwischen. "
+                           L"Zähl die Blinker einer Gruppe:\n\n%ls\n\n"
+                           L"Etwas anderes: eine Version, die wir noch nicht kennen, bitte melde dich. "
+                           L"Schnelles Flackern: Version nicht gefunden.\n\n"
+                           L"4. Nach etwa 30 Sekunden schaltet sich die Kamera selbst aus. "
+                           L"Blinkt sie weiter, Akku herausnehmen.\n"
+                           L"5. Karte wieder entsperren.\n"
+                           L"6. Ist es die Version mit ✓? Dann die Karte wieder in den Kartenleser stecken, "
+                           L"deinen EXCCD-Download wählen und auf \"EXCCD auf die Karte installieren\" klicken. "
+                           L"Das ersetzt den Test durch EXCCD.\n\n"
+                           L"Falls nichts blinkt, Karte entsperren und so prüfen:\n%ls",
+    [S_PROBE_SHORT] = L"%d× kurz",
+    [S_PROBE_LONG] = L"%d× lang + ",
+    [S_PROBE_OK] = L"EXCCD läuft",
+    [S_PROBE_NO] = L"kein EXCCD für diese Version",
+    [S_PROBE_DONE_REQ] = L"Fertig!\n\nKarte in die %ls stecken (nicht gesperrt).\n\n%ls\n\nEXCCD braucht Firmware %ls. "
+                         L"Zeigt deine Kamera diese Version, die Karte wieder in den Kartenleser stecken, deinen "
+                         L"EXCCD-Download wählen und auf \"EXCCD auf die Karte installieren\" klicken.",
+    [S_PROBE_REQ_HOWTO] = L"Kamera im Wiedergabemodus einschalten, FUNC/SET halten und DISP drücken. "
+                          L"Die Kamera zeigt eine Zeile wie \"Firmware Ver GM1.00D\", es zählt der Buchstabe am Ende.",
 };
 
 static const wchar_t **str = str_en;
@@ -154,11 +219,12 @@ static const wchar_t **str = str_en;
 
 enum {
     ID_ZIP_EDIT = 100, ID_BROWSE, ID_CAMERA, ID_DRIVE, ID_REFRESH, ID_STATUS, ID_INSTALL,
-    ID_PROGRESS, ID_LOG
+    ID_PROGRESS, ID_LOG, ID_PROBE, ID_LANG
 };
-#define WM_APP_LOG      (WM_APP + 1)
-#define WM_APP_PROGRESS (WM_APP + 2)
-#define WM_APP_DONE     (WM_APP + 3)
+#define WM_APP_LOG        (WM_APP + 1)
+#define WM_APP_PROGRESS   (WM_APP + 2)
+#define WM_APP_DONE       (WM_APP + 3)
+#define WM_APP_PROBE_DONE (WM_APP + 4)
 
 typedef struct {
     wchar_t letter;
@@ -170,7 +236,7 @@ typedef struct {
 } drive_info;
 
 static HWND g_wnd, g_zip_edit, g_browse, g_camera, g_drive, g_refresh, g_status, g_install,
-            g_progress, g_log, g_zip_label, g_cam_label, g_card_label;
+            g_progress, g_log, g_zip_label, g_cam_label, g_card_label, g_probe, g_lang;
 static HFONT g_font, g_bold;
 
 static wchar_t g_zip_path[MAX_PATH];
@@ -516,6 +582,8 @@ static void update_state(void)
         }
     }
     EnableWindow(g_install, ok && !g_busy);
+    /* needs no ZIP; start_probe() says what's missing */
+    EnableWindow(g_probe, !g_busy);
     EnableWindow(g_browse, !g_busy);
     EnableWindow(g_camera, !g_busy);
     EnableWindow(g_drive, !g_busy);
@@ -763,6 +831,13 @@ static DWORD WINAPI install_thread(void *arg)
         goto out;
     if (log && !write_file(logpath, log, loglen))
         goto out;
+    /* left over from "Check firmware"; DISKBOOT.BIN was just replaced by unpack() */
+    for (int i = 0; i < 2; i++) {
+        wchar_t req[32];
+        fmt(req, 32, L"%lc:\\%ls", j->letter, i ? L"VERS.REQ" : L"VER.REQ");
+        SetFileAttributesW(req, FILE_ATTRIBUTE_NORMAL);
+        DeleteFileW(req);
+    }
 
     if (j->make_bootable) {
         if (!make_bootable(j->letter))
@@ -810,6 +885,153 @@ static void start_install(void)
     }
 }
 
+/* ---- firmware test (worker thread) -------------------------------------- */
+
+/* The probe for this camera, embedded as RCDATA named after the platform
+ * (see Makefile). NULL if the installer was built without it. */
+static const uint8_t *probe_data(const camera *cam, DWORD *size)
+{
+    wchar_t name[64];
+    HRSRC r;
+    HGLOBAL g;
+    MultiByteToWideChar(CP_UTF8, 0, cam->platform, -1, name, 64);
+    CharUpperW(name);
+    if (!(r = FindResourceW(NULL, name, (LPCWSTR)RT_RCDATA)) || !(g = LoadResource(NULL, r)))
+        return NULL;
+    *size = SizeofResource(NULL, r);
+    return *size ? LockResource(g) : NULL;
+}
+
+typedef struct {
+    wchar_t letter;
+    const uint8_t *probe;   /* NULL: only VER.REQ / VERS.REQ */
+    DWORD probe_size;
+} probe_job;
+
+static DWORD WINAPI probe_thread(void *arg)
+{
+    probe_job *j = arg;
+    static const char req[] = "EXCCD: playback mode, hold FUNC/SET, press DISP.\r\n";
+    wchar_t path[32];
+    int ok = 0, boot = j->probe != NULL;
+
+    if (boot) {
+        post_log(T(S_LOG_PROBE));
+        fmt(path, 32, L"%lc:\\DISKBOOT.BIN", j->letter);
+        if (!write_file(path, j->probe, j->probe_size))
+            goto out;
+    }
+    PostMessageW(g_wnd, WM_APP_PROGRESS, 40, 0);
+    /* older cameras answer VER.REQ, newer ones VERS.REQ */
+    post_log(T(S_LOG_REQ));
+    fmt(path, 32, L"%lc:\\VER.REQ", j->letter);
+    if (!write_file(path, (const uint8_t *)req, sizeof(req) - 1))
+        goto out;
+    fmt(path, 32, L"%lc:\\VERS.REQ", j->letter);
+    if (!write_file(path, (const uint8_t *)req, sizeof(req) - 1))
+        goto out;
+    PostMessageW(g_wnd, WM_APP_PROGRESS, 80, 0);
+    if (boot) {
+        if (!make_bootable(j->letter))
+            goto out;
+    } else {
+        eject(j->letter);
+    }
+    ok = 1;
+out:
+    PostMessageW(g_wnd, WM_APP_PROBE_DONE, ok, boot);
+    free(j);
+    return 0;
+}
+
+static const camera *g_probe_cam;           /* camera of the running test */
+
+static void start_probe(void)
+{
+    const camera *cam = selected_camera();
+    drive_info *d = selected_drive();
+    wchar_t msg[512], what[128], size[32];
+    probe_job *j;
+    HANDLE t;
+    int check;
+
+    if (!cam || !d) {
+        MessageBoxW(g_wnd, T(S_PROBE_NEED_CAM), T(S_PROBE_TITLE), MB_OK | MB_ICONINFORMATION);
+        return;
+    }
+    check = d->readable ? check_card(cam, d->fs) : CHECK_BAD_FS;
+    if (check != CHECK_OK && check != CHECK_FILES_ONLY && check != CHECK_NEED_FAT16) {
+        MessageBoxW(g_wnd, T(S_PROBE_BAD_CARD), T(S_PROBE_TITLE), MB_OK | MB_ICONWARNING);
+        return;
+    }
+    fmt_size(size, 32, d->total);
+    fmt(what, 128, L"%lc: (%ls, %ls)", d->letter, d->label[0] ? d->label : L"SD", size);
+    fmt(msg, 512, T(S_PROBE_CONFIRM), what);
+    if (MessageBoxW(g_wnd, msg, T(S_PROBE_TITLE), MB_YESNO | MB_ICONQUESTION) != IDYES)
+        return;
+
+    j = calloc(1, sizeof(*j));
+    j->letter = d->letter;
+    /* the blinking test needs a card the camera boots from */
+    if (check == CHECK_OK)
+        j->probe = probe_data(cam, &j->probe_size);
+    g_probe_cam = cam;
+    g_busy = 1;
+    SetWindowTextW(g_log, L"");
+    SendMessageW(g_progress, PBM_SETPOS, 0, 0);
+    update_state();
+    t = CreateThread(NULL, 0, probe_thread, j, 0, NULL);
+    if (t)
+        CloseHandle(t);
+    else {
+        free(j);
+        g_busy = 0;
+        update_state();
+    }
+}
+
+/* "1× long + 2× short  =  1.01b" for a version like "1.01b" */
+static void probe_blinks(wchar_t *buf, const char *v)
+{
+    wchar_t part[32];
+    int middle = (v[2] - '0') * 10 + (v[3] - '0'), letter = v[4] - 'a' + 1;
+    buf[0] = 0;
+    if (middle) {
+        fmt(part, 32, T(S_PROBE_LONG), middle);
+        wcscat(buf, part);
+    }
+    fmt(part, 32, T(S_PROBE_SHORT), letter);
+    wcscat(buf, part);
+}
+
+static void probe_done(int ok, int blink)
+{
+    const camera *cam = g_probe_cam;
+    wchar_t msg[2048], name[64], fw[16], table[512] = L"", blinks[64], line[160];
+
+    if (!ok || !cam) {
+        append_log(T(S_FAILED));
+        MessageBoxW(g_wnd, T(S_FAILED), T(S_PROBE_TITLE), MB_OK | MB_ICONERROR);
+        return;
+    }
+    MultiByteToWideChar(CP_UTF8, 0, cam->name, -1, name, 64);
+    MultiByteToWideChar(CP_UTF8, 0, cam->fw, -1, fw, 16);
+    if (blink) {
+        /* one row per version CHDK knows for this camera */
+        for (const char *v = cam->known_fw; *v; v += v[5] ? 6 : 5) {
+            int own = strncmp(v, cam->fw, 5) == 0;
+            probe_blinks(blinks, v);
+            fmt(line, 160, L"%ls%ls  =  %.5hs   %ls %ls", table[0] ? L"\n" : L"", blinks, v,
+                own ? L"✓" : L"✗", T(own ? S_PROBE_OK : S_PROBE_NO));
+            wcscat(table, line);
+        }
+        fmt(msg, 2048, T(S_PROBE_DONE_BLINK), name, table, T(S_PROBE_REQ_HOWTO));
+    } else {
+        fmt(msg, 2048, T(S_PROBE_DONE_REQ), name, T(S_PROBE_REQ_HOWTO), fw);
+    }
+    MessageBoxW(g_wnd, msg, T(S_PROBE_TITLE), MB_OK | MB_ICONINFORMATION);
+}
+
 /* ---- window ------------------------------------------------------------- */
 
 static int g_dpi = 96;
@@ -827,11 +1049,13 @@ static void layout(int w)
 {
     int m = S(16), x = m, y = m, inner = w - 2 * m, bw = S(110), h = S(24), gap = S(8);
 
-    MoveWindow(g_zip_label, x, y, inner, S(20), TRUE);           y += S(24);
+    MoveWindow(g_zip_label, x, y, inner - S(100) - gap, S(20), TRUE);
+    MoveWindow(g_lang, x + inner - S(100), y - S(4), S(100), S(200), TRUE); y += S(24);
     MoveWindow(g_zip_edit, x, y, inner - bw - gap, h, TRUE);
     MoveWindow(g_browse, x + inner - bw, y, bw, h, TRUE);         y += h + gap;
     MoveWindow(g_cam_label, x, y + S(3), S(70), S(20), TRUE);
-    MoveWindow(g_camera, x + S(70), y, inner - S(70), S(200), TRUE); y += h + S(18);
+    MoveWindow(g_camera, x + S(70), y, inner - S(70) - S(130) - gap, S(200), TRUE);
+    MoveWindow(g_probe, x + inner - S(130), y, S(130), h, TRUE); y += h + S(18);
 
     MoveWindow(g_card_label, x, y, inner, S(20), TRUE);          y += S(24);
     MoveWindow(g_drive, x, y, inner - bw - gap, S(200), TRUE);
@@ -857,10 +1081,15 @@ static void create_controls(void)
     g_bold = CreateFontIndirectW(&lf);
 
     g_zip_label = make(L"STATIC", T(S_STEP1), 0, 0, g_bold);
+    g_lang = make(L"COMBOBOX", L"", WS_TABSTOP | CBS_DROPDOWNLIST, ID_LANG, g_font);
+    SendMessageW(g_lang, CB_ADDSTRING, 0, (LPARAM)L"English");
+    SendMessageW(g_lang, CB_ADDSTRING, 0, (LPARAM)L"Deutsch");
+    SendMessageW(g_lang, CB_SETCURSEL, str == str_de, 0);
     g_zip_edit = make(L"EDIT", L"", WS_BORDER | ES_AUTOHSCROLL | ES_READONLY, ID_ZIP_EDIT, g_font);
     g_browse = make(L"BUTTON", T(S_BROWSE), WS_TABSTOP | BS_PUSHBUTTON, ID_BROWSE, g_font);
     g_cam_label = make(L"STATIC", T(S_CAMERA), 0, 0, g_font);
     g_camera = make(L"COMBOBOX", L"", WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL, ID_CAMERA, g_font);
+    g_probe = make(L"BUTTON", T(S_PROBE), WS_TABSTOP | BS_PUSHBUTTON, ID_PROBE, g_font);
     g_card_label = make(L"STATIC", T(S_STEP2), 0, 0, g_bold);
     g_drive = make(L"COMBOBOX", L"", WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL, ID_DRIVE, g_font);
     g_refresh = make(L"BUTTON", T(S_REFRESH), WS_TABSTOP | BS_PUSHBUTTON, ID_REFRESH, g_font);
@@ -877,6 +1106,33 @@ static void create_controls(void)
         SendMessageW(g_camera, CB_ADDSTRING, 0, (LPARAM)name);
     }
     SendMessageW(g_camera, CB_SETCURSEL, 0, 0);
+}
+
+static void set_title(void)
+{
+    wchar_t title[96];
+    fmt(title, 96, L"%ls  %hs", T(S_TITLE), EXCCD_INSTALLER_VERSION);
+    SetWindowTextW(g_wnd, title);
+}
+
+/* Language switch: put every fixed text in the other language. The log keeps
+ * what it already says. */
+static void set_language(int german)
+{
+    LRESULT cam = SendMessageW(g_camera, CB_GETCURSEL, 0, 0);
+    str = german ? str_de : str_en;
+    set_title();
+    SetWindowTextW(g_zip_label, T(S_STEP1));
+    SetWindowTextW(g_browse, T(S_BROWSE));
+    SetWindowTextW(g_cam_label, T(S_CAMERA));
+    SetWindowTextW(g_probe, T(S_PROBE));
+    SetWindowTextW(g_card_label, T(S_STEP2));
+    SetWindowTextW(g_refresh, T(S_REFRESH));
+    SetWindowTextW(g_install, T(S_INSTALL));
+    SendMessageW(g_camera, CB_DELETESTRING, 0, 0);
+    SendMessageW(g_camera, CB_INSERTSTRING, 0, (LPARAM)T(S_CAMERA_PICK));
+    SendMessageW(g_camera, CB_SETCURSEL, cam, 0);
+    refresh_drives();                       /* sizes use , or . and update_state() */
 }
 
 static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -902,6 +1158,11 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         case ID_BROWSE: browse_zip(); break;
         case ID_REFRESH: refresh_drives(); break;
         case ID_INSTALL: start_install(); break;
+        case ID_PROBE: start_probe(); break;
+        case ID_LANG:
+            if (HIWORD(wp) == CBN_SELCHANGE)
+                set_language(SendMessageW(g_lang, CB_GETCURSEL, 0, 0) == 1);
+            break;
         case ID_CAMERA:
         case ID_DRIVE:
             if (HIWORD(wp) == CBN_SELCHANGE)
@@ -939,6 +1200,11 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             append_log(T(S_FAILED));
             MessageBoxW(hwnd, T(S_FAILED), T(S_TITLE), MB_OK | MB_ICONERROR);
         }
+        refresh_drives();
+        return 0;
+    case WM_APP_PROBE_DONE:
+        g_busy = 0;
+        probe_done((int)wp, (int)lp);
         refresh_drives();
         return 0;
     case WM_CLOSE:

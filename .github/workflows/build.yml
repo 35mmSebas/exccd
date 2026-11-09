@@ -106,20 +106,35 @@ jobs:
           make PLATFORM=$PLATFORM PLATFORMSUB=$PLATFORMSUB firzipsubcomplete
           cp bin/$PLATFORM-$PLATFORMSUB-*-full.zip dist/exccd-$VERSION-$PLATFORM-$PLATFORMSUB-full.zip
           unzip -l dist/*.zip | grep -E 'DISKBOOT.BIN|PS.FIR'
+          # Firmware-Pruefprogramm fuer den Installer
+          make PLATFORM=$PLATFORM PLATFORMSUB=$PLATFORMSUB fwprobe
+          ls -l bin/FWPROBE-$PLATFORM.BIN
 
       - uses: actions/upload-artifact@v4
         with:
           name: exccd-${{ env.VERSION }}-${{ env.PLATFORM }}-${{ env.PLATFORMSUB }}
           path: dist/*.zip
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fwprobe-${{ env.PLATFORM }}
+          path: bin/FWPROBE-${{ env.PLATFORM }}.BIN
+
   # SD-Karten-Installer fuer Windows (MinGW-Cross-Build, unsigniert)
   installer:
-    needs: setup
+    needs: [setup, build]
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ needs.setup.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+
+      # Firmware-Pruefprogramme aus den Kamera-Builds, werden in die .exe eingebettet
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: fwprobe-*
+          path: tools/installer/probes
+          merge-multiple: true
 
       - name: Installer bauen
         run: |

@@ -2,7 +2,9 @@
 
     .section .blob_chdk_core
 blob_chdk_core_start:
+#ifndef EXCCD_FW_PROBE
     .incbin CORE_FILE
+#endif
 blob_chdk_core_end:
 
     .text

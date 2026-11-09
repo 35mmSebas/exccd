@@ -47,6 +47,8 @@ typedef struct {
     const char *name;       /* shown to the user */
     int fat32_boot;         /* 1: boots from FAT32 (DryOS R47+); 0: FAT12/16 only */
     int firm_update;        /* 1: can start EXCCD via MENU -> Firm Update (PS.FIR) */
+    const char *fw;         /* the firmware EXCCD is built for, "1.00d" (sub in cameras.txt) */
+    const char *known_fw;   /* all versions CHDK knows, "1.00a 1.00d" (camera_list.csv) */
 } camera;
 
 extern const camera cameras[];

@@ -17,11 +17,18 @@ ifdef NEED_ENCODED_DISKBOOT
 CFLAGS+=-DNEED_ENCODED_DISKBOOT=$(NEED_ENCODED_DISKBOOT)
 endif
 
+# EXCCD: firmware probe, see loader/generic/check_compat.c (top Makefile: make fwprobe)
+ifdef EXCCD_FW_PROBE
+CFLAGS+=-DEXCCD_FW_PROBE
+endif
+
 all: main.bin
 
 main.bin: main.elf
 main.elf: entry.o main.o blobs.o
+ifndef EXCCD_FW_PROBE
 blobs.o: $(CORE_FILE)
+endif
 
 blobs.o: ../generic/blobs.S
 	@echo $< '->' $@

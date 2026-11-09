@@ -32,6 +32,11 @@ for cam in $CAMERAS; do
     make -s PLATFORM=$p PLATFORMSUB=$s firzipsubcomplete >$log 2>&1 ||
         { tail -20 $log; echo "Fehler, ganzes Log: $log" >&2; exit 1; }
     cp bin/$p-$s-*-full.zip $out/exccd-$version-$p-$s-full.zip
+    # Firmware-Pruefprogramm fuer den Installer (tools/installer/probes/)
+    make -s PLATFORM=$p PLATFORMSUB=$s fwprobe >>$log 2>&1 ||
+        { tail -20 $log; echo "Fehler beim fwprobe, ganzes Log: $log" >&2; exit 1; }
+    mkdir -p tools/installer/probes
+    cp bin/FWPROBE-$p.BIN tools/installer/probes/
     make -s PLATFORM=$p PLATFORMSUB=$s clean >/dev/null
-    echo "    -> $out/exccd-$version-$p-$s-full.zip"
+    echo "    -> $out/exccd-$version-$p-$s-full.zip, tools/installer/probes/FWPROBE-$p.BIN"
 done

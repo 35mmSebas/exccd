@@ -215,12 +215,15 @@ uint64_t zip_total_size(const zip_file *z)
 
 /* Keep in step with tools/filmsim/cameras.txt (test_core checks it).
  * fat32_boot: platform_camera.h defines CAM_DRYOS_2_3_R47.
- * firm_update: the full ZIP contains PS.FIR. */
+ * firm_update: the full ZIP contains PS.FIR.
+ * fw: the sub from cameras.txt as the camera shows it.
+ * known_fw: every version of this camera in camera_list.csv, for the
+ * blink table of "Check firmware" (test_core checks it). */
 const camera cameras[] = {
-    { "ixus60_sd600",    "IXUS 60 / PowerShot SD600",        0, 1 },
-    { "ixus145_elph135", "IXUS 145 / PowerShot ELPH 135",    1, 0 },
-    { "ixus132_elph115", "IXUS 132 / PowerShot ELPH 115 IS", 1, 0 },
-    { "sx110is",         "PowerShot SX110 IS",               0, 0 },
+    { "ixus60_sd600",    "IXUS 60 / PowerShot SD600",        0, 1, "1.00d", "1.00a 1.00d" },
+    { "ixus145_elph135", "IXUS 145 / PowerShot ELPH 135",    1, 0, "1.00c", "1.00c" },
+    { "ixus132_elph115", "IXUS 132 / PowerShot ELPH 115 IS", 1, 0, "1.00b", "1.00b" },
+    { "sx110is",         "PowerShot SX110 IS",               0, 0, "1.00b", "1.00b" },
 };
 const int camera_count = sizeof(cameras) / sizeof(cameras[0]);
 
