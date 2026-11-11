@@ -116,7 +116,7 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 
 .claim { text-align: center; display: flex; flex-direction: column; align-items: center; }
 .claim h1 { font-size: clamp(1.2rem, 2.6vw, 1.6rem); font-weight: 400; text-transform: uppercase; letter-spacing: .14em; line-height: 1.2; }
-.claim-for { margin: 10px 0 0; color: var(--muted); font-size: .9rem; }
+.claim-for { margin: 10px auto 0; max-width: 34em; color: var(--muted); font-size: .9rem; }
 .claim-facts { margin: 2px 0 26px; color: var(--muted); font-size: .8rem; letter-spacing: .06em; min-height: 1.5em; }
 .claim-hint { margin: 16px 0 0; color: var(--muted); font-size: .78rem; }
 .claim-hint b { color: var(--text); font-weight: 400; }
