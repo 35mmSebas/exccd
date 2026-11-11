@@ -312,6 +312,8 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .feat-grid h4 { margin: 0 0 6px; font-size: 1rem; }
 .feat-grid p { margin: 0 0 14px; color: var(--muted); font-size: .9rem; flex: 1; }
 .small-cards li { padding-top: 16px; }
+.feat-grid li.wide { grid-column: span 2; }
+@media (max-width: 560px) { .feat-grid li.wide { grid-column: auto; } }
 .opts { align-self: flex-start; font-size: .72rem; letter-spacing: .04em; color: #c8c8cb; border: 1px solid var(--line-2);
         border-radius: 3px; padding: 2px 7px; }
 .stamp { color: #ff8a3d; font-family: ui-monospace, Consolas, monospace; font-style: italic; letter-spacing: .08em; white-space: nowrap; }
