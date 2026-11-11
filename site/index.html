@@ -172,7 +172,7 @@
         <li>
           <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="12" width="32" height="24" rx="2"/><path d="M14 30l7-8 5 6 4-4 6 6"/><circle cx="31" cy="19" r="2.5"/></svg>
           <h3>Pick looks</h3>
-          <p>On this page you choose which films you want on your camera. Your browser packs them into one ZIP
+          <p>On this website you choose which looks you want on your camera. Your browser packs them into one ZIP
             file; nothing gets uploaded anywhere.</p>
         </li>
         <li>
@@ -248,8 +248,9 @@
         </li>
         <li>
           <h3>A clean screen</h3>
-          <p>On screen there's only the battery and the name of the film. When you half-press the shutter or open
-            Canon's menus or FUNC/SET, both get out of the way and come back afterwards.</p>
+          <p>Normally the screen shows just the battery and the name of the film, plus a short note when something
+            special is on, like a recipe or Auto-ISO. When you half-press the shutter or open Canon's menus, it
+            gets out of the way and comes back afterwards.</p>
         </li>
         <li>
           <h3>Films, not parameters</h3>
@@ -282,7 +283,8 @@
         <li>
           <h3>White balance</h3>
           <p>First you set the camera's own white balance under <b>MENU</b> → <i>Look</i>: Auto, Daylight,
-            Cloudy, Tungsten, Fluorescent or Custom. That's Canon's normal setting, just moved next to the film.</p>
+            Cloudy, Tungsten, Fluorescent or Custom. It's Canon's normal setting; you just find it in the same
+            menu as the rest of the look.</p>
         </li>
         <li>
           <h3>WB shift</h3>
@@ -291,15 +293,15 @@
             few steps towards red and yellow make a look warmer, towards blue it gets cooler.</p>
         </li>
         <li>
-          <h3>Change it any time</h3>
-          <p>Both live on the camera, not in the download, so you can change them whenever you like. The
-            shift is worked into the look's tone curve, so it doesn't slow the camera down.</p>
+          <h3>Works with every look</h3>
+          <p>The shift is worked into the tone curve of whichever look you've picked, so it doesn't slow the
+            camera down. Only with the film set to <b>Off</b> it does nothing, because then there's no curve.</p>
         </li>
         <li>
           <h3>For the curious</h3>
           <p>One step is roughly 3 % more or less red or blue in the raw data. It isn't calibrated yet, so take
-            the numbers as a feel, not a measurement. You see the shift in the photo, not on the screen, and
-            with the film set to <b>Off</b> it does nothing.</p>
+            the numbers as a feel, not a measurement. You see the shift in the photo, not on the screen while
+            you frame.</p>
         </li>
       </ol>
     </section>
@@ -370,7 +372,7 @@
             one to do the work. You get a new JPEG; the DNG stays untouched.</p>
         </li>
       </ol>
-      <p class="muted small develop-note">White balance, Dynamic+ and the date stamp come from the original photo. The Exif
+      <p class="muted small develop-note">White balance, Dynamic+ and the date for the date stamp come from the original photo. The Exif
         data (date, exposure, orientation) comes from the helper shot, so hold the camera the same way and don't
         use digital zoom. Developing takes a few seconds, longer with heavy effects; a bar shows how far it is.</p>
     </section>
@@ -379,12 +381,12 @@
       <header class="features-head">
         <p class="eyebrow">Also in there</p>
         <h2>A few extras.</h2>
-        <p class="muted">All optional, and all in the options menu (<b>MENU</b> → <i>Look</i> → <i>Effects</i>). Like
-          the looks, they're applied to the raw sensor data before the camera makes the JPEG. So grain or a light
-          leak becomes part of the photo instead of being laid on top afterwards.</p>
+        <p class="muted">All optional, and all in the options menu (<b>MENU</b>). The effects and look settings
+          belong to the look and are saved in a <a href="#recipes">recipe</a>; the camera settings depend on the
+          moment and stay as they are when you switch.</p>
       </header>
 
-      <h3 class="feat-group" id="effects">Effects</h3>
+      <h3 class="feat-group" id="effects">Effects · MENU → Look → Effects</h3>
       <ul class="feat-grid fx">
         <li><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="5"/><circle cx="16" cy="16" r="10" class="soft"/><circle cx="16" cy="16" r="14" class="soft2"/></svg>
           <h4>Black Mist</h4><p>A soft glow around bright areas, like a diffusion filter in front of the lens. It takes the hard edge off digital sharpness.</p><span class="opts">Off · 1/8 · 1/4</span></li>
@@ -396,25 +398,31 @@
           <h4>Light Leak</h4><p>A warm streak of light from the left or right edge, like on a film camera with a leaky back. Side and position change from shot to shot.</p><span class="opts">Off · On</span></li>
         <li><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="2"/><path d="M15 21h3M20 21h3M25 21h1" class="warm"/></svg>
           <h4>Date stamp</h4><p>Orange digits in the corner, like the date stamp on 90s film compacts: <span class="stamp">'26 10 31</span></p><span class="opts">Off · On</span></li>
-        <li><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="12" cy="16" r="8"/><circle cx="20" cy="16" r="8"/></svg>
-          <h4>Double exposure</h4><p>Two shots on one frame. The second one is mixed into the first in the raw data, much like exposing a negative twice.</p><span class="opts">Off · On</span></li>
         <li><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="7" width="26" height="18" rx="2"/><path d="M8 12h1M14 11h1M21 13h1M11 17h1M18 18h1M24 16h1M7 21h1M15 21h1M22 21h1" class="soft"/></svg>
           <h4>Grain</h4><p>Film grain, added to the raw data. Unlike coloured digital noise it has one colour, comes in clumps and is strongest in the midtones, modelled on how film grain behaves. On Auto it follows the speed (ISO) of the film you picked.</p><span class="opts">Off · Auto · Fine · Medium · Coarse</span></li>
         <li><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="5" width="26" height="22" rx="1"/><rect x="6" y="8" width="20" height="16" class="soft"/></svg>
           <h4>Film frame</h4><p>A thin black border around the picture, like a print from the lab. It covers the outer edge of the image, so leave a little room when you frame.</p><span class="opts">Off · Thin</span></li>
       </ul>
 
-      <h3 class="feat-group" id="shooting">Shooting</h3>
+      <p class="muted small fx-note">The effects work on the raw sensor data before the camera makes the JPEG, so
+        grain or a light leak becomes part of the photo instead of being laid on top afterwards.</p>
+
+      <h3 class="feat-group" id="look-settings">Look settings · MENU → Look</h3>
       <ul class="feat-grid small-cards">
-        <li class="wide"><h4>Auto-ISO with a shutter limit</h4><p>Canon's Auto ISO tends to keep the ISO low and the shutter slow, so indoor photos get blurry. Here you set the slowest time you accept, like the minimum shutter speed setting on many newer cameras. The camera raises the ISO only when it has to, up to a maximum you choose. On Auto the limit follows the zoom: about 1 / focal length, never slower than 1/30. It steps in when the camera's ISO is on Auto and the flash doesn't fire.</p><span class="opts">Off · Auto · 1/8 … 1/500 · max. ISO 200 … 1600</span></li>
         <li><h4>Dynamic+</h4><p>For bright scenes: the camera exposes a little shorter so the sky doesn't burn out, and the curve brings the shadows back up.</p><span class="opts">Off · +1 · +2</span></li>
+        <li><h4>B&amp;W colour filter</h4><p>Works like a coloured filter on the lens in black-and-white photography: yellow, orange or red darken blue skies and make clouds stand out.</p><span class="opts">Off · Yellow · Orange · Red</span></li>
+        <li><h4>Colour noise filter</h4><p>Small sensors make coloured blotches in dark areas. This smooths them out and leaves the fine grey noise alone, which looks more like grain.</p><span class="opts">Off · Auto · Light · Strong</span></li>
+      </ul>
+
+      <h3 class="feat-group" id="shooting">Camera · MENU</h3>
+      <ul class="feat-grid small-cards">
+        <li class="wide"><h4>Auto-ISO with a shutter limit</h4><p>Canon's Auto ISO tends to keep the ISO low and the shutter slow, so indoor photos get blurry. Here you set the slowest time you accept, like the minimum shutter speed setting on many newer cameras. The camera raises the ISO only when it has to, up to a maximum you choose. On Auto the limit follows the zoom: about 1 / focal length, never slower than 1/30. It steps in when the camera's ISO is on Auto, you haven't set a shutter speed yourself and the flash doesn't fire.</p><span class="opts">Off · Auto · 1/8 … 1/500 · max. ISO 200 … 1600</span></li>
         <li><h4>Zone focus</h4><p>Focus at a fixed distance instead of autofocus. Handy on the street: the camera fires right away instead of hunting for focus first.</p><span class="opts">AF · 0.5 m … ∞</span></li>
         <li><h4>Shutter speed</h4><p>Set the exposure time yourself, for long night shots or to freeze movement.</p><span class="opts">Auto · 16″ … 1/1000</span></li>
         <li><h4>ND filter</h4><p>Many of these cameras have a small grey filter inside that cuts the light, often instead of a real aperture. Here you swing it in or out yourself.</p><span class="opts">Auto · In · Out</span></li>
         <li><h4>Flash power</h4><p>A fixed flash strength instead of automatic. Low is nice for a bit of fill light.</p><span class="opts">Auto · Low · Mid · High</span></li>
-        <li><h4>B&amp;W colour filter</h4><p>Works like a coloured filter on the lens in black-and-white photography: yellow, orange or red darken blue skies and make clouds stand out.</p><span class="opts">Off · Yellow · Orange · Red</span></li>
-        <li><h4>Colour noise filter</h4><p>Small sensors make coloured blotches in dark areas. This smooths them out and leaves the fine grey noise alone, which looks more like grain.</p><span class="opts">Off · Auto · Light · Strong</span></li>
         <li><h4>Raw + film log</h4><p>Saves a DNG next to each JPEG if you want one. <code>FILMLOG.CSV</code> lists every shot with the film you used.</p><span class="opts">Off · DNG</span></li>
+        <li><h4>Double exposure</h4><p>Two shots on one frame. The second one is mixed into the first in the raw data, much like exposing a negative twice.</p><span class="opts">Off · On</span></li>
       </ul>
     </section>
   </section>
@@ -466,10 +474,10 @@
         <p class="muted small">Every look comes with two <b>Dynamic+</b> variants (DR+1, DR+2) for bright scenes; they're
           always included. The small graph on each card is the look's tone curve: the dashed line means “no
           change”, above it the picture gets brighter, below it darker. Film type and ISO on the labels say what
-          a look is modelled on; they don't change the camera's ISO.
-          <b>White balance</b> and the <b>WB shift</b> aren't set here but <a href="#colour">on the camera</a>, so
-          you can change them any time without downloading again. If you like a combination, save it as a
-          <a href="#recipes">recipe</a>.</p>
+          a look is modelled on; they don't change the camera's ISO (only the grain on Auto goes by it).
+          <b>White balance</b>, <b>WB shift</b> and the effects aren't chosen here: you set them
+          <a href="#colour">on the camera</a> while shooting, and save the combinations you like as
+          <a href="#recipes">recipes</a>.</p>
       </section>
 
       <section class="step" id="download-step">
@@ -509,7 +517,7 @@
               The installer can check it (<i>Check firmware…</i>), or see
               <a href="#camera-step">how to find it by hand</a>.</p></li>
           <li><h3>Download your looks</h3>
-            <p>Pick your films on the <a href="#looks-step">looks page</a> and download the ZIP. Just leave it in
+            <p>Pick your looks on the <a href="#looks-step">looks page</a> and download the ZIP. Just leave it in
               your Downloads folder; the installer looks for it there.</p></li>
           <li><h3>Format the card in the camera</h3>
             <p>Use the camera's own <i>Format</i> menu, not the PC, so the card is set up the way the camera expects
@@ -517,8 +525,8 @@
           <li><h3>Run the installer</h3>
             <p><a class="button outline" href="exccd-installer.exe" download>Installer for Windows</a></p>
             <p>Choose your camera, check that it picked your download and the right card, then click
-              <i>Install EXCCD on the card</i>. It only lists SD cards, so it can't touch your other drives. It keeps
-              your photos and makes the card bootable, which means the camera can start EXCCD from it.</p>
+              <i>Install EXCCD on the card</i>. It only lists SD cards, so it can't touch your other drives. It also
+              makes the card bootable, which means the camera can start EXCCD from it.</p>
             <p class="muted small">Windows warns about an unknown app because the installer isn't signed. Signing costs
               money every year, and this is a free hobby project; the code is open on GitHub. Click
               <i>More info → Run anyway</i>. It asks for administrator rights because it writes the card's boot sector.</p></li>
@@ -526,8 +534,8 @@
             <p>Slide the card's write-protect switch to <b>LOCK</b> and put it in the camera. It sounds odd, but on
               these cameras that's the signal to start EXCCD from the card. Photos are still saved as usual.</p></li>
           <li><h3>Switch on, pick a look</h3>
-            <p>In shooting mode press <b>Print</b>, flip through the films with the arrow keys and confirm with
-              <b>FUNC/SET</b>. The film you're shooting is shown at the bottom of the screen.</p></li>
+            <p>In shooting mode press <b>Print</b>, flip through the looks with the arrow keys and confirm with
+              <b>FUNC/SET</b>. The look you're shooting with is shown at the bottom of the screen.</p></li>
         </ol>
         <details class="manual" id="manual"><summary>Without the installer (macOS, Linux)</summary>
           <ol>
@@ -598,11 +606,14 @@
               can develop later on a PC, or on the camera with <a href="#develop">RAW develop</a>. Turn it on in the options
               (<b>MENU</b> → <i>RAW</i>).</p></details>
           <details><summary>Which look did I use for a photo?</summary>
-            <p>EXCCD writes every shot with its look to <code>A/CHDK/FILMLOG.CSV</code> on the card.</p></details>
+            <p>EXCCD writes every shot with its look to <code>CHDK/FILMLOG.CSV</code> on the card, a list you can
+              open in any spreadsheet.</p></details>
           <details><summary>How do I update, or add looks later?</summary>
             <p>Come back, pick a new set, download it and run the installer again with the card unlocked. It replaces
               the <code>CHDK</code> folder and keeps <code>FILMLOG.CSV</code> and your photos. By hand: delete the old
-              <code>CHDK</code> folder first, then unpack the new ZIP.</p></details>
+              <code>CHDK</code> folder first, then unpack the new ZIP.</p>
+            <p>Your recipes and settings are replaced too. If you want to keep your recipes, copy
+              <code>CHDK/FILMS/RECIPES.TXT</code> off the card first and back afterwards.</p></details>
           <details><summary>Which languages are the menus in?</summary>
             <p>English. German is on the card too: <b>MENU</b> → <i>System</i> → <i>Language...</i> →
               <code>german.lng</code>. The film labels stay in English.</p></details>
@@ -612,7 +623,7 @@
               real camera, so it takes a while. If you have one, <a href="#contribute">you can help</a>.</p></details>
           <details><summary>Is it finished?</summary>
             <p>No, it's a public beta. It works, but looks get re-tuned and features change as photos from more
-              cameras come in. Your chosen look is saved by its name, so an update won't mix it up.</p></details>
+              cameras come in.</p></details>
           <details><summary>Is it open source?</summary>
             <p>Yes. The code is GPL v2 like CHDK, the looks (curves, labels, film table) are CC BY-SA 4.0.
               Everything is on <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>.</p></details>
