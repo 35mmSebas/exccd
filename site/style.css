@@ -283,6 +283,18 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 @media (max-width: 900px) { .simple { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .principles { grid-template-columns: 1fr; } }
 
+/* WB-Shift, Rezepte, RAW entwickeln */
+.wb-grid { display: block; width: 100%; max-width: 200px; margin-top: 28px; }
+.wb-grid .wb-lines { fill: none; stroke: var(--line-2); stroke-width: 1; }
+.wb-grid .wb-axis { fill: none; stroke: var(--muted); stroke-width: 1.4; }
+.wb-grid .wb-dot { fill: var(--warn); }
+.wb-grid text { fill: var(--muted); font-size: 13px; letter-spacing: .1em; }
+.develop { padding-bottom: 80px; }
+.develop .simple { padding: 24px 0 36px; }
+.develop-text p { margin: 0; color: #c8c8cb; }
+.develop .how-steps { counter-reset: how; }
+.develop-note { max-width: 760px; margin: 18px 0 0; }
+
 /* Funktionen */
 .features { padding-bottom: 80px; }
 .features-head { max-width: 640px; margin-bottom: 32px; }
