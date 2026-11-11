@@ -12,7 +12,7 @@
   --accent: #f4f4f4;
   --link: #f4f4f4;
   --warn: #ffb36b;
-  --top: 124px;
+  --top: 156px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 17px;
   line-height: 1.5;
@@ -44,7 +44,7 @@ h1, h2 { font-weight: 400; }
 .button:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 button.link { background: none; border: 0; color: var(--link); font: inherit; cursor: pointer; padding: 0; }
 
-/* Kopfzeile: Menuepunkt = Symbol, Wort, drei Unterpunkte */
+/* Kopfzeile: Menuepunkt = Symbol, Wort, bis zu vier Unterpunkte */
 .top { position: sticky; top: 0; z-index: 10; height: var(--top); background: #000;
        display: flex; align-items: flex-start; gap: clamp(24px, 5vw, 72px); padding: 28px clamp(16px, 3vw, 40px) 0; }
 .brand { display: flex; flex-direction: column; color: var(--text); text-decoration: none; font-size: 1.3rem;
