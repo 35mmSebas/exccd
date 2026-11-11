@@ -139,6 +139,8 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .how-steps h3::before { content: "0" counter(how) "  "; color: var(--muted); white-space: pre; font-size: .8rem; letter-spacing: .1em; }
 .how-steps p { color: var(--muted); margin: 0; font-size: .95rem; }
 @media (max-width: 800px) { .how-steps { grid-template-columns: 1fr; } }
+.how-note { max-width: 760px; margin: 22px 0 0; color: #c8c8cb; }
+.how-note b { color: var(--text); font-weight: 600; }
 
 /* Schritte */
 .step { border-top: 1px solid var(--line); padding: 40px 0 52px; }
