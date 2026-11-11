@@ -1,5 +1,4 @@
 import { assemble } from "./zipjoin.js";
-import { curveFiles, makeCurve, tonePreview, wbGains, WB_MAX } from "./curves.js";
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => {
@@ -15,8 +14,7 @@ const svg = (tag, attrs = {}) => {
 };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const state = { site: null, config: null, camera: null, firmwareOk: true, selected: new Set(), knownLooks: new Set(),
-  wb: new Map() };
+const state = { site: null, config: null, camera: null, firmwareOk: true, selected: new Set(), knownLooks: new Set() };
 
 // Spalten von FILMS.TXT (siehe CHDK/FILMS/EXAMPLE.TXT)
 const MODES = { 0: "Canon colours", 1: "Vivid", 2: "Neutral", 3: "Black & white", 4: "Sepia", 5: "Positive film", 11: "Custom colour" };
@@ -95,7 +93,7 @@ function renderCameras() {
 function setCamera(cam) {
   state.camera = cam;
   try { localStorage.setItem(CAM_KEY, cam.id); } catch { /* ohne Speicher */ }
-  // Auswahl und WB-Verschiebung gelten je Look-ID weiter; neue Looks sind angewaehlt
+  // Die Auswahl gilt je Look-ID weiter; neue Looks sind angewaehlt
   const known = new Set(state.knownLooks);
   for (const l of cam.looks) if (!known.has(l.id)) { state.selected.add(l.id); state.knownLooks.add(l.id); }
   renderCamera();
@@ -181,75 +179,10 @@ function chips(look) {
   return el("div", { className: "chips" }, ...out);
 }
 
-// --- WB-Verschiebung je Look (R/B), steckt in der Kurve -----------------
-
-// S/W-Looks nicht: dort wirkte die Verschiebung wie ein Farbfilter
-const canShift = (look) => look.recipe != null && Number(look.cols[1]) !== 3;
-const shiftOf = (look) => state.wb.get(look.id) ?? [0, 0];
-const isShifted = ([r, b]) => r !== 0 || b !== 0;
-const signed = (v) => (v > 0 ? `+${v}` : v < 0 ? `−${-v}` : "0");
-const shiftText = ([r, b]) => `R${signed(r)} B${signed(b)}`;
-// Looks ohne Kurve (Daylight) bekommen eine eigene, max. 7 Zeichen
-const curveStem = (look) => (look.curve ? look.curve.replace(/\.CV$/i, "") : look.id.slice(0, 7));
-
-// Vorschau auf den Beispielfotos: dieselben Kanal-Faktoren, linear wie im RAW
-function wbFilter(look) {
-  const id = `wb-${look.id}`;
-  let f = document.getElementById(id);
-  if (!f) {
-    f = svg("filter", { id, "color-interpolation-filters": "linearRGB" });
-    f.append(svg("feColorMatrix", { type: "matrix" }));
-    $("wb-defs").append(f);
-  }
-  const [r, g, , b] = wbGains(shiftOf(look));
-  f.firstChild.setAttribute("values", `${r} 0 0 0 0  0 ${g} 0 0 0  0 0 ${b} 0 0  0 0 0 1 0`);
-  return `url(#${id})`;
-}
-
-function applyShift(look, card) {
-  const shift = shiftOf(look);
-  const on = isShifted(shift);
-  const filter = on ? wbFilter(look) : "";
-  for (const img of card.querySelectorAll(".sample img")) img.style.filter = filter;
-  const tone = on ? tonePreview(state.camera.curve, makeCurve(state.camera.curve, look.recipe, 1, shift)) : look.tone;
-  card.querySelector(".tone").replaceWith(toneGraph(look, tone));
-  card.classList.toggle("shifted", on);
-  const noCurve = card.querySelector(".no-curve");
-  if (noCurve) noCurve.hidden = on;
-  update();
-}
-
-function wbPanel(look, card) {
-  const sliders = [["R", "Red", "cyan", "red"], ["B", "Blue", "yellow", "blue"]].map(([key, name, lo, hi], idx) => {
-    const out = el("output", { className: "wb-val", textContent: "0" });
-    const input = el("input", { type: "range", min: -WB_MAX, max: WB_MAX, step: 1, value: 0,
-      ariaLabel: `${name} shift for ${look.name}, minus is ${lo}, plus is ${hi}` });
-    input.addEventListener("input", () => {
-      const shift = [...shiftOf(look)];
-      shift[idx] = Number(input.value);
-      state.wb.set(look.id, shift);
-      out.textContent = signed(shift[idx]);
-      applyShift(look, card);
-    });
-    return { input, out, row: el("div", { className: `wb-row ${key.toLowerCase()}` },
-      el("span", { className: "wb-key", textContent: key }), input, out) };
-  });
-  const reset = el("button", { type: "button", className: "link wb-reset", textContent: "Reset" });
-  reset.addEventListener("click", () => {
-    state.wb.delete(look.id);
-    for (const s of sliders) { s.input.value = 0; s.out.textContent = "0"; }
-    applyShift(look, card);
-  });
-  return el("div", { className: "wb" },
-    el("div", { className: "wb-head" }, el("span", { textContent: "White balance shift" }), reset),
-    ...sliders.map((s) => s.row));
-}
-
 function renderLooks() {
   const box = $("looks-grid");
   box.replaceChildren();
   $("filters").replaceChildren();
-  $("wb-defs").replaceChildren();
   state.camera.looks.forEach((look) => {
     const input = el("input", { type: "checkbox", checked: state.selected.has(look.id), value: look.id });
     input.addEventListener("change", () => {
@@ -267,8 +200,6 @@ function renderLooks() {
     }));
     media.append(el("img", { src: labelSrc(look), alt: `${look.name} film label`, loading: "lazy", width: 600, height: 440 }));
 
-    // Nur die Auswahl ist ein <label>; die WB-Regler liegen daneben, sonst
-    // wuerde jeder Klick darauf den Look ab- oder anwaehlen
     const card = el("div", { className: "look" });
     card.append(el("label", { className: "look-pick" },
       media,
@@ -280,11 +211,9 @@ function renderLooks() {
           el("span", { className: "tick", ariaHidden: "true" })),
         el("div", { className: "look-detail" }, toneGraph(look), chips(look))),
       input));
-    if (canShift(look)) card.append(wbPanel(look, card));
     card.dataset.kind = look.kind;
     card.style.setProperty("--accent", look.accent);
     box.append(card);
-    if (isShifted(shiftOf(look))) restoreShift(look, card);
   });
 
   const kinds = ["All", ...new Set(state.camera.looks.map((l) => l.kind))];
@@ -296,16 +225,6 @@ function renderLooks() {
     });
     $("filters").append(b);
   }
-}
-
-// Nach einem Kamerawechsel: Regler und Vorschau auf die gespeicherte Verschiebung setzen
-function restoreShift(look, card) {
-  const shift = shiftOf(look);
-  card.querySelectorAll(".wb-row").forEach((row, idx) => {
-    row.querySelector("input").value = shift[idx];
-    row.querySelector("output").textContent = signed(shift[idx]);
-  });
-  applyShift(look, card);
 }
 
 function setAll(on) {
@@ -333,8 +252,7 @@ function update() {
       el("span", { textContent: `${n} of ${state.camera.looks.length} looks` }),
       el("span", { className: "muted", textContent: n ? `about ${mb(size)}` : "" })),
     el("ul", { className: "picked" }, ...looks.map((l) => {
-      const shift = shiftOf(l);
-      const li = el("li", { textContent: isShifted(shift) ? `${l.name} · ${shiftText(shift)}` : l.name });
+      const li = el("li", { textContent: l.name });
       li.style.setProperty("--accent", l.accent);
       return li;
     })));
@@ -358,18 +276,7 @@ async function download() {
       loadBytes(`data/${cam.id}/base.zip`),
       ...looks.map((l) => loadBytes(`data/${cam.id}/looks/${l.id}.zip`)),
     ]);
-    // Looks mit WB-Verschiebung: Kurven neu rechnen, ersetzen die aus der Look-ZIP
-    const extra = [];
-    const rows = looks.map((l) => {
-      const shift = shiftOf(l);
-      if (!canShift(l) || !isShifted(shift)) return l;
-      const stem = curveStem(l);
-      extra.push(...curveFiles(cam.curve, stem, l.recipe, shift));
-      const cols = [...l.cols];
-      cols[9] = `${stem}.CV`;
-      return { ...l, cols, wb: shift };
-    });
-    const zip = assemble(base, lookZips, rows, state.site.version, new Date(), extra);
+    const zip = assemble(base, lookZips, looks, state.site.version, new Date());
     const name = `exccd-${state.site.version}-${cam.id}-${looks.length}looks.zip`;
     const url = URL.createObjectURL(new Blob([zip], { type: "application/zip" }));
     el("a", { href: url, download: name }).click();

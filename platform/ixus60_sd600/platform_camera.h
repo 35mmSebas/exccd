@@ -94,3 +94,6 @@
     #define FILMSIM_THUMB_GREYS         { 0xFF,0, 0xFA,71, 0x3F,122, 0x1F,168, 0x11,197 }
     #define FILMSIM_WB_R                486     // R 1.9 (Tageslicht)
     #define FILMSIM_WB_B                371     // B 1.45
+    // Canon blendet das OSD waehrend der Bildverarbeitung aus (0xC0F1407C Bit 4),
+    // der Fortschrittsbalken schaltet es zum Zeichnen frei (core/filmsim.c, osd_unmute)
+    #define FILMSIM_OSD_UNMUTE          1

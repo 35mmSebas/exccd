@@ -464,6 +464,12 @@ static void default_curve_set_file()
     if (module_curves_load())
         libcurves->curve_set_file();
 }
+static void default_curve_set_gains(int r, int g, int b)
+{
+    // If load succeeded call module version of function
+    if (module_curves_load())
+        libcurves->curve_set_gains(r, g, b);
+}
 
 // Default library - module unloaded
 libcurves_sym default_libcurves =
@@ -472,7 +478,8 @@ libcurves_sym default_libcurves =
     default_curve_init_mode,
     dummy_void,                 //curve_apply
     default_curve_set_mode,
-    default_curve_set_file
+    default_curve_set_file,
+    default_curve_set_gains
 };
 
 // Library pointer

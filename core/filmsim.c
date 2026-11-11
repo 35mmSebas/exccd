@@ -28,6 +28,8 @@
 #include "keyboard.h"
 #include "filmsim.h"
 #include "filmsim_txt.h"
+#include "filmsim_recipe.h"
+#include "lens.h"
 // Fortschrittsbalken beim RAW-Entwickeln (am Dateiende), auch aus filmsim_raw.h gerufen
 static void prog_rows(int done, int total);
 #define FS_PROG_ROW(y, n) prog_rows((y), (n))
@@ -247,8 +249,9 @@ int filmsim_osd_hidden(void)
 #define FILMS_LOG   "A/CHDK/FILMS/FILMS.LOG"
 #define FILMS_LOG_SIZE 1024
 
-static filmsim_t films_file[1 + FILMS_TXT_MAX];
-static films_txt_str_t films_str[FILMS_TXT_MAX];
+// Tabelle und Texte auf dem Heap (gut 2 KB, der SX110-Kern ist knapp), nur bei gueltiger FILMS.TXT
+static filmsim_t *films_file = 0;
+static films_txt_str_t *films_str = 0;
 
 static void films_read_file(void)
 {
@@ -265,6 +268,11 @@ static void films_read_file(void)
     log[0] = 0;
     if (st.st_size > 0 && st.st_size <= FILMS_TXT_FILE_MAX)
         buf = malloc(st.st_size + 1);
+    if (buf && !films_file) {
+        films_file = malloc((1 + FILMS_TXT_MAX) * sizeof(filmsim_t) + FILMS_TXT_MAX * sizeof(films_txt_str_t));
+        if (films_file) films_str = (films_txt_str_t *)(films_file + 1 + FILMS_TXT_MAX);
+        else { free(buf); buf = 0; }
+    }
     if (buf) {
         int fd = open(FILMS_TXT, O_RDONLY, 0777);
         if (fd >= 0) {
@@ -284,6 +292,7 @@ static void films_read_file(void)
         num_sims = n + 1;
     } else {
         strcat(log, "No valid looks - using the built-in table\r\n");
+        if (films_file && sims != films_file) { free(films_file); films_file = 0; films_str = 0; }
     }
 
     if (log[0]) {
@@ -388,6 +397,46 @@ static int canon_props_match(const filmsim_t *s)
 }
 
 //-------------------------------------------------------------------
+// Weissabgleich-Verschiebung (conf.film_wb_r / _b, -9..+9)
+//   Wirkt wie auf der frueheren Webseite (site/curves.js, wbGains): je Stufe
+//   Faktor 1,03 auf R bzw. B. Kein Faktor liegt ueber 1 - angehoben wird
+//   relativ, indem die anderen Kanaele sinken, damit Lichter nicht frueher
+//   ausfressen. Die Faktoren kommen beim Laden in die Tonkurve, kosten also
+//   keine Rechenzeit. Ohne Filmkurve gilt eine neutrale Kurve. Bei "Aus"
+//   bleibt alles bei Canon.
+//   Die Stufe ist vorlaeufig und noch nicht gegen Referenzaufnahmen kalibriert.
+//-------------------------------------------------------------------
+static const short wb_step[RECIPE_SHIFT_MAX + 1] = { 4096, 4219, 4345, 4476, 4610, 4748, 4891, 5038, 5189, 5344 };
+
+static int wb_shift_clamp(int v)
+{
+    return v < -RECIPE_SHIFT_MAX ? -RECIPE_SHIFT_MAX : (v > RECIPE_SHIFT_MAX ? RECIPE_SHIFT_MAX : v);
+}
+
+static int wb_shift_active(void)
+{
+    return conf.film_sim != 0 && (conf.film_wb_r || conf.film_wb_b);
+}
+
+// Faktoren R, G, B (4096 = 1)
+static void wb_shift_gains(int *g)
+{
+    g[0] = g[1] = g[2] = 4096;
+    if (!wb_shift_active()) return;
+    int r = wb_shift_clamp(conf.film_wb_r), b = wb_shift_clamp(conf.film_wb_b);
+    int kr = r >= 0 ? wb_step[r] : 4096 * 4096 / wb_step[-r];
+    int kb = b >= 0 ? wb_step[b] : 4096 * 4096 / wb_step[-b];
+    int top = kr > kb ? kr : kb;
+    if (top < 4096) top = 4096;
+    g[0] = kr * 4096 / top;
+    g[1] = 4096 * 4096 / top;
+    g[2] = kb * 4096 / top;
+}
+
+// Pseudo-Datei fuer "nur Verschiebung" (gibt es nicht, der Lader nimmt dann eine neutrale Kurve)
+#define CURVE_WB_ONLY "WBSHIFT.CV"
+
+//-------------------------------------------------------------------
 // Eigene Tonkurven fuer 12-Bit-Sensoren
 //   curves.flt kann nur 10 Bit (CHDK schaltet OPT_CURVES bei 12 Bit ab).
 //   Die .CV-Dateien bleiben dieselben (4 x 1024 Werte, 10 Bit: R, G der
@@ -409,13 +458,26 @@ static void curve_lut_free(void)
 static int curve_lut_load(const char *fn)
 {
     unsigned short *cv = malloc(4 * CV_N * sizeof(unsigned short));
-    int ok = 0;
+    int ok = 0, g[3], ch, v;
     curve_lut_free();
     if (!cv) return 0;
+    wb_shift_gains(g);
     int fd = open(fn, O_RDONLY, 0777);
     if (fd >= 0) {
         ok = read(fd, cv, 4 * CV_N * sizeof(unsigned short)) == 4 * CV_N * (int)sizeof(unsigned short);
         close(fd);
+    } else if (wb_shift_active()) {
+        for (v = 0; v < 4 * CV_N; v++) cv[v] = v % CV_N;   // neutral, nur Verschiebung
+        ok = 1;
+    }
+    if (ok && wb_shift_active()) {
+        // R, G, G, B wie in der Datei; Werte ueber Schwarz (31) skalieren
+        for (ch = 0; ch < 4; ch++) {
+            int k = g[ch == 0 ? 0 : (ch == 3 ? 2 : 1)];
+            unsigned short *c = cv + ch * CV_N;
+            for (v = 0; v < CV_N; v++)
+                if (c[v] > 31) c[v] = 31 + (((c[v] - 31) * k + 2048) >> 12);
+        }
     }
     if (ok) curve_lut = malloc(3 * 4096 * sizeof(unsigned short));
     if (curve_lut) curve_lut_build(cv, curve_lut);
@@ -448,10 +510,12 @@ static void set_curve_dr(const filmsim_t *s, int dr)
 {
 #if defined(OPT_CURVES) || defined(FS_OWN_CURVES)
     curve_dr = dr;
-    if (s->curve || dr) {
+    if (s->curve || dr || wb_shift_active()) {
         struct stat st;
         strcpy(conf.curve_file, CURVE_DIR "/");
-        if (!s->curve) {
+        if (!s->curve && !dr) {
+            strcat(conf.curve_file, CURVE_WB_ONLY);                    // nur WB-Verschiebung
+        } else if (!s->curve) {
             strcat(conf.curve_file, dr == 1 ? "DR1.CV" : "DR2.CV");    // nur Dynamik+
         } else if (dr) {
             // POSTCRD.CV -> POSTCRD1.CV / POSTCRD2.CV
@@ -463,7 +527,7 @@ static void set_curve_dr(const filmsim_t *s, int dr)
         } else {
             strcat(conf.curve_file, s->curve);
         }
-        curve_file_ok = (stat(conf.curve_file, &st) == 0) ? 1 : -1;
+        curve_file_ok = (stat(conf.curve_file, &st) == 0 || (!s->curve && !dr)) ? 1 : -1;
         conf.curve_enable = 1;
     } else {
         conf.curve_enable = 0;
@@ -476,6 +540,11 @@ static void set_curve_dr(const filmsim_t *s, int dr)
     }
     conf.curve_enable = 0;           // curves.flt gibt es hier nicht
 #else
+    if (conf.curve_enable) {
+        int g[3];
+        wb_shift_gains(g);
+        libcurves->curve_set_gains(g[0], g[1], g[2]);
+    }
     libcurves->curve_init_mode();
 #endif
 #else
@@ -519,6 +588,9 @@ static const char* dev_temp_enum(int change, int arg);
 static const char* dev_tint_enum(int change, int arg);
 static void dev_fx_menu_open(void);
 static int dev_fx_any(void);
+static void recipes_load(void);         // Rezepte (weiter unten)
+static void look_text_update(void);
+static void recipe_osd(char *buf);
 
 // Aus filmsim_tick: Kamera im Fotomodus, keine Menues, kein Bild in Arbeit.
 // Canon ist mit dem JPEG fertig, erst jetzt den Film zuruecknehmen
@@ -714,6 +786,8 @@ void filmsim_tick(void)
         // Index aus aelterer Version / kuerzerer FILMS.TXT -> "Aus"
         if (conf.film_sim < 0 || conf.film_sim >= NUM_SIMS) conf.film_sim = 0;
         set_curve(current());
+        recipes_load();
+        look_text_update();
         curve_done = 1;
     }
 
@@ -738,6 +812,14 @@ void filmsim_tick(void)
 }
 
 // Film auswaehlen und sofort anwenden
+// Menue-Eintrag "Look: Summer 200" (Text des Untermenues, folgt dem eingelegten Film)
+char filmsim_look_text[40];
+static void look_text_update(void)
+{
+    const char *n = conf.film_sim > 0 && conf.film_sim < NUM_SIMS ? filmsim_name() : sim_name(0);
+    sprintf(filmsim_look_text, "%s: %.24s", lang_str(LANG_EXCCD_LOOK), n);
+}
+
 void filmsim_set(int v)
 {
     if (v < 0 || v >= NUM_SIMS) return;
@@ -745,6 +827,7 @@ void filmsim_set(int v)
     if (v != conf.film_sim) preview_pending = 1;
     conf.film_sim = v;
     film_name_store();
+    look_text_update();
     if (v == 0) {
         // zurueck auf Canon-Standard
         if (!was_off && filmsim_photo_mode())
@@ -766,9 +849,10 @@ void filmsim_set(int v)
 extern CMenu root_menu;     // "Optionen" (core/gui.c)
 extern gui_handler menuGuiHandler;
 
-#define LABEL_TOP   4
+#define LABEL_TOP   2
 #define LABEL_H     196
-#define BAR_Y       (LABEL_TOP + LABEL_H + 10)
+#define BAR_Y       (LABEL_TOP + LABEL_H + 3)
+#define HELP_Y      (BAR_Y + FONT_HEIGHT + 3)    // Tastenhinweis unter der Leiste
 #define LABEL_W     301                 // Breite der EXCCD-Laschen
 
 // EXCCD-Farben wie in den Laschen (Kamerapalette, Aufnahmemodus, alle deckend)
@@ -877,6 +961,10 @@ static void bar_draw(void)
                        RECT_BORDER0|DRAW_FILLED);
     }
     draw_string(x, BAR_Y, n, MAKE_COLOR(COLOR_BLACK, COLOR_WHITE));
+    // Hinweis: wer die Kamera zum ersten Mal hat, weiss nicht, dass MENU die Optionen oeffnet
+    const char *hl = lang_str(LANG_EXCCD_PICK_HELP);
+    if (HELP_Y + FONT_HEIGHT <= camera_screen.height)
+        draw_string((camera_screen.width - (int)strlen(hl) * FONT_WIDTH) / 2, HELP_Y, hl, MAKE_COLOR(COLOR_BLACK, EX_GREY));
 }
 
 static void film_gui_draw(int force)
@@ -1002,7 +1090,8 @@ void filmsim_draw_osd(void)
         && !conf.film_double && !conf.subj_dist_override_koef
         && !conf.film_mist && !conf.film_halation && !conf.film_vignette
         && !conf.film_leak && !conf.film_datestamp && !conf.film_dr && !conf.film_cnr
-        && !conf.film_zoom && !conf.film_grain && !conf.film_frame) return;
+        && !conf.film_zoom && !conf.film_grain && !conf.film_frame && !conf.film_recipe
+        && !conf.film_aiso) return;
     strcpy(buf, filmsim_name());
     if (dev_armed) {
         // Wichtiger als alles andere: Das naechste Foto ist kein Foto
@@ -1020,6 +1109,7 @@ void filmsim_draw_osd(void)
         extern const char* filmsim_tv_str(void);
         const char *tv = filmsim_tv_str();
         if (tv) { strcat(buf, " | "); strcat(buf, tv); }
+        else if (filmsim_aiso_str()) { strcat(buf, " | "); strcat(buf, filmsim_aiso_str()); }
         extern const char* filmsim_focus_str(void);
         const char *fo = filmsim_focus_str();
         if (fo) { strcat(buf, " | "); strcat(buf, fo); }
@@ -1034,6 +1124,7 @@ void filmsim_draw_osd(void)
         extern const char* filmsim_bwfilter_str(void);
         const char *bf = filmsim_bwfilter_str();
         if (bf) { strcat(buf, " | "); strcat(buf, bf); }
+        recipe_osd(buf);
     }
     const char *n = buf;
     int len = strlen(n);
@@ -1424,12 +1515,10 @@ const char* filmsim_bwfilter_str(void)
 #endif
 
 // Weichzeichnen eines kleinen Gitters (Kastenfilter, mehrfach = annaehernd Gauss)
-static int blur_tmp[256];
-static int glow_rm[3][256], glow_rh[256];
-
-static void grid_blur(unsigned short *g, int w, int h, int r, int passes)
+// tmp: 256 int Arbeitsspeicher. Alle Puffer der Effekte kommen aus malloc, nicht
+// static: Die SX110 hat ein hartes Groessenlimit fuer den Kern.
+static void grid_blur(unsigned short *g, int w, int h, int r, int passes, int *tmp)
 {
-    int *tmp = blur_tmp;
     int x, y, p, n = 2 * r + 1;
     if (w > 256 || h > 256) return;
     for (p = 0; p < passes; p++) {
@@ -1512,7 +1601,9 @@ __attribute__((optimize("O2"))) static void effects_glow_and_tone(char *raw)
 
     if (do_mist) gm = malloc(3 * mw * mh * sizeof(unsigned short));
     if (do_hal)  gh = malloc(hw * hh * sizeof(unsigned short));
-    acc = malloc((3 * 256 + 256) * sizeof(int));
+    // acc: Sammeln (3 x 256 + 256), dahinter Gitterzeilen Mist (3 x 256) und Halation (256),
+    // Arbeitsspeicher fuer grid_blur (256)
+    acc = malloc((3 * 256 + 256 + 3 * 256 + 256 + 256) * sizeof(int));
     ix_m = malloc(rowpix * sizeof(short)); fx_m = malloc(rowpix);
     ix_h = malloc(rowpix * sizeof(short)); fx_h = malloc(rowpix);
     leak_x = malloc(rowpix);
@@ -1570,8 +1661,8 @@ __attribute__((optimize("O2"))) static void effects_glow_and_tone(char *raw)
                 }
             }
         }
-        if (do_mist) { int ch; for (ch = 0; ch < 3; ch++) grid_blur(gm + ch * mw * mh, mw, mh, 2, 3); }
-        if (do_hal) grid_blur(gh, hw, hh, 1, 3);
+        if (do_mist) { int ch; for (ch = 0; ch < 3; ch++) grid_blur(gm + ch * mw * mh, mw, mh, 2, 3, acc + 2048); }
+        if (do_hal) grid_blur(gh, hw, hh, 1, 3, acc + 2048);
     }
 
     //---------------- Tabellen fuer den 2. Durchgang ----------------
@@ -1609,8 +1700,8 @@ __attribute__((optimize("O2"))) static void effects_glow_and_tone(char *raw)
 
     //---------------- 2. Durchgang: anwenden ----------------
     unsigned int dith = rnd | 1;
-    int (*rm)[256] = glow_rm;
-    int *rh = glow_rh;
+    int (*rm)[256] = (int (*)[256])(acc + 1024);
+    int *rh = acc + 1792;
     for (y = 0; y < rows; y++) {
         if (do_mist || do_hal) prog_rows(rows + y, 2 * rows);
         else                   prog_rows(y, rows);
@@ -1816,7 +1907,7 @@ static void effects_datestamp(void)
 //-------------------------------------------------------------------
 #ifdef FS_RAW
 #define CNR_RMAX 4
-static int cnr_recip[512];                            // 65536 / e
+static int *cnr_recip = 0;                           // 65536 / e, 512 Eintraege (malloc, bleibt)
 #define CNR_CLIP 1000
 
 // Farbanteile einer Blockzeile berechnen (aus den Originaldaten)
@@ -1865,7 +1956,8 @@ static void filmsim_cnr_apply(char *raw)
     if (!ring_r || !ring_b || !ring_l || !vr || !vb || !vl) goto out;
     const int dmax = (R == 2) ? 170 : 250;           // ab dieser Farbabweichung: Kante, nicht Rauschen
     const int invd = 65536 / dmax;
-    if (!cnr_recip[12]) { int t; for (t = 1; t < 512; t++) cnr_recip[t] = 65536 / t; }
+    if (!cnr_recip && (cnr_recip = malloc(512 * sizeof(int)))) { int t; cnr_recip[0] = 0; for (t = 1; t < 512; t++) cnr_recip[t] = 65536 / t; }
+    if (!cnr_recip) goto out;
     int inv = 65536 / (RB * RB);
     int computed = 0, j, i, d;
 
@@ -2056,6 +2148,480 @@ const char* filmsim_frame_enum(int change, __attribute__ ((unused))int arg)
 }
 
 //-------------------------------------------------------------------
+// Weissabgleich (Canon, PROPCASE_WB_MODE)
+//   Die Propsets 1, 2, 3, 5 und 6 zaehlen gleich: 0 Auto, 1 Tageslicht,
+//   2 Bewoelkt, 3 Kunstlicht, 4 Leuchtstoff, 5 Leuchtstoff H, 7 Manuell.
+//   Gesetzt wird nur auf Wunsch (Menue, Rezept), nicht dauerhaft erzwungen:
+//   Wer danach im FUNC-Menue umstellt, behaelt seine Wahl.
+//-------------------------------------------------------------------
+#if defined(PROPCASE_WB_MODE) && (CAM_PROPSET <= 3 || CAM_PROPSET == 5 || CAM_PROPSET == 6)
+#define FS_WB_MODE 1
+static const signed char wb_prop[RECIPE_WB_N] = { 0, 1, 2, 3, 4, 5, 7 };
+
+// RECIPE_WB_*, RECIPE_WB_KEEP = unbekannter Wert (Blitz, Unterwasser ...)
+static int wb_mode_get(void)
+{
+    int p = shooting_get_prop(PROPCASE_WB_MODE), i;
+    for (i = 0; i < RECIPE_WB_N; i++)
+        if (wb_prop[i] == p) return i;
+    return RECIPE_WB_KEEP;
+}
+
+static void wb_mode_set(int i)
+{
+    if (i < 0 || i >= RECIPE_WB_N || !filmsim_photo_mode()) return;
+    if (shooting_get_prop(PROPCASE_WB_MODE) == wb_prop[i]) return;
+    shooting_set_prop(PROPCASE_WB_MODE, wb_prop[i]);
+    preview_pending = 1;
+}
+#else
+static int wb_mode_get(void) { return RECIPE_WB_KEEP; }
+static void wb_mode_set(__attribute__ ((unused))int i) {}
+#endif
+
+const char* filmsim_wb_enum(int change, __attribute__ ((unused))int arg)
+{
+#ifdef FS_WB_MODE
+    static const int names[RECIPE_WB_N] = { LANG_EXCCD_AUTO, LANG_EXCCD_WB_DAYLIGHT, LANG_EXCCD_WB_CLOUDY,
+        LANG_EXCCD_WB_TUNGSTEN, LANG_EXCCD_WB_FLUOR, LANG_EXCCD_WB_FLUOR_H, LANG_EXCCD_WB_CUSTOM };
+    static char other[8];
+    int i = wb_mode_get();
+    if (change) {
+        i = i < 0 ? 0 : (i + change + RECIPE_WB_N) % RECIPE_WB_N;
+        wb_mode_set(i);
+    }
+    if (i >= 0) return lang_str(names[i]);
+    sprintf(other, "(%d)", shooting_get_prop(PROPCASE_WB_MODE));
+    return other;
+#else
+    (void)change;
+    return "-";
+#endif
+}
+
+static void shift_str(char *b, int v)
+{
+    sprintf(b, v > 0 ? "+%d" : "%d", v);
+}
+
+static void wb_shift_change(int *v, int change)
+{
+    int n = wb_shift_clamp(*v + change);
+    if (n == *v) return;
+    *v = n;
+    set_curve(current());
+}
+
+const char* filmsim_wb_r_enum(int change, __attribute__ ((unused))int arg)
+{
+    static char b[8];
+    if (change) wb_shift_change(&conf.film_wb_r, change);
+    shift_str(b, conf.film_wb_r);
+    return b;
+}
+
+const char* filmsim_wb_b_enum(int change, __attribute__ ((unused))int arg)
+{
+    static char b[8];
+    if (change) wb_shift_change(&conf.film_wb_b, change);
+    shift_str(b, conf.film_wb_b);
+    return b;
+}
+
+
+//-------------------------------------------------------------------
+// WB-Shift als Raster wie bei Fujifilm (Menue-Eintrag "WB shift")
+//   waagerecht Rot (links Cyan, rechts Rot), senkrecht Blau (oben Blau,
+//   unten Gelb), je -9..+9. Pfeiltasten verschieben, SET uebernimmt,
+//   MENU bricht ab, Zoom setzt auf 0. Die Kurve wird erst bei SET neu
+//   geladen, nicht bei jedem Schritt.
+//-------------------------------------------------------------------
+#define WBG_N       19                  // Felder je Achse
+static int wbg_r, wbg_b;                // Cursor
+static int wbg_draw_all;
+static int wbg_shown_r = 99, wbg_shown_b = 99;  // zuletzt gezeichneter Cursor (99 = keiner)
+static gui_handler *wbg_prev;
+static int wbg_armed;                  // SET erst nach dem Loslassen (sonst schliesst die Wiederholung)
+
+static void wbg_value_str(char *b, int r, int bl)
+{
+    char v[8];
+    strcpy(b, "R"); shift_str(v, r); strcat(b, v);
+    strcat(b, " B"); shift_str(v, bl); strcat(b, v);
+}
+
+static void wbg_draw(int force)
+{
+    int w = camera_screen.width, h = camera_screen.height;
+    int cell = (h - 3 * FONT_HEIGHT - 20) / WBG_N;
+    if (cell > 12) cell = 12;
+    if (cell < 5) cell = 5;
+    int gs = cell * WBG_N;
+    int gx = (w - gs) / 2, gy = FONT_HEIGHT + 10;
+    int i;
+    char b[24];
+    if (force) wbg_draw_all = 1;
+    if (wbg_draw_all) {
+        wbg_draw_all = 0;
+        draw_rectangle(0, 0, w - 1, h - 1, MAKE_COLOR(COLOR_BLACK, COLOR_BLACK), RECT_BORDER0|DRAW_FILLED);
+        draw_string(8, 4, lang_str(LANG_EXCCD_WB_SHIFT), MAKE_COLOR(COLOR_BLACK, COLOR_WHITE));
+        // Farbleisten an den Raendern: zeigen, wohin eine Richtung faerbt
+        draw_rectangle(gx, gy - 5, gx + gs - 1, gy - 3, MAKE_COLOR(COLOR_BLUE, COLOR_BLUE), RECT_BORDER0|DRAW_FILLED);
+        draw_rectangle(gx, gy + gs + 2, gx + gs - 1, gy + gs + 4, MAKE_COLOR(COLOR_YELLOW, COLOR_YELLOW), RECT_BORDER0|DRAW_FILLED);
+        draw_rectangle(gx - 5, gy, gx - 3, gy + gs - 1, MAKE_COLOR(COLOR_CYAN, COLOR_CYAN), RECT_BORDER0|DRAW_FILLED);
+        draw_rectangle(gx + gs + 2, gy, gx + gs + 4, gy + gs - 1, MAKE_COLOR(COLOR_RED, COLOR_RED), RECT_BORDER0|DRAW_FILLED);
+        draw_string(gx - 7 - 2 * FONT_WIDTH, gy + gs / 2 - FONT_HEIGHT / 2, "C", MAKE_COLOR(COLOR_BLACK, COLOR_CYAN));
+        draw_string(gx + gs + 7 + FONT_WIDTH, gy + gs / 2 - FONT_HEIGHT / 2, "R", MAKE_COLOR(COLOR_BLACK, COLOR_RED));
+        draw_string(gx + gs + 7 + FONT_WIDTH, gy, "B", MAKE_COLOR(COLOR_BLACK, COLOR_BLUE));
+        draw_string(gx + gs + 7 + FONT_WIDTH, gy + gs - FONT_HEIGHT, "Y", MAKE_COLOR(COLOR_BLACK, COLOR_YELLOW));
+        draw_string(8, h - FONT_HEIGHT - 4, lang_str(LANG_EXCCD_WB_SHIFT_HELP), MAKE_COLOR(COLOR_BLACK, EX_GREY));
+        // Raster nur einmal zeichnen - die Redraw-Funktion laeuft bei jedem
+        // GUI-Takt, ein komplettes Neuzeichnen dort flimmert sichtbar
+        for (i = 0; i <= WBG_N; i++) {
+            int c = (i == WBG_N / 2 || i == WBG_N / 2 + 1) ? EX_GREY : EX_RULE;
+            draw_hline(gx, gy + i * cell - (i == WBG_N), gs, c);
+            draw_vline(gx + i * cell - (i == WBG_N), gy, gs, c);
+        }
+        wbg_shown_r = wbg_shown_b = 99;     // Cursor/Wert neu zeichnen
+    }
+    if (wbg_r == wbg_shown_r && wbg_b == wbg_shown_b) return;
+    // alten Cursor loeschen: nur das Innere des Feldes, die Linien bleiben
+    if (wbg_shown_r != 99) {
+        int ox = gx + (wbg_shown_r + 9) * cell, oy = gy + (9 - wbg_shown_b) * cell;
+        draw_rectangle(ox + 1, oy + 1, ox + cell - 1, oy + cell - 1, MAKE_COLOR(COLOR_BLACK, COLOR_BLACK), RECT_BORDER0|DRAW_FILLED);
+    }
+    // Mitte (0/0) markieren (liegt im Inneren des Mittelfeldes), Cursor als weisses Feld
+    int mx = gx + (WBG_N / 2) * cell, my = gy + (WBG_N / 2) * cell;
+    draw_rectangle(mx + cell / 2 - 1, my + cell / 2 - 1, mx + cell / 2, my + cell / 2,
+                   MAKE_COLOR(EX_GREY, EX_GREY), RECT_BORDER0|DRAW_FILLED);
+    int cx = gx + (wbg_r + 9) * cell, cy = gy + (9 - wbg_b) * cell;
+    draw_rectangle(cx + 1, cy + 1, cx + cell - 1, cy + cell - 1, MAKE_COLOR(COLOR_WHITE, COLOR_WHITE), RECT_BORDER0|DRAW_FILLED);
+    wbg_value_str(b, wbg_r, wbg_b);
+    strcat(b, "   ");
+    draw_string(w - 8 - 10 * FONT_WIDTH, 4, b, MAKE_COLOR(COLOR_BLACK, COLOR_WHITE));
+    wbg_shown_r = wbg_r; wbg_shown_b = wbg_b;
+}
+
+static void wbg_close(int apply)
+{
+    if (apply && (wbg_r != conf.film_wb_r || wbg_b != conf.film_wb_b)) {
+        conf.film_wb_r = wbg_r;
+        conf.film_wb_b = wbg_b;
+        set_curve(current());
+        conf_save();
+    }
+    gui_set_mode(wbg_prev);
+    gui_menu_erase_and_redraw();
+}
+
+static int wbg_kbd(void)
+{
+    int k = kbd_get_autoclicked_key(), r = wbg_r, b = wbg_b;
+    if (!kbd_is_key_pressed(KEY_SET)) wbg_armed = 1;
+    switch (k) {
+    case KEY_LEFT:  r--; break;
+    case KEY_RIGHT: r++; break;
+    case KEY_UP:    b++; break;
+    case KEY_DOWN:  b--; break;
+    case KEY_ZOOM_IN: case KEY_ZOOM_OUT: case KEY_DISPLAY: r = b = 0; break;
+    case KEY_SET:   if (wbg_armed) wbg_close(1); return 0;
+    }
+    r = wb_shift_clamp(r); b = wb_shift_clamp(b);
+    if (r != wbg_r || b != wbg_b) { wbg_r = r; wbg_b = b; wbg_draw(0); }
+    return 0;
+}
+
+static void wbg_menu_btn(void)
+{
+    wbg_close(0);
+}
+
+static gui_handler wbgGuiHandler = { GUI_MODE_MODULE, wbg_draw, wbg_kbd, wbg_menu_btn, 0, 0 };
+
+// Menue-Eintrag: zeigt "R+2 B-1", jede Taste (links/rechts/SET) oeffnet das Raster
+const char* filmsim_wb_shift_enum(int change, __attribute__ ((unused))int arg)
+{
+    static char b[24];
+    if (change) {
+        wbg_r = wb_shift_clamp(conf.film_wb_r);
+        wbg_b = wb_shift_clamp(conf.film_wb_b);
+        wbg_draw_all = 1;
+        wbg_armed = 0;
+        wbg_prev = gui_set_mode(&wbgGuiHandler);
+    }
+    if (!conf.film_wb_r && !conf.film_wb_b) strcpy(b, "0");
+    else wbg_value_str(b, conf.film_wb_r, conf.film_wb_b);
+    return b;
+}
+//-------------------------------------------------------------------
+// Rezepte (A/CHDK/FILMS/RECIPES.TXT, Plaetze C1..C4)
+//   Ein Rezept stellt Film, Weissabgleich, WB-Verschiebung, Dynamik+,
+//   Farbrauschen, S/W-Filter und die Effekte auf einmal ein. Kamera-
+//   Einstellungen fuer die Situation (Zeit, Fokus, Zoom, Blitz, ND, RAW,
+//   Doppelbelichtung) gehoeren nicht dazu.
+//   conf.film_recipe merkt sich das zuletzt geladene; weicht etwas davon ab,
+//   zeigen Menue und Statuszeile ein * dahinter.
+//-------------------------------------------------------------------
+#define RECIPES_TXT "A/CHDK/FILMS/RECIPES.TXT"
+#define RECIPES_LOG "A/CHDK/FILMS/RECIPES.LOG"
+
+static recipe_t recipes[RECIPE_SLOTS];
+static int recipes_state = 0;           // 0 ungelesen, 1 gelesen, -1 Datei unlesbar (nicht ueberschreiben)
+static int recipe_save_slot = 0;
+
+static int name_same(const char *a, const char *b)
+{
+    for (; *a && *b; a++, b++) {
+        int x = *a, y = *b;
+        if (x >= 'a' && x <= 'z') x -= 32;
+        if (y >= 'a' && y <= 'z') y -= 32;
+        if (x != y) return 0;
+    }
+    return !*a && !*b;
+}
+
+static void recipes_load(void)
+{
+    struct stat st;
+    char *buf, *log;
+    int len = -1;
+    if (recipes_state) return;
+    recipes_state = 1;
+    for (len = 0; len < RECIPE_SLOTS; len++) recipe_clear(&recipes[len]);
+    if (stat(RECIPES_TXT, &st) != 0) return;
+    if (st.st_size <= 0 || st.st_size > RECIPE_FILE_MAX || !(buf = malloc(st.st_size + 1 + 512))) {
+        recipes_state = -1;
+        return;
+    }
+    log = buf + st.st_size + 1;
+    int fd = open(RECIPES_TXT, O_RDONLY, 0777);
+    len = -1;
+    if (fd >= 0) {
+        len = read(fd, buf, st.st_size);
+        close(fd);
+    }
+    if (len == st.st_size) {
+        recipes_parse(buf, len, recipes, log, 512);
+        if (log[0]) {
+            fd = open(RECIPES_LOG, O_WRONLY | O_CREAT | O_TRUNC, 0777);
+            if (fd >= 0) { write(fd, log, strlen(log)); close(fd); }
+        } else if (stat(RECIPES_LOG, &st) == 0) {
+            remove(RECIPES_LOG);
+        }
+    } else {
+        recipes_state = -1;
+    }
+    free(buf);
+}
+
+// Aktuelle Einstellungen als Rezept (Name bleibt)
+static void recipe_from_conf(recipe_t *r)
+{
+    r->used = 1;
+    r->film[0] = 0;
+    if (conf.film_sim > 0 && conf.film_sim < NUM_SIMS) {
+        strncpy(r->film, sims[conf.film_sim].name, FILMS_TXT_NAME_MAX);
+        r->film[FILMS_TXT_NAME_MAX] = 0;
+    }
+    r->shift_r = wb_shift_clamp(conf.film_wb_r);
+    r->shift_b = wb_shift_clamp(conf.film_wb_b);
+    r->v[RF_WB]       = wb_mode_get();
+    r->v[RF_DR]       = conf.film_dr;
+    r->v[RF_NR]       = conf.film_cnr;
+    r->v[RF_BWFILTER] = conf.film_bwfilter;
+    r->v[RF_GRAIN]    = conf.film_grain;
+    r->v[RF_VIGNETTE] = conf.film_vignette;
+    r->v[RF_MIST]     = conf.film_mist;
+    r->v[RF_HALATION] = conf.film_halation;
+    r->v[RF_LEAK]     = conf.film_leak;
+    r->v[RF_DATE]     = conf.film_datestamp;
+    r->v[RF_FRAME]    = conf.film_frame;
+}
+
+// Stimmt der Zustand der Kamera noch mit dem Rezept ueberein?
+static int recipe_matches(const recipe_t *r)
+{
+    recipe_t c;
+    int i;
+    recipe_from_conf(&c);
+    if (!name_same(c.film, r->film) || c.shift_r != r->shift_r || c.shift_b != r->shift_b) return 0;
+    for (i = 0; i < RF_N; i++) {
+        if (i == RF_WB && r->v[i] == RECIPE_WB_KEEP) continue;
+        if (c.v[i] != r->v[i]) return 0;
+    }
+    return 1;
+}
+
+static void recipe_apply(int k)
+{
+    const recipe_t *r = &recipes[k];
+    int i, film = conf.film_sim;            // Film nicht auf der Karte: bleibt (Anzeige mit *)
+    if (!r->film[0]) film = 0;
+    else for (i = 1; i < NUM_SIMS; i++)
+        if (name_same(sims[i].name, r->film)) { film = i; break; }
+    conf.film_dr        = r->v[RF_DR];
+    conf.film_cnr       = r->v[RF_NR];
+    conf.film_bwfilter  = r->v[RF_BWFILTER];
+    conf.film_grain     = r->v[RF_GRAIN];
+    conf.film_vignette  = r->v[RF_VIGNETTE];
+    conf.film_mist      = r->v[RF_MIST];
+    conf.film_halation  = r->v[RF_HALATION];
+    conf.film_leak      = r->v[RF_LEAK];
+    conf.film_datestamp = r->v[RF_DATE];
+    conf.film_frame     = r->v[RF_FRAME];
+    conf.film_wb_r      = r->shift_r;
+    conf.film_wb_b      = r->shift_b;
+    if (r->v[RF_WB] != RECIPE_WB_KEEP) wb_mode_set(r->v[RF_WB]);
+    conf.film_recipe = k + 1;
+    filmsim_set(film);                      // Canon-Farben und Kurve (mit Dynamik+ und Verschiebung)
+}
+
+// "C1 Name" bzw. "C1 Name*" (geaendert) / "C1 (leer)"
+static const char* recipe_label(char *b, int k, int mark)
+{
+    const recipe_t *r = &recipes[k];
+    sprintf(b, "C%d ", k + 1);
+    strcat(b, !r->used ? lang_str(LANG_EXCCD_EMPTY) : (r->name[0] ? r->name : (r->film[0] ? r->film : sim_name(0))));
+    if (mark && r->used && !recipe_matches(r)) strcat(b, "*");
+    return b;
+}
+
+static int recipe_active(void)
+{
+    int k = conf.film_recipe;
+    return (k >= 1 && k <= RECIPE_SLOTS && recipes[k - 1].used) ? k : 0;
+}
+
+// Menue "Recipe": blaettert durch die belegten Plaetze und laedt sofort
+const char* filmsim_recipe_enum(int change, __attribute__ ((unused))int arg)
+{
+    static char b[32];
+    int k, n;
+    films_load();
+    recipes_load();
+    k = recipe_active();
+    if (change) {
+        for (n = 0; n <= RECIPE_SLOTS; n++) {
+            k = (k + change + RECIPE_SLOTS + 1) % (RECIPE_SLOTS + 1);
+            if (!k || recipes[k - 1].used) break;
+        }
+        if (k) recipe_apply(k - 1);
+        else conf.film_recipe = 0;
+    }
+    return k ? recipe_label(b, k - 1, 1) : "-";
+}
+
+// Menue "Save as recipe": ein Eintrag je Platz, Text "C1 Summer 200" / "C3 (empty)"
+char filmsim_slot_text[RECIPE_SLOTS][32];
+
+static void slot_labels_update(void)
+{
+    int k;
+    for (k = 0; k < RECIPE_SLOTS; k++) recipe_label(filmsim_slot_text[k], k, 0);
+}
+
+static void recipe_save_now(void)
+{
+    recipe_t *r = &recipes[recipe_save_slot];
+    char *buf;
+    int ok = 0, len;
+    if (recipes_state >= 0 && (buf = malloc(RECIPE_FILE_MAX))) {
+        recipe_t old = *r;
+        if (!r->used || !r->name[0]) {      // neuer Platz: heisst wie der Film
+            strncpy(r->name, conf.film_sim ? filmsim_name() : sim_name(0), RECIPE_NAME_MAX);
+            r->name[RECIPE_NAME_MAX] = 0;
+        }
+        recipe_from_conf(r);
+        len = recipes_format(recipes, buf, RECIPE_FILE_MAX);
+        if (len > 0) {
+            int fd = open(RECIPES_TXT, O_WRONLY | O_CREAT | O_TRUNC, 0777);
+            if (fd >= 0) {
+                ok = write(fd, buf, len) == len;
+                close(fd);
+            }
+        }
+        free(buf);
+        if (ok) conf.film_recipe = recipe_save_slot + 1;
+        else *r = old;
+    }
+    slot_labels_update();
+    gui_mbox_init(LANG_EXCCD_RECIPE_SAVE, ok ? LANG_EXCCD_SAVED : LANG_EXCCD_SAVE_FAILED,
+                  MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, NULL);
+}
+
+static void recipe_save_confirmed(unsigned int btn)
+{
+    if (btn == MBOX_BTN_YES) recipe_save_now();
+}
+
+// Menue "Save as recipe" -> Platz arg (0..3): belegter Platz erst nach Rueckfrage
+void filmsim_recipe_save(int arg)
+{
+    static char text[64], label[32];
+    recipes_load();
+    if (arg < 0 || arg >= RECIPE_SLOTS) return;
+    recipe_save_slot = arg;
+    if (!recipes[recipe_save_slot].used) {
+        recipe_save_now();
+        return;
+    }
+    sprintf(text, lang_str(LANG_EXCCD_RECIPE_OVERWRITE), recipe_label(label, recipe_save_slot, 0));
+    gui_mbox_init(LANG_EXCCD_RECIPE_SAVE, (int)text,
+                  MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_YES_NO|MBOX_DEF_BTN2, recipe_save_confirmed);
+}
+
+// Untermenue "Save as recipe" oeffnen (MENUITEM_SUBMENU_PROC): erst die Namen auffrischen
+extern CMenu filmsim_save_menu;
+void filmsim_recipe_save_menu(__attribute__ ((unused))int arg)
+{
+    recipes_load();
+    slot_labels_update();
+    gui_activate_sub_menu(&filmsim_save_menu);
+}
+
+// Statuszeile: " | C1" bzw. " | C1*", dazu die WB-Verschiebung
+static void recipe_osd(char *buf)
+{
+    int k = recipe_active();
+    if (k) {
+        char b[8];
+        sprintf(b, " | C%d", k);
+        strcat(buf, b);
+        if (!recipe_matches(&recipes[k - 1])) strcat(buf, "*");
+    }
+    if (wb_shift_active()) {
+        char b[24], v[4];
+        strcpy(b, " | R");
+        shift_str(v, conf.film_wb_r); strcat(b, v);
+        strcat(b, " B");
+        shift_str(v, conf.film_wb_b); strcat(b, v);
+        strcat(buf, b);
+    }
+}
+
+// Menue "Reset to defaults": Look-Einstellungen und Effekte auf Standard, der Film bleibt.
+// Die Kamera-Overrides (Zeit, Fokus, Blitz, ND, RAW) setzt gui.c zurueck.
+void filmsim_reset_settings(void)
+{
+    if (conf.film_double) remove(DBL_FILE);
+    conf.film_double = 0;
+    conf.film_dr = 0;
+    conf.film_cnr = 0;
+    conf.film_bwfilter = 0;
+    conf.film_zoom = 0;                 // frei
+    conf.film_mist = 0;
+    conf.film_halation = 0;
+    conf.film_vignette = 0;
+    conf.film_leak = 0;
+    conf.film_datestamp = 0;
+    conf.film_grain = 0;
+    conf.film_frame = 0;
+    conf.film_wb_r = conf.film_wb_b = 0;
+    conf.film_recipe = 0;
+    set_curve(current());               // ohne Dynamik+ und WB-Verschiebung
+}
+
+//-------------------------------------------------------------------
 // Dynamik+: knapper belichten (Lichter schuetzen), Schatten per Kurve
 // wieder aufhellen. Die Belichtungskorrektur passiert in shooting.c.
 //-------------------------------------------------------------------
@@ -2091,6 +2657,118 @@ void filmsim_dr_curve_hook(int end)
     if (end) shot_dr = -1;
     if (want < 0 || !filmsim_photo_mode() || want == curve_dr) return;
     set_curve_dr(current(), want);
+}
+
+//-------------------------------------------------------------------
+// Auto-ISO mit kuerzester Belichtungszeit (wie "ISO AUTO Min. VS" bei Sony)
+//   Wirkt nur, wenn die Canon-ISO auf Auto (oder HI) steht. Nach der
+//   Canon-Messung: Ist die Zeit laenger als die Grenze, steigt die ISO
+//   (hoechstens bis ISO max) und die Zeit wird um genauso viel kuerzer.
+//   Bei genug Licht sinkt die ISO bis zur Grund-ISO der Kamera, solange die
+//   Zeit nicht unter die Grenze faellt. Die Belichtung (EV) bleibt gleich,
+//   eine Dynamik+-Verschiebung ist schon in der gemessenen Zeit enthalten.
+//   conf.film_aiso: 0 aus, 1 Auto (1/Brennweite KB), 2.. feste Zeit
+//   conf.film_aiso_max: Index in aiso_max_iso[]
+//-------------------------------------------------------------------
+static const short aiso_tv96[]    = { 0, 0, 288, 375, 471, 567, 669, 765, 861 };   // 96*log2(den)
+static const char *aiso_names[]   = { 0, 0, "1/8", "1/15", "1/30", "1/60", "1/125", "1/250", "1/500" };
+static const short aiso_max_iso[] = { 200, 400, 800, 1600 };
+#define AISO_N     ((int)(sizeof(aiso_tv96)/sizeof(aiso_tv96[0])))
+#define AISO_MAX_N ((int)(sizeof(aiso_max_iso)/sizeof(aiso_max_iso[0])))
+
+// kleinste und groesste ISO (Marktwert) dieser Kamera aus der Canon-Tabelle
+static short aiso_cam_iso(int max)
+{
+    extern const ISOTable iso_table[];
+    extern const unsigned int ISO_SIZE;
+    unsigned i;
+    short v = 0;
+    for (i = 0; i < ISO_SIZE; i++) {
+        short p = iso_table[i].prop_id;
+        if (p < 50) continue;                       // Auto, HI
+        if (!v || (max ? p > v : p < v)) v = p;
+    }
+    return v;
+}
+
+static short aiso_limit(void)
+{
+    int i = conf.film_aiso_max;
+    if (i < 0 || i >= AISO_MAX_N) i = 1;
+    short m = aiso_max_iso[i], cam = aiso_cam_iso(1);
+    return (cam && m > cam) ? cam : m;
+}
+
+// Grenze als tv96, 0 = Funktion aus
+static int aiso_min_tv96(void)
+{
+    int a = conf.film_aiso;
+    if (a < 1 || a >= AISO_N) return 0;
+    if (a > 1) return aiso_tv96[a];
+    // Auto: Faustregel 1/Brennweite (Kleinbild), nicht langsamer als 1/30
+    int f = (get_effective_focal_length(lens_get_zoom_point()) + 500) / 1000;
+    if (f < 30) f = 30;
+    return shooting_get_tv96_from_shutter_speed(1.0f / (float)f);
+}
+
+// von shooting.c nach Tv-Override/Dynamik+; 1 = ISO wurde gesetzt
+int filmsim_autoiso(void)
+{
+    int min_tv = aiso_min_tv96();
+    if (!min_tv || !filmsim_photo_mode()) return 0;
+    if (conf.tv_override_enabled) return 0;                     // feste Zeit gewaehlt
+    if (shooting_get_iso_mode() > 0) return 0;                  // feste Canon-ISO gewaehlt
+    int m = camera_info.state.mode_shooting;
+    if (m == MODE_M || m == MODE_TV || m == MODE_STITCH) return 0;
+    if (shooting_get_prop(PROPCASE_IS_FLASH_READY)) return 0;  // Blitz loest aus
+
+    int tv = shooting_get_tv96();
+    int sv = shooting_get_sv96_real();
+    if (sv <= 0) return 0;
+    int sv_min = shooting_get_sv96_from_iso(shooting_iso_market_to_real(aiso_cam_iso(0)));
+    int sv_max = shooting_get_sv96_from_iso(shooting_iso_market_to_real(aiso_limit()));
+    int want = sv + (min_tv - tv);                              // kleinste ISO, mit der die Zeit reicht
+    if (want > sv_max) want = sv_max;
+    if (want < sv_min) want = sv_min;
+    if (want == sv) return 0;
+    shooting_set_tv96_direct(tv + (want - sv), SET_NOW);
+    shooting_set_sv96(want, SET_NOW);
+    return 1;
+}
+
+const char* filmsim_aiso_enum(int change, __attribute__ ((unused))int arg)
+{
+    if (change) {
+        conf.film_aiso = (conf.film_aiso + change + AISO_N) % AISO_N;
+        conf.override_disable = 0;
+    }
+    int a = conf.film_aiso;
+    if (a < 1 || a >= AISO_N) return lang_str(LANG_EXCCD_OFF);
+    return a == 1 ? lang_str(LANG_EXCCD_AUTO) : aiso_names[a];
+}
+
+const char* filmsim_aiso_max_enum(int change, __attribute__ ((unused))int arg)
+{
+    static char buf[8];
+    if (change) {
+        int n = AISO_MAX_N, cam = aiso_cam_iso(1);
+        while (n > 1 && aiso_max_iso[n - 1] > cam && aiso_max_iso[n - 2] >= cam) n--;   // nur Werte, die die Kamera kann
+        int i = conf.film_aiso_max;
+        if (i < 0 || i >= n) i = n - 1;
+        conf.film_aiso_max = (i + change + n) % n;
+    }
+    sprintf(buf, "%d", aiso_limit());
+    return buf;
+}
+
+// fuer die Anzeige unten: "A-ISO 1/60" oder 0
+const char* filmsim_aiso_str(void)
+{
+    static char buf[16];
+    int a = conf.film_aiso;
+    if (a < 1 || a >= AISO_N) return 0;
+    sprintf(buf, "A-ISO %s", a == 1 ? "auto" : aiso_names[a]);
+    return buf;
 }
 
 //-------------------------------------------------------------------
@@ -2302,7 +2980,7 @@ static void dev_fx_menu_open(void)
 }
 
 //-------------------------------------------------------------------
-// RAW entwickeln: Fortschrittsbalken
+// Fortschrittsbalken (RAW entwickeln und jede Aufnahme mit Look oder Effekten)
 //   Der RAW-Hook laeuft im selben Task wie die CHDK-Oberflaeche, die waehrenddessen
 //   nicht zeichnet. Deshalb zeichnen die Rechenschleifen den Balken selbst (prog_rows,
 //   hoechstens alle PROG_MS). Die Schritte sind grob nach den Messungen auf der SX110
@@ -2314,6 +2992,33 @@ static int prog_on = 0;
 static int prog_w[PS_N];
 static int prog_total, prog_base, prog_step_w, prog_k;
 static int prog_tick;
+static int prog_dev;                    // 1: RAW entwickeln, 0: normale Aufnahme
+
+#ifdef FILMSIM_OSD_UNMUTE
+//   IXUS 60 (VxWorks): Waehrend der Bildverarbeitung setzt Canon in 0xC0F1407C Bit 4
+//   (ff932f6c, Firmware 1.00d, Kopie in 0x5D5C), das blendet das OSD aus, der Bildschirm
+//   ist schwarz. Zum Zeichnen das Bit im Register loeschen (wie Canons ff880648:
+//   Schattenkopie bei 0x0031xxxx, dann Register, Uebernahme ueber 4078). Canons Variable
+//   bleibt unberuehrt, Canon stellt nach der Aufnahme selbst wieder her.
+//   Gemessen 11.11.: Nur dieses Bit bringt den Balken. 0xC0F14074 (=10 waehrend der
+//   Verarbeitung) zusaetzlich zuruecksetzen zeigt beim RAW entwickeln bunte Bildfehler,
+//   allein bringt es nichts.
+static void osd_reg(unsigned int a, unsigned int v)
+{
+    *(volatile unsigned int *)((a & 0x1FFFF) | 0x300000) = v;
+    *(volatile unsigned int *)a = v;
+}
+static void osd_unmute(void)
+{
+    // Adressen nur aus Firmware 1.00d belegt: Literale von ff932f6c im ROM pruefen,
+    // bei anderer Firmware (1.00a) nichts tun
+    if (*(const unsigned int *)0xFF932FAC != 0x5D5C || *(const unsigned int *)0xFF932FB0 != 0x5D2C
+        || *(const unsigned int *)0xFF932FB4 != 0xC0F1407C) return;
+    if (*(volatile int *)0x5D2C != 1) return;           // Display aus: nichts anfassen
+    unsigned int v = *(volatile unsigned int *)0x5D5C;
+    if (v & 0x10) { osd_reg(0xC0F1407C, v & ~0x10); osd_reg(0xC0F14078, 1); }
+}
+#endif
 
 static void prog_draw(int pm, int label)
 {
@@ -2328,7 +3033,8 @@ static void prog_draw(int pm, int label)
     if (pm < 0) pm = 0;
     if (pm > 1000) pm = 1000;
     draw_rectangle(x0, y0, x1, y1, MAKE_COLOR(EX_BG, EX_RULE), RECT_BORDER1|DRAW_FILLED);
-    sprintf(buf, lang_str(LANG_EXCCD_DEV_PROGRESS), dev_name);
+    if (prog_dev) sprintf(buf, lang_str(LANG_EXCCD_DEV_PROGRESS), dev_name);
+    else          sprintf(buf, lang_str(LANG_EXCCD_SHOT_PROGRESS), filmsim_name());
     buf[cols] = 0;
     draw_string(x0 + 10, y0 + 6, buf, MAKE_COLOR(EX_BG, COLOR_WHITE));
     strncpy(buf, lang_str(label), sizeof(buf) - 1);
@@ -2340,6 +3046,9 @@ static void prog_draw(int pm, int label)
     int fill = bx0 + 1 + ((bx1 - bx0 - 2) * pm) / 1000;
     if (fill > bx0 + 1)
         draw_rectangle(bx0 + 1, by0 + 1, fill, by1 - 1, MAKE_COLOR(COLOR_WHITE, COLOR_WHITE), RECT_BORDER0|DRAW_FILLED);
+#ifdef FILMSIM_OSD_UNMUTE
+    osd_unmute();
+#endif
 }
 
 static int prog_label(int k)
@@ -2377,16 +3086,14 @@ void filmsim_prog_step(int k)
     if (prog_step_w) prog_show(0, 1);
 }
 
-// Aus raw.c vor dem Laden der DNG: Effekte der Entwicklung einsetzen, Balken planen
-void filmsim_develop_prepare(void)
+// Gewichte der Rechenschritte aus den aktuellen Einstellungen (ohne Laden und WB)
+static void prog_plan(void)
 {
     int i, bw = 0;
-    if (!dev_fx_in) { dev_fx_swap(); dev_fx_in = 1; }
     const filmsim_t *s = current();
     for (i = 0; i < PS_N; i++) prog_w[i] = 0;
-    prog_w[PS_LOAD] = dev_ev ? 35 : 20;                  // mit Belichtung ein Durchgang mehr
-    prog_w[PS_WB] = (dev_has_meta || dev_temp || dev_tint) ? 15 : 0;   // Weissabgleich am Ende
-    if (raw_touched(&bw)) prog_w[PS_HOT] = 15;
+    if (!raw_touched(&bw)) return;      // z. B. Daylight 100 ohne Effekte: nichts zu rechnen
+    prog_w[PS_HOT] = 15;
     int cl = cnr_level();
     if (cl) prog_w[PS_CNR] = cl == 2 ? 80 : 40;
     if (s->curve || conf.film_dr) prog_w[PS_CURVE] = 19;
@@ -2395,10 +3102,51 @@ void filmsim_develop_prepare(void)
     else if (conf.film_mist) prog_w[PS_GLOW] = 120;
     else if (conf.film_vignette || conf.film_leak) prog_w[PS_GLOW] = 40;
     if (grain_pct10()) prog_w[PS_GRAIN] = 90;
+}
+
+static void prog_start(int dev)
+{
+    int i;
     prog_total = 0;
     for (i = 0; i < PS_N; i++) prog_total += prog_w[i];
-    prog_on = 1;
+    prog_dev = dev;
+    prog_on = prog_total > 0;
+    prog_tick = get_tick_count();
+}
+
+static void prog_finish(void)
+{
+    if (prog_on) {
+        prog_draw(1000, LANG_EXCCD_DEV_JPEG);
+        prog_on = 0;
+        gui_set_need_restore();         // wegwischen, sobald die Oberflaeche wieder zeichnet
+    }
+}
+
+// Aus raw.c vor dem Laden der DNG: Effekte der Entwicklung einsetzen, Balken planen
+void filmsim_develop_prepare(void)
+{
+    if (!dev_fx_in) { dev_fx_swap(); dev_fx_in = 1; }
+    prog_plan();
+    prog_w[PS_LOAD] = dev_ev ? 35 : 20;                  // mit Belichtung ein Durchgang mehr
+    prog_w[PS_WB] = (dev_has_meta || dev_temp || dev_tint) ? 15 : 0;   // Weissabgleich am Ende
+    prog_start(1);
     filmsim_prog_step(PS_LOAD);
+}
+
+// Aus raw.c bei einer normalen Aufnahme, vor den Rechenschritten (die Schritte meldet
+// filmsim_time_mark). Doppelbelichtung: Rohbild auf die Karte schreiben bzw. lesen.
+void filmsim_shot_prepare(void)
+{
+    if (!filmsim_photo_mode()) { prog_on = 0; return; }
+    prog_plan();
+    if (conf.film_double) prog_w[PS_DOUBLE] = 50;
+    prog_start(0);
+}
+
+void filmsim_shot_end(void)
+{
+    prog_finish();
 }
 
 // Aus raw.c nach den Effekten: Weissabgleich der Aufnahme, Temperatur und Toenung, dann
@@ -2415,11 +3163,7 @@ void filmsim_develop_end(char *raw)
 #else
     (void)raw;
 #endif
-    if (prog_on) {
-        prog_draw(1000, LANG_EXCCD_DEV_JPEG);
-        prog_on = 0;
-        gui_set_need_restore();         // wegwischen, sobald die Oberflaeche wieder zeichnet
-    }
+    prog_finish();
     if (dev_fx_in) { dev_fx_swap(); dev_fx_in = 0; }
 }
 
@@ -2525,7 +3269,7 @@ static unsigned char *thumb_small(int fd, const unsigned char *head, int n, int 
 static unsigned char *thumb_raw(int fd, int fsize, const unsigned char *head, int n,
                                 int bw, int bh, int *ow, int *oh, int (*still_wanted)(void))
 {
-    static unsigned char gam[1024];         // Rohwert 0..1023 -> Bildschirm, Gamma etwa 1/2
+    static unsigned char *gam = 0;          // Rohwert 0..1023 -> Bildschirm, Gamma etwa 1/2 (malloc, bleibt)
     dng_meta_t m;
     int rowlen = camera_sensor.raw_rowlen, jx, jy, jw, jh, x, y;
     if (!dng_parse(head, n, camera_sensor.raw_rowpix, camera_sensor.raw_rows, camera_sensor.bits_per_pixel, &m))
@@ -2536,7 +3280,7 @@ static unsigned char *thumb_raw(int fd, int fsize, const unsigned char *head, in
     *ow = bw; *oh = bw * jh / jw;
     if (*oh > bh) { *oh = bh; *ow = bh * jw / jh; }
     if (*ow < 8 || *oh < 8) return 0;
-    if (!gam[1023])
+    if (!gam && (gam = malloc(1024)))
         for (x = 0; x < 1024; x++) {
             int v = x * 64, r = 0, b;
             for (b = 1 << 15; b; b >>= 1) if ((r + b) * (r + b) <= v) r += b;
@@ -2545,7 +3289,7 @@ static unsigned char *thumb_raw(int fd, int fsize, const unsigned char *head, in
     unsigned char *img = malloc(*ow * *oh);
     unsigned short *rows = malloc(2 * rowlen + 16);
     short *sx = malloc(*ow * sizeof(short));
-    if (!img || !rows || !sx) goto fail;
+    if (!gam || !img || !rows || !sx) goto fail;
     for (x = 0; x < *ow; x++) sx[x] = (jx + x * jw / *ow) & ~1;
     for (y = 0; y < *oh; y++) {
         if ((y & 7) == 0 && still_wanted && !still_wanted()) goto fail;

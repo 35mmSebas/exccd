@@ -878,8 +878,29 @@
 #define LANG_EXCCD_DEV_TINT                     746
 #define LANG_EXCCD_DEV_GREEN                    747
 #define LANG_EXCCD_DEV_MAGENTA                  748
+#define LANG_EXCCD_SHOT_PROGRESS                749
+#define LANG_EXCCD_RESET                        750
+#define LANG_EXCCD_RESET_TEXT                   751
+#define LANG_EXCCD_RECIPE                       752
+#define LANG_EXCCD_RECIPE_SAVE                  753
+#define LANG_EXCCD_LOOK                         754
+#define LANG_EXCCD_PICK_HELP                    755
+#define LANG_EXCCD_RECIPE_OVERWRITE             756
+#define LANG_EXCCD_EMPTY                        757
+#define LANG_EXCCD_WB                           758
+#define LANG_EXCCD_WB_SHIFT                     759
+#define LANG_EXCCD_WB_SHIFT_HELP                760
+#define LANG_EXCCD_WB_DAYLIGHT                  761
+#define LANG_EXCCD_WB_CLOUDY                    762
+#define LANG_EXCCD_WB_TUNGSTEN                  763
+#define LANG_EXCCD_WB_FLUOR                     764
+#define LANG_EXCCD_WB_FLUOR_H                   765
+#define LANG_EXCCD_WB_CUSTOM                    766
 
-#define GUI_LANG_ITEMS                          748
+#define LANG_EXCCD_AISO                         767
+#define LANG_EXCCD_AISO_MAX                     768
+
+#define GUI_LANG_ITEMS                          768
 
 //-------------------------------------------------------------------
 extern void gui_lang_init();

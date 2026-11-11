@@ -2384,8 +2384,27 @@ static const char* gui_filmsim_flash_enum(int change, __attribute__ ((unused))in
     return lang_str(modes[i]);
 }
 
+// Alle Einstellungen und Effekte auf Standard, der eingelegte Film bleibt
+static void gui_filmsim_reset_selected(unsigned int btn)
+{
+    if (btn != MBOX_BTN_YES) return;
+    filmsim_reset_settings();
+    conf.tv_override_enabled = 0;                       // Belichtungszeit Auto
+    conf.film_aiso = 0;                                 // Auto-ISO-Grenze aus
+    conf.subj_dist_override_koef = SD_OVERRIDE_OFF;     // Fokus Auto
+    conf.flash_manual_override = 0;                     // Blitz Auto
+    conf.nd_filter_state = 0;                           // ND Auto
+    if (conf.save_raw) { conf.save_raw = 0; cb_change_dng(); }
+    conf_save();
+}
+
+static void gui_filmsim_reset(__attribute__ ((unused))int arg)
+{
+    gui_mbox_init(LANG_EXCCD_RESET, LANG_EXCCD_RESET_TEXT,
+                  MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_YES_NO|MBOX_DEF_BTN2, gui_filmsim_reset_selected);
+}
+
 static CMenuItem effects_submenu_items[] = {
-    MENU_ITEM   (0x5f,LANG_EXCCD_DOUBLE,                    MENUITEM_ENUM,      filmsim_double_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_MIST,                      MENUITEM_ENUM,      filmsim_mist_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_HALATION,                  MENUITEM_ENUM,      filmsim_halation_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_VIGNETTE,                  MENUITEM_ENUM,      filmsim_vignette_enum, 0 ),
@@ -2414,18 +2433,57 @@ static CMenuItem system_submenu_items[] = {
 };
 static CMenu system_submenu = {0x29,LANG_EXCCD_SYSTEM, system_submenu_items };
 
-static CMenuItem root_menu_items[] = {
-    MENU_ITEM   (0x61,LANG_EXCCD_SHUTTER,                   MENUITEM_ENUM,      gui_filmsim_tv_enum, 0 ),
+// Als Rezept speichern: ein Eintrag je Platz, ein Druck speichert (belegter Platz mit Rueckfrage).
+// Die Texte fuellt filmsim_recipe_save_menu() beim Oeffnen.
+static CMenuItem save_menu_items[] = {
+    MENU_ITEM   (0x33,(int)filmsim_slot_text[0],             MENUITEM_PROC,      filmsim_recipe_save, 0 ),
+    MENU_ITEM   (0x33,(int)filmsim_slot_text[1],             MENUITEM_PROC,      filmsim_recipe_save, 1 ),
+    MENU_ITEM   (0x33,(int)filmsim_slot_text[2],             MENUITEM_PROC,      filmsim_recipe_save, 2 ),
+    MENU_ITEM   (0x33,(int)filmsim_slot_text[3],             MENUITEM_PROC,      filmsim_recipe_save, 3 ),
+    MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
+    {0}
+};
+CMenu filmsim_save_menu = {0x33,LANG_EXCCD_RECIPE_SAVE, save_menu_items };
+
+// Look: alles, was ein Rezept speichert
+static CMenuItem look_submenu_items[] = {
+    MENU_ITEM   (0x5f,LANG_EXCCD_WB,                        MENUITEM_ENUM,      filmsim_wb_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_WB_SHIFT,                  MENUITEM_ENUM,      filmsim_wb_shift_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_DYNAMIC,                   MENUITEM_ENUM,      filmsim_dr_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_CNR,                       MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_BWFILTER,                  MENUITEM_ENUM,      filmsim_bwfilter_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_EFFECTS,                   MENUITEM_SUBMENU,   &effects_submenu, 0 ),
+    MENU_ITEM   (0x0,(int)"",                               MENUITEM_SEPARATOR, 0, 0 ),
+    MENU_ITEM   (0x33,LANG_EXCCD_RECIPE_SAVE,               MENUITEM_SUBMENU_PROC, filmsim_recipe_save_menu, 0 ),
+    MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
+    {0}
+};
+static CMenu look_submenu = {0x5f,LANG_EXCCD_LOOK, look_submenu_items };
+
+static CMenuItem exccd_raw_items[] = {
+    MENU_ITEM   (0x5c,LANG_EXCCD_SAVE_RAW,                  MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
+    MENU_ITEM   (0x2a,LANG_MENU_RAW_DEVELOP,                MENUITEM_PROC,      gui_filmsim_develop, 0 ),
+    MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
+    {0}
+};
+static CMenu exccd_raw_menu = {0x5c,(int)"RAW", exccd_raw_items };
+
+// Oben Rezept und Look, darunter die Kamera fuer die Situation (nicht im Rezept)
+static CMenuItem root_menu_items[] = {
+    MENU_ITEM   (0x5f,LANG_EXCCD_RECIPE,                    MENUITEM_ENUM,      filmsim_recipe_enum, 0 ),
+    MENU_ITEM   (0x5f,(int)filmsim_look_text,               MENUITEM_SUBMENU,   &look_submenu, 0 ),
+    MENU_ITEM   (0x0,(int)"",                               MENUITEM_SEPARATOR, 0, 0 ),
+    MENU_ITEM   (0x61,LANG_EXCCD_SHUTTER,                   MENUITEM_ENUM,      gui_filmsim_tv_enum, 0 ),
+    MENU_ITEM   (0x61,LANG_EXCCD_AISO,                      MENUITEM_ENUM,      filmsim_aiso_enum, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_AISO_MAX,                  MENUITEM_ENUM,      filmsim_aiso_max_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_FOCUS,                     MENUITEM_ENUM,      gui_filmsim_focus_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_ZOOM,                      MENUITEM_ENUM,      filmsim_zoom_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_FLASH,                     MENUITEM_ENUM,      gui_filmsim_flash_enum, 0 ),
     MENU_ITEM   (0x5f,LANG_EXCCD_ND,                        MENUITEM_ENUM,      gui_filmsim_nd_enum, 0 ),
-    MENU_ITEM   (0x5f,LANG_EXCCD_CNR,                       MENUITEM_ENUM,      filmsim_cnr_enum, 0 ),
-    MENU_ITEM   (0x5f,LANG_EXCCD_BWFILTER,                  MENUITEM_ENUM,      filmsim_bwfilter_enum, 0 ),
-    MENU_ITEM   (0x5f,LANG_EXCCD_EFFECTS,                   MENUITEM_SUBMENU,   &effects_submenu, 0 ),
-    MENU_ITEM   (0x5c,LANG_EXCCD_SAVE_RAW,                  MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
-    MENU_ITEM   (0x2a,LANG_MENU_RAW_DEVELOP,                MENUITEM_PROC,      gui_filmsim_develop, 0 ),
+    MENU_ITEM   (0x5f,LANG_EXCCD_DOUBLE,                    MENUITEM_ENUM,      filmsim_double_enum, 0 ),
+    MENU_ITEM   (0x0,(int)"",                               MENUITEM_SEPARATOR, 0, 0 ),
+    MENU_ITEM   (0x5c,(int)"RAW",                           MENUITEM_SUBMENU,   &exccd_raw_menu, 0 ),
+    MENU_ITEM   (0x2b,LANG_EXCCD_RESET,                     MENUITEM_PROC,      gui_filmsim_reset, 0 ),
     MENU_ITEM   (0x29,LANG_EXCCD_SYSTEM,                   MENUITEM_SUBMENU,   &system_submenu, 0 ),
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
     {0}

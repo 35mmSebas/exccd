@@ -49,6 +49,11 @@ jobs:
           gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
           "$RUNNER_TEMP/test_films_txt" CHDK/FILMS/EXAMPLE.TXT
 
+      - name: PC-Test RECIPES.TXT-Parser
+        run: |
+          gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_recipes" tools/filmsim/test_recipes.c core/filmsim_recipe.c
+          "$RUNNER_TEMP/test_recipes"
+
       - name: PC-Test SD-Installer (Bootsektor, Kameraliste)
         run: |
           make -C tools/installer test_core

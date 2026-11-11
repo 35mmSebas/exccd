@@ -63,6 +63,7 @@ def main():
                "-DROMBASEADDR=0xff810000", "-DMAXRAMADDR=0x1ffffff", "-DCAM_DIGIC=2",
                '-DHDK_VERSION="host"', '-DBUILD_NUMBER="0"', '-DBUILD_SVNREV="0"',
                os.path.join(out, "filmsim_host.c"), os.path.join(ROOT, "core", "filmsim_txt.c"),
+               os.path.join(ROOT, "core", "filmsim_recipe.c"),
                os.path.join(ROOT, "tools", "filmsim", "test_filmsim_host.c"),
                "-o", exe]
         r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace")
@@ -70,7 +71,7 @@ def main():
             print(plat, "Uebersetzen fehlgeschlagen:\n", r.stdout[-6000:])
             fails += 1
             continue
-        for scenario in [("names", str(v)) for v in range(6)] + [("picker",), ("raw",), ("develop",), ("thumb",)]:
+        for scenario in [("names", str(v)) for v in range(6)] + [("picker",), ("raw",), ("develop",), ("thumb",), ("recipe",), ("aiso",)]:
             r = subprocess.run([exe, scenario[0], ROOT] + list(scenario[1:]), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                text=True, encoding="ascii", errors="replace", timeout=600)
             tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else "(keine Ausgabe)"

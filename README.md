@@ -82,13 +82,24 @@ card the camera is unchanged.
 | Left/right | Flip through the looks |
 | Up/down | Jump five looks |
 | **FUNC/SET** | Apply the look and close |
-| **MENU** | Options (raw, Dynamic+, system) |
+| **MENU** | Options (recipes, look settings, camera settings, raw, system) |
+
+The film selection shows the keys at the bottom (*SET OK, MENU Options*). The Options menu is
+grouped like this:
+
+| Entry | What is in it | Saved in a recipe |
+|---|---|---|
+| Recipe | Load C1 to C4 with left/right | |
+| Look: *film* ▸ | White balance, WB shift, Dynamic+, colour noise filter, B/W filter, Effects ▸ (grain, halation, mist, vignette, light leak, date, frame), Save as recipe ▸ | yes |
+| Shutter, Focus, Zoom, Flash, ND filter, Double exposure | Settings for the situation | no |
+| RAW ▸ | Save RAW, RAW develop | no |
+| Reset to defaults, System ▸ | Palette, language, build info, bootable card | no |
 
 The name of the active look is shown at the bottom of the screen. For every photo,
 `A/CHDK/FILMLOG.CSV` records which look was active.
 
-**RAW develop** (Options): render a saved DNG again with a different look. Set Options → RAW
-to DNG when shooting. Later, choose RAW develop, pick the DNG and the look, then take one
+**RAW develop** (Options → RAW): render a saved DNG again with a different look. Set Options → RAW →
+Save RAW to DNG when shooting. Later, choose RAW develop, pick the DNG and the look, then take one
 photo: what is in front of the lens does not matter, the camera only needs a shot to run its
 JPEG engine. The status line shows `Develop <file>: <look>` until then; choose RAW develop
 again to cancel. You get a new JPEG. The DNG stays untouched, your loaded look comes back.
@@ -97,6 +108,26 @@ White balance, Dynamic+ level, date stamp and Auto color noise filter come from 
 photo. The JPEG's Exif data (date, exposure, orientation) comes from the helper shot, so hold
 the camera the same way and do not use digital zoom. `FILMLOG.CSV` names the source file in a
 third column. Canon's JPEG engine only runs after a shot, so this cannot run in playback mode.
+
+**White balance** (Options → Look): sets the camera's own white balance (Auto, Daylight, Cloudy,
+Tungsten, Fluorescent, Fluorescent H, Custom). **WB shift** fine-tunes the colour on top of
+that, on a grid like the white balance shift of a Fujifilm camera: left/right moves from cyan to
+red, up/down from yellow to blue, each −9 to +9. SET applies, MENU cancels, the zoom lever goes
+back to 0. The shift is worked into the look's tone curve,
+so it costs no time per photo. It only shows in the photo, not on the screen, and it is off
+while the film is Off. One step is about 3 %; this is not calibrated yet.
+
+**Recipes** (Options → Recipe): a recipe stores the film, white balance, WB shift, Dynamic+,
+colour noise filter, B/W filter and all effects in one of four slots, C1 to C4. Choosing a
+recipe sets all of it at once, including the camera's white balance. Shutter, focus, zoom,
+flash, ND, RAW and double exposure are left alone, they depend on the situation. To save one,
+set everything up, then Options → Look → Save as recipe and pick a slot: the list shows the four
+slots with their names, one press saves (a used slot asks first). A new slot is named after the film. If you change something after loading a recipe, the menu and the status
+line show a `*` after its slot. The recipes live in `A/CHDK/FILMS/RECIPES.TXT`, a text file you
+can edit on the PC to rename recipes, write new ones or share them (the file explains the
+format). `wb = keep` leaves the camera's white balance as it is. Mistakes in the file end up in
+`A/CHDK/FILMS/RECIPES.LOG`. Saving on the camera rewrites the file, so your own comments in it
+are lost.
 
 ## Building
 

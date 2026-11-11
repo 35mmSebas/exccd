@@ -483,6 +483,10 @@ typedef struct
     int film_zoom;              // Zoom: 0 frei, 1 Stufen, 2+k fest auf Stufe k (core/filmsim_zoom.c)
     int film_frame;             // Filmrahmen: 0 aus, 1 schmal (2 aus dem Lab-Build: wie 1)
     char film_name[24];         // Name des gewaehlten Looks, "" = Aus. Geht vor film_sim
+    int film_wb_r, film_wb_b;   // Weissabgleich-Verschiebung -9..+9 (in die Tonkurve gerechnet)
+    int film_recipe;            // zuletzt geladenes Rezept: 0 keins, 1..4 = C1..C4
+    int film_aiso;              // Auto-ISO kuerzeste Zeit: 0 aus, 1 Auto (1/f), 2.. 1/8..1/500
+    int film_aiso_max;          // Auto-ISO hoechste ISO: 0=200 1=400 2=800 3=1600
 
 } Conf;
 

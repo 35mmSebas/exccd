@@ -156,6 +156,24 @@ short shooting_get_iso_market() { return 100; }
 short shooting_get_canon_iso_mode(void) { return 0; }
 void shooting_set_iso_mode(int v) { (void)v; }
 
+// Belichtung fuer die Auto-ISO (APEX, 1/96 EV); Kamera: ISO 100..800, 35 mm Weitwinkel
+#include <math.h>
+const ISOTable iso_table[] = { {0, 0, "Auto", -1}, {1, 100, "100", -1}, {2, 200, "200", -1},
+                               {3, 400, "400", -1}, {4, 800, "800", -1} };
+const unsigned int ISO_SIZE = 5;
+static short ex_tv, ex_sv, ex_isomode;
+static int ex_fl = 35000;
+short shooting_get_tv96() { return ex_tv; }
+short shooting_get_sv96_real() { return ex_sv; }
+int shooting_get_iso_mode() { return ex_isomode; }
+void shooting_set_tv96_direct(short v, short now) { (void)now; ex_tv = v; }
+void shooting_set_sv96(short v, short now) { (void)now; ex_sv = v; }
+short shooting_iso_market_to_real(short i) { return i; }
+short shooting_get_sv96_from_iso(short iso) { return iso > 0 ? (short)(log(iso * 32.0 / 100.0) / log(2.0) * 96.0 + 0.5) : 0; }
+short shooting_get_tv96_from_shutter_speed(float t) { return (short)(-log(t) / log(2.0) * 96.0 + (t < 1 ? 0.5 : -0.5)); }
+long lens_get_zoom_point() { return 0; }
+int get_effective_focal_length(int zp) { (void)zp; return ex_fl; }
+
 static char drawn[4096];
 static int restore_count = 0;
 void gui_set_need_restore(void) { restore_count++; }
@@ -170,6 +188,11 @@ void draw_rectangle(coord a, coord b, coord c, coord d, twoColors e, int f) { (v
 #define FB_W 480
 #define FB_H 270
 static short fb[FB_H][FB_W];
+void draw_vline(coord a, coord b, int c, color d)
+{
+    for (; c > 0; c--, b++)
+        if (a >= 0 && a < FB_W && b >= 0 && b < FB_H) fb[b][a] = d;
+}
 void draw_hline(coord a, coord b, int c, color d)
 {
     for (; c > 0; c--, a++)
@@ -178,8 +201,11 @@ void draw_hline(coord a, coord b, int c, color d)
 twoColors user_color(confColor c) { (void)c; return 0; }
 
 static gui_handler *cur_mode = 0;
-gui_handler *gui_set_mode(gui_handler *h) { cur_mode = h; return h; }
+gui_handler *gui_set_mode(gui_handler *h) { gui_handler *o = cur_mode; cur_mode = h; return o; }
+static int menu_redraws = 0;
+void gui_menu_erase_and_redraw(void) { menu_redraws++; }
 void gui_menu_init(CMenu *m) { menu_open = m; }
+void gui_activate_sub_menu(CMenu *m) { menu_open = m; }
 static int alt_exits = 0;
 void exit_alt(void) { alt_exits++; }
 void exit_alt_on_release(void) { alt_exits++; }
@@ -431,6 +457,7 @@ static void scenario_picker(void)
     CHECK(cur_mode != 0, "Auswahl nicht offen");
     cur_mode->redraw(1);
     CHECK(strstr(drawn, "3/26") != 0, "Position fehlt: [%s]", drawn);
+    CHECK(strstr(drawn, lang_str(LANG_EXCCD_PICK_HELP)) != 0, "Tastenhinweis fehlt: [%s]", drawn);
     press(KEY_RIGHT);
     CHECK(strstr(drawn, "4/26") != 0, "rechts: [%s]", drawn);
     press(KEY_LEFT); press(KEY_LEFT);
@@ -1109,6 +1136,216 @@ static void scenario_thumb(const char *dng, const char *pgm)
     }
 }
 
+// Rezepte und Weissabgleich: speichern, laden, Aenderungs-*, WB-Shift in der Kurve (12 Bit)
+extern const char* filmsim_wb_enum(int change, int arg);
+extern const char* filmsim_wb_r_enum(int change, int arg);
+extern const char* filmsim_wb_b_enum(int change, int arg);
+extern const char* filmsim_wb_shift_enum(int change, int arg);
+extern const char* filmsim_recipe_enum(int change, int arg);
+extern void filmsim_recipe_save_menu(int arg);
+extern char filmsim_slot_text[4][32];
+extern char filmsim_look_text[40];
+CMenu filmsim_save_menu;
+extern void filmsim_recipe_save(int arg);
+
+static void film_by_name(const char *n)
+{
+    int i;
+    for (i = 0; i < 40; i++) {
+        filmsim_set(i);
+        if (strcmp(filmsim_name(), n) == 0) return;
+    }
+    CHECK(0, "Film %s fehlt", n);
+}
+
+static const char *card_text(const char *n)
+{
+    int i = fs_find(n);
+    if (i < 0) return "";
+    card[i].data[card[i].size] = 0;
+    return card[i].data;
+}
+
+#if CAM_SENSOR_BITS_PER_PIXEL == 12
+static long long raw_sum(void)
+{
+    long long s = 0;
+    int x, y;
+    for (y = 100; y < (int)camera_sensor.raw_rows - 100; y += 7)
+        for (x = 200; x < (int)camera_sensor.raw_rowpix - 200; x += 5) s += get_raw_pixel(x, y);
+    return s;
+}
+#endif
+
+static void scenario_recipe(const char *root)
+{
+    const char *t;
+    load_card_curve(root, "SUMMER.CV");
+    camera_on();
+    filmsim_menu_enum(0, 0);
+
+    // ohne RECIPES.TXT: kein Rezept
+    CHECK(strcmp(filmsim_recipe_enum(0, 0), "-") == 0, "ohne Datei: %s", filmsim_recipe_enum(0, 0));
+    CHECK(strcmp(filmsim_recipe_enum(1, 0), "-") == 0, "ohne Datei blaettern: %s", filmsim_recipe_enum(0, 0));
+
+    // C1: Summer 200, Tageslicht, R+2 B-1, Korn fein
+    film_by_name("Summer 200");
+    conf.film_grain = 2;
+    filmsim_wb_r_enum(1, 0); filmsim_wb_r_enum(1, 0); filmsim_wb_b_enum(-1, 0);
+    CHECK(strcmp(filmsim_wb_r_enum(0, 0), "+2") == 0 && strcmp(filmsim_wb_b_enum(0, 0), "-1") == 0, "Shift-Anzeige");
+    filmsim_wb_enum(1, 0);
+    CHECK(shooting_get_prop(PROPCASE_WB_MODE) == 1, "WB Tageslicht: %d", shooting_get_prop(PROPCASE_WB_MODE));
+    for (int k = 0; k < 20; k++) filmsim_wb_r_enum(1, 0);
+    CHECK(conf.film_wb_r == 9, "Shift begrenzt: %d", conf.film_wb_r);
+    for (int k = 0; k < 7; k++) filmsim_wb_r_enum(-1, 0);
+
+    // WB-Shift-Raster: oeffnet aus dem Menue, Pfeile verschieben, SET erst nach Loslassen
+    {
+        gui_handler *menu = &menuGuiHandler;
+        cur_mode = menu;
+        CHECK(strcmp(filmsim_wb_shift_enum(0, 0), "R+2 B-1") == 0, "Raster-Eintrag: %s", filmsim_wb_shift_enum(0, 0));
+        filmsim_wb_shift_enum(1, 0);
+        CHECK(cur_mode != menu, "Raster nicht offen");
+        gui_handler *g = cur_mode;
+        g->redraw(1);
+        key_held = KEY_SET; next_key = KEY_SET; g->kbd_process();      // Wiederholung der oeffnenden SET-Taste
+        CHECK(cur_mode == g, "gehaltenes SET schliesst das Raster");
+        key_held = 0;
+        long keys[] = { KEY_RIGHT, KEY_RIGHT, KEY_DOWN, KEY_UP, KEY_DOWN };
+        for (unsigned k = 0; k < sizeof(keys) / sizeof(keys[0]); k++) { next_key = keys[k]; g->kbd_process(); g->redraw(0); }
+        CHECK(conf.film_wb_r == 2 && conf.film_wb_b == -1, "Raster aendert vor SET: R%d B%d", conf.film_wb_r, conf.film_wb_b);
+        next_key = KEY_SET; g->kbd_process();
+        CHECK(cur_mode == menu && conf.film_wb_r == 4 && conf.film_wb_b == -2, "SET: R%d B%d", conf.film_wb_r, conf.film_wb_b);
+        CHECK(strcmp(filmsim_wb_shift_enum(0, 0), "R+4 B-2") == 0, "Raster-Eintrag nach SET: %s", filmsim_wb_shift_enum(0, 0));
+        // MENU bricht ab
+        filmsim_wb_shift_enum(-1, 0); g = cur_mode;
+        for (int k = 0; k < 30; k++) { next_key = KEY_LEFT; g->kbd_process(); }
+        g->redraw(0);
+        g->kbd_process_menu_btn();
+        CHECK(cur_mode == menu && conf.film_wb_r == 4, "MENU: R%d", conf.film_wb_r);
+        // Zoom setzt auf 0, Raender halten
+        filmsim_wb_shift_enum(1, 0); g = cur_mode;
+        for (int k = 0; k < 30; k++) { next_key = KEY_UP; g->kbd_process(); }
+        g->redraw(0);
+        next_key = KEY_ZOOM_IN; g->kbd_process();
+        next_key = KEY_SET; g->kbd_process();
+        CHECK(conf.film_wb_r == 0 && conf.film_wb_b == 0, "Zoom: R%d B%d", conf.film_wb_r, conf.film_wb_b);
+        CHECK(strcmp(filmsim_wb_shift_enum(0, 0), "0") == 0, "Raster-Eintrag 0: %s", filmsim_wb_shift_enum(0, 0));
+        filmsim_wb_r_enum(2, 0); filmsim_wb_b_enum(-1, 0);
+    }
+    filmsim_recipe_save_menu(0);
+    CHECK(menu_open == &filmsim_save_menu && strcmp(filmsim_slot_text[0], "C1 (empty)") == 0, "Speichern-Menue: %s", filmsim_slot_text[0]);
+    filmsim_recipe_save(0);
+    CHECK(strcmp(filmsim_slot_text[0], "C1 Summer 200") == 0, "Platzname nach Speichern: %s", filmsim_slot_text[0]);
+    CHECK(strcmp(filmsim_look_text, "Look: Summer 200") == 0, "Look-Eintrag: %s", filmsim_look_text);
+    t = card_text("A/CHDK/FILMS/RECIPES.TXT");
+    CHECK(strstr(t, "[C1] Summer 200") && strstr(t, "film      = Summer 200") && strstr(t, "wb        = daylight")
+          && strstr(t, "shift     = R+2 B-1") && strstr(t, "grain     = fine"), "RECIPES.TXT:\n%s", t);
+    CHECK(conf.film_recipe == 1, "aktiv nach Speichern: %d", conf.film_recipe);
+    CHECK(strcmp(filmsim_recipe_enum(0, 0), "C1 Summer 200") == 0, "Anzeige: %s", filmsim_recipe_enum(0, 0));
+    conf.film_grain = 3;
+    CHECK(strcmp(filmsim_recipe_enum(0, 0), "C1 Summer 200*") == 0, "geaendert: %s", filmsim_recipe_enum(0, 0));
+    conf.film_grain = 2;
+    shooting_set_prop(PROPCASE_WB_MODE, 2);
+    CHECK(strchr(filmsim_recipe_enum(0, 0), '*') != 0, "WB geaendert ohne *");
+
+    // C2: Noir, Kunstlicht, Dynamik+ 1, kein Shift; belegter Platz fragt erst
+    film_by_name("Noir 3200");
+    conf.film_grain = 0; conf.film_wb_r = conf.film_wb_b = 0; conf.film_dr = 1;
+    shooting_set_prop(PROPCASE_WB_MODE, 3);
+    filmsim_recipe_save(0);                         // C1 belegt -> Rueckfrage (Stummel antwortet nicht)
+    CHECK(strstr(card_text("A/CHDK/FILMS/RECIPES.TXT"), "Noir") == 0, "C1 ohne Rueckfrage ueberschrieben");
+    CHECK(strcmp(filmsim_slot_text[1], "C2 (empty)") == 0, "Platz: %s", filmsim_slot_text[1]);
+    filmsim_recipe_save(1);
+    CHECK(strcmp(filmsim_look_text, "Look: Noir 3200") == 0, "Look-Eintrag: %s", filmsim_look_text);
+    t = card_text("A/CHDK/FILMS/RECIPES.TXT");
+    CHECK(strstr(t, "[C1] Summer 200") && strstr(t, "[C2] Noir 3200") && strstr(t, "wb        = tungsten")
+          && strstr(t, "dynamic   = +1"), "zwei Rezepte:\n%s", t);
+
+    // Laden: C2 -> (weiter) "-" -> C1
+    CHECK(strcmp(filmsim_recipe_enum(1, 0), "-") == 0, "nach C2 kommt -");
+    CHECK(strcmp(filmsim_recipe_enum(1, 0), "C1 Summer 200") == 0, "C1 laden: %s", filmsim_recipe_enum(0, 0));
+    CHECK(strcmp(filmsim_name(), "Summer 200") == 0 && conf.film_grain == 2 && conf.film_dr == 0
+          && conf.film_wb_r == 2 && conf.film_wb_b == -1, "C1 geladen: %s grain %d dr %d R%d B%d",
+          filmsim_name(), conf.film_grain, conf.film_dr, conf.film_wb_r, conf.film_wb_b);
+    CHECK(shooting_get_prop(PROPCASE_WB_MODE) == 1, "C1 WB: %d", shooting_get_prop(PROPCASE_WB_MODE));
+    CHECK(strcmp(filmsim_recipe_enum(-1, 0), "-") == 0, "zurueck auf -");
+    CHECK(strcmp(filmsim_recipe_enum(-1, 0), "C2 Noir 3200") == 0, "C2 laden: %s", filmsim_recipe_enum(0, 0));
+    CHECK(strcmp(filmsim_name(), "Noir 3200") == 0 && conf.film_dr == 1 && conf.film_wb_r == 0
+          && shooting_get_prop(PROPCASE_WB_MODE) == 3, "C2 geladen");
+
+#if CAM_SENSOR_BITS_PER_PIXEL == 12
+    // Shift wirkt in der Kurve: gleiche Aufnahme mit und ohne Verschiebung
+    rawbuf = malloc(camera_sensor.raw_rows * camera_sensor.raw_rowlen + 8);
+    film_by_name("Summer 200");
+    conf.film_dr = 0; conf.film_wb_r = conf.film_wb_b = 0;
+    filmsim_set(conf.film_sim);
+    raw_fill_test(); filmsim_curve_apply((char *)rawbuf);
+    long long base = raw_sum();
+    filmsim_wb_r_enum(3, 0);
+    raw_fill_test(); filmsim_curve_apply((char *)rawbuf);
+    long long warm = raw_sum();
+    filmsim_wb_r_enum(-3, 0);
+    raw_fill_test(); filmsim_curve_apply((char *)rawbuf);
+    CHECK(raw_sum() == base, "Shift 0 nicht wie vorher");
+    CHECK(warm < base, "R+3 senkt G/B nicht: %lld / %lld", warm, base);
+    // Film ohne Kurve (Daylight): Shift wirkt ueber die neutrale Kurve
+    film_by_name("Daylight 100");
+    raw_fill_test(); filmsim_curve_apply((char *)rawbuf);
+    long long d0 = raw_sum();
+    filmsim_wb_b_enum(-4, 0);
+    raw_fill_test(); filmsim_curve_apply((char *)rawbuf);
+    CHECK(raw_sum() < d0, "Daylight + B-4 ohne Wirkung");
+    // Aus: keine Kurve, auch mit Shift
+    filmsim_set(0);
+    raw_fill_test(); long long o0 = raw_sum(); filmsim_curve_apply((char *)rawbuf);
+    CHECK(raw_sum() == o0, "Aus mit Shift veraendert das Bild");
+#endif
+}
+
+// Auto-ISO mit kuerzester Zeit: Canon misst, EXCCD verschiebt ISO und Zeit
+static void scenario_aiso(void)
+{
+    camera_on();
+    short s100 = shooting_get_sv96_from_iso(100), s800 = shooting_get_sv96_from_iso(800);
+    conf.tv_override_enabled = 0;
+    conf.film_aiso = 5; conf.film_aiso_max = 2;                 // 1/60, ISO max 800
+    CHECK(strcmp(filmsim_aiso_enum(0, 0), "1/60") == 0, "Menue: %s", filmsim_aiso_enum(0, 0));
+    CHECK(strcmp(filmsim_aiso_max_enum(0, 0), "800") == 0, "ISO max: %s", filmsim_aiso_max_enum(0, 0));
+
+    // 1/8 s bei ISO 100 -> 3 EV mehr: ISO 800, 1/60
+    ex_isomode = 0; ex_sv = s100; ex_tv = 288;
+    CHECK(filmsim_autoiso() == 1 && ex_sv == s100 + 279 && ex_tv == 567, "1/8: sv %d tv %d", ex_sv, ex_tv);
+    // 1/2 s bei ISO 100 -> nur bis ISO 800, Zeit bleibt laenger (1/15)
+    ex_sv = s100; ex_tv = 96;
+    CHECK(filmsim_autoiso() == 1 && ex_sv == s800 && ex_tv == 96 + (s800 - s100), "1/2: sv %d tv %d", ex_sv, ex_tv);
+    // Canon nimmt ISO 400 bei 1/500 -> herunter auf ISO 100, 1/125 (Belichtung gleich)
+    ex_sv = shooting_get_sv96_from_iso(400); ex_tv = 861;
+    int ev = ex_tv - ex_sv;
+    CHECK(filmsim_autoiso() == 1 && ex_sv == s100 && ex_tv - ex_sv == ev && ex_tv >= 567, "hell: sv %d tv %d", ex_sv, ex_tv);
+    // schon passend: nichts tun
+    ex_sv = s100; ex_tv = 700;
+    CHECK(filmsim_autoiso() == 0 && ex_tv == 700, "passend veraendert");
+    // feste Canon-ISO, Tv-Override, Blitz, Aus: nichts tun
+    ex_isomode = 2; ex_tv = 288;
+    CHECK(filmsim_autoiso() == 0, "feste ISO");
+    ex_isomode = 0; conf.tv_override_enabled = 1;
+    CHECK(filmsim_autoiso() == 0, "Tv-Override");
+    conf.tv_override_enabled = 0; shooting_set_prop(PROPCASE_IS_FLASH_READY, 1);
+    CHECK(filmsim_autoiso() == 0, "Blitz");
+    shooting_set_prop(PROPCASE_IS_FLASH_READY, 0);
+    // Auto: 1/Brennweite, Tele 105 mm -> mindestens 1/105
+    conf.film_aiso = 1; ex_fl = 105000; ex_sv = s100; ex_tv = 480;
+    CHECK(filmsim_autoiso() == 1 && ex_tv >= 640 && ex_tv <= 648, "Auto 105 mm: tv %d", ex_tv);
+    // ISO max nur bis zur Kamera (800): 200 400 800, dann wieder 200
+    conf.film_aiso_max = 2;
+    CHECK(strcmp(filmsim_aiso_max_enum(1, 0), "200") == 0, "ISO max weiter: %s", filmsim_aiso_max_enum(0, 0));
+    conf.film_aiso_max = 3;
+    CHECK(strcmp(filmsim_aiso_max_enum(0, 0), "800") == 0, "1600 auf 800 begrenzt: %s", filmsim_aiso_max_enum(0, 0));
+    conf.film_aiso = 0;
+    CHECK(filmsim_autoiso() == 0 && filmsim_aiso_str() == 0, "Aus");
+}
+
 int main(int argc, char **argv)
 {
     const char *what = argc > 1 ? argv[1] : "";
@@ -1117,6 +1354,8 @@ int main(int argc, char **argv)
     else if (strcmp(what, "picker") == 0) scenario_picker();
     else if (strcmp(what, "raw") == 0) scenario_raw(root);
     else if (strcmp(what, "develop") == 0) scenario_develop();
+    else if (strcmp(what, "recipe") == 0) scenario_recipe(root);
+    else if (strcmp(what, "aiso") == 0) scenario_aiso();
     else if (strcmp(what, "thumb") == 0) scenario_thumb(argc > 3 ? argv[3] : 0, argc > 4 ? argv[4] : 0);
     else { printf("Szenario?\n"); return 2; }
     printf("%s (%d Fehler)\n", fails ? "FEHLER" : "ok", fails);

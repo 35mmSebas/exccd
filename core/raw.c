@@ -293,6 +293,12 @@ void raw_process(void)
 
     }
 
+    // Filmsim: Fortschrittsbalken der normalen Aufnahme planen (Entwickeln hat ihn schon)
+    extern void filmsim_shot_prepare(void);
+    extern void filmsim_shot_end(void);
+    if (!developing)
+        filmsim_shot_prepare();
+
     // Filmsim: Zeitmessung der folgenden Schritte (A/CHDK/FILMTIME.CSV)
     extern void filmsim_time_mark(int i);
     extern void filmsim_time_log(void);
@@ -343,6 +349,8 @@ void raw_process(void)
         extern void filmsim_develop_end(char *raw);
         filmsim_develop_end(rawadr);
     }
+    else
+        filmsim_shot_end();
 
     // Filmsim: Film zum Foto ins Logbuch schreiben
     extern void filmsim_log_shot(void);

@@ -51,6 +51,34 @@ typedef enum {
 
 CURVE_TYPE current_curve_type = CURVE_NONE;
 
+// EXCCD: Weissabgleich-Verschiebung, beim Laden in eigene RGB-Kurven gerechnet
+// (R, G, G, B; 4096 = 1, nie ueber 1). Mit Verschiebung und fehlender Datei
+// gilt eine neutrale Kurve, damit die Verschiebung auch ohne Filmkurve wirkt.
+static int curve_gain[4] = { 4096, 4096, 4096, 4096 };
+
+static int curve_gains_set(void)
+{
+	return curve_gain[0] != 4096 || curve_gain[1] != 4096 || curve_gain[3] != 4096;
+}
+
+static void curve_apply_gains(void)
+{
+	int ch, v;
+	if (!curve_gains_set() || curve_data[0] > 1023) return;	// L-Kurven: Faktoren, nicht anfassen
+	for (ch = 0; ch < 4; ch++) {
+		unsigned short *c = curve_data + ch * CURVE_SIZE;
+		for (v = 0; v < CURVE_SIZE; v++)
+			if (c[v] > 31) c[v] = 31 + (((c[v] - 31) * curve_gain[ch] + 2048) >> 12);
+	}
+}
+
+void curve_set_gains(int r, int g, int b)
+{
+	curve_gain[0] = r;
+	curve_gain[1] = curve_gain[2] = g;
+	curve_gain[3] = b;
+}
+
 static void curve_free_data() {
 	free(curve_data);
 	curve_data = NULL;
@@ -90,11 +118,19 @@ static int curve_load_data(const char *name,CURVE_TYPE curve_type) {
 	}
 	fd = fopen(name, "r+b");
 	if (!fd) {
+		if (curve_type == CURVE_CUSTOM && curve_gains_set()) {
+			unsigned i;
+			for (i = 0; i < 4 * CURVE_SIZE; i++) curve_data[i] = i % CURVE_SIZE;
+			curve_apply_gains();
+			current_curve_type = curve_type;
+			return 1;
+		}
 		curve_free_data();
 		return 0;
 	}
 	fread(curve_data, 1, size, fd);
 	fclose(fd);
+	if (curve_type == CURVE_CUSTOM) curve_apply_gains();
 	current_curve_type = curve_type;
 	return 1;
 }
@@ -438,7 +474,8 @@ libcurves_sym _libcurves =
     curve_init_mode,
     curve_apply,
     curve_set_mode,
-    curve_set_file
+    curve_set_file,
+    curve_set_gains
 };
 
 ModuleInfo _module_info =

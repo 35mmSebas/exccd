@@ -86,10 +86,13 @@ RECIPES = {
         G=((.08, .06),  (.25, .21),  (.5, .53),  (.75, .84),  (.92, .96)),
         B=((.08, .12),  (.25, .27),  (.5, .45),  (.75, .66),  (.92, .82)))),
     # v1.10: dritte Runde Looks
-    "SUMMER":  dict(points=dict(             # Summer: golden, warme Lichter, weich gehobene Mitten
-        R=((.08, .09),  (.25, .275), (.5, .545), (.75, .79),  (.92, .935)),
-        G=((.08, .08),  (.25, .245), (.5, .51),  (.75, .757), (.92, .92)),
-        B=((.08, .068), (.25, .20),  (.5, .435), (.75, .685), (.92, .865)))),
+    # 10.11.2026: Summer hat jedes Grau gelb gefaerbt (Mitten R-B 0,11, grauer Himmel wurde gelb).
+    # Gold 200 ist warm, aber Neutrales bleibt fast neutral (nur leicht cremig, R-B ~0,03 in den
+    # Mitten). Die Waerme kommt jetzt v.a. aus Saettigung +1 / Haut +1 (warme Farben), nicht aus einem Stich.
+    "SUMMER":  dict(points=dict(             # Summer: warm, cremige Lichter, weich gehobene Mitten
+        R=((.08, .083), (.25, .262), (.5, .527), (.75, .77),  (.92, .93)),
+        G=((.08, .08),  (.25, .255), (.5, .517), (.75, .762), (.92, .925)),
+        B=((.08, .077), (.25, .243), (.5, .497), (.75, .745), (.92, .912)))),
     "CHROME":  dict(points=dict(             # Chrome: tiefe Schatten, kraeftige Rottoene, dichte Mitten
         R=((.08, .058), (.25, .215), (.5, .52),  (.75, .80),  (.92, .94)),
         G=((.08, .05),  (.25, .198), (.5, .49),  (.75, .775), (.92, .925)),

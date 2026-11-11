@@ -62,7 +62,7 @@ as (R, G, B), ±0.03 = clearly visible. Point-curve looks are drawn freely per c
 | Concrete     | recipe     |  0.28    | 0.02 | 0.10     | 0 / 0 / +0.004          | +0.004 / +0.002 / 0     | + Mix 2: desaturated, hard |
 | Ember        | points     | medium   | –    | –        | red                     | orange to peach         | red to orange gradient, muted blue |
 | Grit (B/W)   | recipe     |  0.38    | 0.00 | 0.04     | Gain 1.20 / 1.0 / 0.80  |                         | B/W, hard, orange filter |
-| Summer       | points     | soft     | –    | –        | warm                    | golden                  | golden, warm negative |
+| Summer       | points     | soft     | –    | –        | near neutral            | slightly creamy         | warm colours (Sat/Skin +1), greys stay neutral |
 | Chrome       | points     | medium   | –    | –        | deep                    | warm                    | dense slide film, strong reds |
 | Bypass       | recipe     |  0.42    | 0.01 | 0.02     | −0.004 / 0 / +0.006     | +0.002 / +0.002 / 0     | silver retained: hard, almost no colour |
 | Noir (B/W)   | recipe     |  0.55    | 0.035| 0.02     | Gain 1.05 / 1.0 / 0.95  |                         | B/W, pushed: very hard, grey blacks |

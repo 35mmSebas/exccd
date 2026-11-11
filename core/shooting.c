@@ -1912,6 +1912,7 @@ static void shooting_set_flash_override()
 void shooting_expo_param_override_thumb(void)
 {
     extern int filmsim_dr_tv96_shift(int automatic);
+    extern int filmsim_autoiso(void);
     if (((camera_info.state.state_kbd_script_run) || (usb_remote_active)) && (photo_param_put_off.tv96 != PHOTO_PARAM_TV_NONE))
     {
         shooting_set_tv96_direct(photo_param_put_off.tv96, SET_NOW);
@@ -1938,6 +1939,8 @@ void shooting_expo_param_override_thumb(void)
     }
     else if (is_iso_override_enabled)
         shooting_set_iso_real(shooting_get_iso_override_value(), SET_NOW);
+    else if (filmsim_autoiso())
+        ;   // EXCCD Auto-ISO mit kuerzester Zeit hat ISO und Zeit gesetzt
     else if (conf.autoiso_enable && shooting_get_flash_mode()/*NOT FOR FLASH AUTO MODE*/ && autoiso_and_bracketing_overrides_are_enabled)
         shooting_set_autoiso(shooting_get_iso_mode());
 

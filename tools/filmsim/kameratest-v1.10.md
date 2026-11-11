@@ -90,3 +90,60 @@ Vorher: Optionen -> RAW auf DNG, ein paar Fotos machen. Dann DNG waehlen, Look w
 ## 8. Sprache
 
 - [ ] `german.lng`: Filmkorn, Filmrahmen, RAW-Entwicklung passen in die Menuezeile; `Fertig - Ausloeser druecken` und `Entwickle CRW_....DNG` passen in Menue und Kasten
+
+## 9. v1.10.1: Fortschritt bei jeder Aufnahme, Reset
+
+- [ ] Foto mit Look und mehreren Effekten (z. B. Halation + Mist + Korn): Kasten `Processing <Film>` erscheint sofort nach dem Ausloesen, der Balken laeuft durch, am Ende `Canon saves JPEG...`, danach verschwindet der Kasten
+- [ ] Daylight 100 ohne Effekte: kein Kasten
+- [ ] Doppelbelichtung (erstes und zweites Bild): Balken haengt nicht beim Schreiben/Lesen der DBL1.RAW
+- [ ] Serienbild / schnelle Folge: Kasten stoert nicht, keine Reste auf dem Bildschirm
+- [ ] Optionen -> Reset to defaults -> Yes: Zeit, Fokus, Zoom, Blitz, ND, Farbrauschen, S/W-Filter, Dynamik+, alle Effekte und DNG speichern stehen auf Standard; der Film bleibt; nach Aus/An weiterhin Standard. No aendert nichts
+- [ ] `german.lng`: `Standard wiederherstellen` passt in die Menuezeile, der Fragetext in den Kasten
+
+## 10. v1.10.1: Weissabgleich, WB-Shift, Rezepte
+
+Auf IXUS 60 (10 Bit, curves.flt, propset 1) und SX110 (12 Bit, eigene Kurve, propset 2) pruefen.
+
+- [ ] Optionen -> White balance: Wechsel auf Tageslicht/Kunstlicht. Canon-Symbol oben aendert sich (sofort oder nach Halbdruck)? Im FUNC-Menue steht derselbe Wert? Das JPEG ist entsprechend waermer/kuehler
+- [ ] Danach im FUNC-Menue umstellen: EXCCD stellt nicht zurueck
+- [ ] Optionen -> WB shift oeffnet das Raster (SET und links/rechts): Pfeile bewegen das weisse Feld, rechts = R+, oben = B+, Wert oben rechts stimmt; SET uebernimmt, MENU bricht ab, Zoom setzt auf 0; danach steht das Menue wieder auf WB shift. Auf IXUS 132/145 (480 breit?) mittig und nicht abgeschnitten
+- [ ] Langes Halten von SET beim Oeffnen schliesst das Raster nicht sofort wieder
+- [ ] Neue Menuestruktur: Optionen passen ohne Scrollen auf den Schirm (Recipe, Look: <Film>, Trennlinie, Zeit/Fokus/Zoom/Blitz/ND/Doppelbelichtung, Trennlinie, RAW, Reset, System, Back); Trennlinien werden uebersprungen
+- [ ] "Look: <Film>" zeigt den eingelegten Film, auch nach Filmwechsel per Print und nach Rezept laden
+- [ ] Doppelbelichtung steht in den Optionen, nicht mehr unter Effects; RAW -> Save RAW und RAW develop funktionieren wie vorher
+- [ ] Filmauswahl: unten steht grau "SET OK   MENU Options", Lasche und Leiste ueberlappen nicht (IXUS 132/145 auch)
+- [ ] WB shift R+9 mit Summer 200: Foto deutlich roeter als mit 0; B+9 deutlich blauer; Lichter (Himmel) fressen nicht frueher aus
+- [ ] WB shift mit Daylight 100 (keine Filmkurve): wirkt trotzdem (neutrale Kurve)
+- [ ] WB shift mit Film Aus: wirkt nicht, Statuszeile zeigt keinen Shift
+- [ ] WB shift + Dynamik+ 2: Shift und Aufhellung wirken zusammen
+- [ ] Statuszeile zeigt `| R+2 B-1`
+- [ ] Optionen -> Look -> Save as recipe -> C1 (empty): `A/CHDK/FILMS/RECIPES.TXT` entsteht, Inhalt passt (film, wb, shift, Effekte), Slot heisst wie der Film
+- [ ] Zweites Rezept C2 mit anderem Film, anderem WB und Effekten speichern, dann Optionen -> Recipe zwischen C1 und C2 wechseln: Film, Canon-WB, Shift, Dynamik+ und Effekte springen mit
+- [ ] Nach dem Laden etwas aendern (z. B. Korn): Menue und Statuszeile zeigen `C1*`; zurueckstellen -> `*` verschwindet
+- [ ] Belegten Platz speichern: Rueckfrage `Overwrite C1 ...?`, No aendert nichts
+- [ ] RECIPES.TXT am PC umbenennen/aendern (z. B. `wb = keep`, falscher Schluessel): Kamera nimmt die Aenderung, Fehler stehen in `RECIPES.LOG`
+- [ ] Rezept mit einem Film, der nicht auf der Karte ist: Film bleibt, Rest wird geladen, Anzeige mit `*`
+- [ ] Aus/An: geladenes Rezept, Shift und WB bleiben
+- [ ] Reset to defaults: Shift 0, kein Rezept aktiv; RECIPES.TXT bleibt
+- [ ] `german.lng`: `Rezept speichern`, `WB-Shift Rot`, `Leuchtstoff H`, `C1 (leer)` passen in die Menuezeile
+
+## 11. v1.10.2: Summer 200 ohne Gelbstich
+
+- [ ] Grauer Himmel / graue Wand mit Summer 200 bleibt grau (nur leicht cremig), nicht gelb
+- [ ] Haut, Laub, Holz bleiben warm; Vergleich jeweils gegen Daylight 100 (Paare fuer fit_mix.py)
+
+## 12. v1.10.2: Auto-ISO mit kuerzester Zeit
+
+Canon-ISO im FUNC-Menue auf **Auto**, Blitz aus. Optionen -> `Auto ISO min. shutter` = 1/60, `Auto ISO max.` = 800.
+- [ ] Statuszeile zeigt `| A-ISO 1/60`
+- [ ] Dunkler Raum: Halbdruck zeigt 1/60 (oder kuerzer) statt 1/8; Foto ist richtig belichtet, EXIF ISO > 100
+- [ ] Sehr dunkel: ISO bleibt bei 800, Zeit wird laenger als 1/60 (kein Absturz, Bild nicht zu dunkel)
+- [ ] Draussen hell: EXIF zeigt Grund-ISO (80/100), Bild normal belichtet
+- [ ] `Auto` (1/f): Weitwinkel ca. 1/35, Tele ca. 1/105 (IXUS 60); SX110 Tele -> sehr kurze Zeit, ISO steigt bis max.
+- [ ] Feste Canon-ISO (z. B. 200): Funktion wirkt nicht, Zeit wie von Canon
+- [ ] `Shutter speed` fest gesetzt: Auto-ISO wirkt nicht
+- [ ] Blitz loest aus: Auto-ISO wirkt nicht
+- [ ] Mit Dynamik+ 1: Bild weiterhin 1 EV knapper belichtet (Kurve hellt auf), Zeit trotzdem >= 1/60
+- [ ] `Auto ISO max.` bietet auf der IXUS 60 nur 200/400/800 an
+- [ ] RAW (DNG) zeigt dieselbe ISO wie das JPEG
+- [ ] `german.lng`: `Auto-ISO min. Zeit` passt in die Menuezeile
