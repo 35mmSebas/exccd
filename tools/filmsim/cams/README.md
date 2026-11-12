@@ -25,6 +25,11 @@ The existing notes and checklists are in German. English is perfectly fine for n
 
 ## Adding a camera
 
+**Quick way:** `python tools/filmsim/add_camera.py LIST` does steps 2 and 4–6 for every camera in LIST
+(one per line: `platform | short name | name for the site [| sub]`). It reads sensor, Bayer pattern,
+propset and firmware from the CHDK port, assigns the sensor family and writes `notes.md` and
+`kameratest.md`. Then build (step 7) and check the result by hand.
+
 1. **Branch** `<platform>` from `main`. It only lives until the camera test.
 2. **Entry** in `tools/filmsim/cameras.txt` with status `test`.
 3. **Check CHDK:** the camera must exist in CHDK 1.6.1 (`platform/<platform>/sub/<fw>/`).
