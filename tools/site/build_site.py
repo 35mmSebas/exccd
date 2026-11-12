@@ -49,6 +49,9 @@ CAMERA_META = {
                         "other_firmware": [], "boot": "fat32", "firm_update": False},
     "sx110is": {"name": "Canon PowerShot SX110 IS",
                 "other_firmware": [], "boot": "fat16", "firm_update": False},
+    # 1.00c/1.00d baut CHDK auch; Installer und Seite kennen bisher nur eine Version je Kamera
+    "a2400": {"name": "Canon PowerShot A2400 IS",
+              "other_firmware": ["1.00c", "1.00d"], "boot": "fat32", "firm_update": False},
 }
 
 FILMS_DIR = "CHDK/FILMS/"

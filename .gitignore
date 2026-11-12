@@ -143,4 +143,7 @@ tools/stubs_load.o
 /_site/
 platform/ixus132_elph115/sub/100b/PRIMARY.BIN
 platform/sx110is/sub/100b/PRIMARY.BIN
+platform/a2400/sub/100c/PRIMARY.BIN
+platform/a2400/sub/100d/PRIMARY.BIN
+platform/a2400/sub/100e/PRIMARY.BIN
 /.claude/

@@ -224,6 +224,7 @@ const camera cameras[] = {
     { "ixus145_elph135", "IXUS 145 / PowerShot ELPH 135",    1, 0, "1.00c", "1.00c" },
     { "ixus132_elph115", "IXUS 132 / PowerShot ELPH 115 IS", 1, 0, "1.00b", "1.00b" },
     { "sx110is",         "PowerShot SX110 IS",               0, 0, "1.00b", "1.00b" },
+    { "a2400",           "PowerShot A2400 IS",               1, 0, "1.00e", "1.00c 1.00d 1.00e" },
 };
 const int camera_count = sizeof(cameras) / sizeof(cameras[0]);
 
