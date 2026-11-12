@@ -97,3 +97,19 @@
     #define CAM_QUALITY_OVERRIDE            1   // https://chdk.setepontos.com/index.php?topic=13342
 
 //--------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // DIGIC III, DryOS R43, propset 3, 12 Bit R G / G B, 3720 x 2772 (10 MP)
+    // Sensorfamilie B (wie SX110)
+    // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
+    // Weissabgleich vorerst von der Familie uebernommen.
+    #define FILMSIM_WB_R                470
+    #define FILMSIM_WB_B                441
+    // Propset 3 kennt in CHDK keine My-Colors-Propcases: Looks nur ueber Kurven und Rohdaten.
+    #define FILMSIM_DIAG                1

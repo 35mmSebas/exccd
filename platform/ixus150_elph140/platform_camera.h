@@ -84,8 +84,8 @@
 
     #define CAM_ADJUSTABLE_ALT_BUTTON       1
 
-    #define CAM_ALT_BUTTON_NAMES            { "Playback", "Help" }
-    #define CAM_ALT_BUTTON_OPTIONS          { KEY_PLAYBACK, KEY_HELP }
+    #define CAM_ALT_BUTTON_NAMES            { "Help", "Playback" }     // EXCCD: Hilfe-Taste zuerst, Wiedergabe bleibt frei
+    #define CAM_ALT_BUTTON_OPTIONS          { KEY_HELP, KEY_PLAYBACK }
 
     #define DRAW_ON_ACTIVE_BITMAP_BUFFER_ONLY   1
 
@@ -96,7 +96,7 @@
     #undef  CAM_HAS_ERASE_BUTTON
     #undef  CAM_HAS_DISP_BUTTON
     #undef  CAM_DEFAULT_ALT_BUTTON
-    #define CAM_DEFAULT_ALT_BUTTON          KEY_PLAYBACK
+    #define CAM_DEFAULT_ALT_BUTTON          KEY_HELP      // EXCCD
     #define SHORTCUT_TOGGLE_RAW             KEY_VIDEO
     #define CAM_HAS_VIDEO_BUTTON            1
 
@@ -120,3 +120,16 @@
     #define CAM_3ARG_DebugAssert                1   // DebugAssert takes 3 arguments
 
 //----------------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // Wie IXUS 145 (DryOS R54, 12 Bit G B / R G, 4704 x 3504), Sensorfamilie C.
+    // Noch keine Laschen (Palette fehlt) und kein eigener Weissabgleich:
+    // Textkarten in CHDK-Farben.
+    // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.
+    #define FILMSIM_DIAG                1

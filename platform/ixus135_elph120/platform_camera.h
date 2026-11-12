@@ -104,8 +104,8 @@
                                                     // see http://chdk.setepontos.com/index.php/topic,3994.405.html
 
     #define CAM_ADJUSTABLE_ALT_BUTTON       1
-    #define CAM_ALT_BUTTON_NAMES            { "Playback", "Video" }
-    #define CAM_ALT_BUTTON_OPTIONS          { KEY_PLAYBACK, KEY_VIDEO }
+    #define CAM_ALT_BUTTON_NAMES            { "Video", "Playback" }     // EXCCD: Video-Taste zuerst, Wiedergabe bleibt frei
+    #define CAM_ALT_BUTTON_OPTIONS          { KEY_VIDEO, KEY_PLAYBACK }
 
     // verified
     #undef  CAM_USB_EVENTID
@@ -144,3 +144,16 @@
     #define CAM_HAS_WIFI                    1       // Camera has wifi support
 
 //----------------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // Gleiche Firmware wie die IXUS 132 (plus WLAN), Sensor 12 Bit G B / R G, 4704 x 3504, Sensorfamilie C.
+    // Noch keine Laschen (Palette fehlt) und kein eigener Weissabgleich:
+    // Textkarten in CHDK-Farben.
+    // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.
+    #define FILMSIM_DIAG                1
