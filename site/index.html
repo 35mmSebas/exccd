@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#000000">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="app.js"></script>
+<script type="module" src="test.js"></script>
 </head>
 <body>
 <header class="top">
@@ -54,6 +55,7 @@
         <li><a href="#trouble">if it doesn't work</a></li>
         <li><a href="#faq">questions</a></li>
         <li><a href="#contribute">help out</a></li>
+        <li><a href="#test">test a camera</a></li>
       </ul>
     </div>
   </nav>
@@ -442,8 +444,8 @@
             <legend>Which camera do you have?</legend>
           </fieldset>
           <p class="beta-note" id="beta-note" role="status" hidden>Beta: EXCCD is built for this camera, but it hasn't been
-            fully tested on one yet. Expect rough edges, and please tell me how it goes on
-            <a class="repo-link" href="https://github.com/35mmSebas/exccd/issues">GitHub</a>.</p>
+            fully tested on one yet. Expect rough edges, and please tell me how it goes with the
+            <a href="#test">camera test</a>.</p>
           <fieldset class="seg" id="fw">
             <legend>Firmware version</legend>
           </fieldset>
@@ -652,7 +654,8 @@
               EXCCD version and a photo (of the display, too) help me a lot to figure out what's going on.</p></li>
           <li><h3>Test on your camera</h3>
             <p>Have an IXUS 132, IXUS 145 or SX110 IS, or another old Canon that CHDK supports? Real photos from real
-              cameras are what I tune the looks with.</p></li>
+              cameras are what I tune the looks with. The <a href="#test">camera test</a> walks you through it,
+              no experience needed.</p></li>
           <li><h3>Send a pull request</h3>
             <p>Fixes, ports and new looks are welcome. The
               <a class="repo-link" href="https://github.com/35mmSebas/exccd/blob/main/tools/filmsim/cams/README.md">porting guide</a>
@@ -661,7 +664,85 @@
       </section>
     </div>
   </section>
+
+  <section class="view" id="test" data-view hidden>
+    <div class="wrap">
+      <section class="step first" id="test-intro">
+        <header class="step-head"><span class="num">00</span><h2>Test a camera</h2></header>
+        <p class="lead-in">EXCCD is built for a few cameras I don't own. If you have one, you can tell me whether it works.
+          You don't need to know anything about photography or code: install it, take three photos of your screen,
+          answer a few yes/no questions and send me the result. Takes about 15 minutes.</p>
+        <p class="lead-in">Nothing is changed inside the camera. EXCCD runs from the SD card; take the card out and it's
+          the same camera as before.</p>
+      </section>
+
+      <section class="step" id="test-camera">
+        <header class="step-head"><span class="num">01</span><h2>Your camera</h2></header>
+        <fieldset class="cams" id="t-cams">
+          <legend>Which camera do you have?</legend>
+        </fieldset>
+        <p id="t-other-box" hidden><label class="t-field">Model name (it's printed on the camera)
+          <input type="text" id="t-other" maxlength="80" placeholder="e.g. PowerShot A590 IS"></label></p>
+        <fieldset class="seg" id="t-fw">
+          <legend>Firmware version (the installer's <i>Check firmware…</i> shows it)</legend>
+        </fieldset>
+      </section>
+
+      <section class="step" id="test-install">
+        <header class="step-head"><span class="num">02</span><h2>Install it</h2></header>
+        <p class="lead-in">Follow the <a href="#install-steps">install steps</a> as usual, then switch the camera on.
+          When EXCCD is running you'll see its menu when you press <b>MENU</b> in shooting mode.</p>
+        <fieldset class="seg t-ask" data-q="starts">
+          <legend>Does EXCCD start?</legend>
+        </fieldset>
+        <p class="t-hint" id="t-nostart" hidden>That's useful to know too. Skip to step 4 and send it anyway, and write
+          in the notes what the camera did (blank screen, error message, nothing at all).</p>
+      </section>
+
+      <section class="step" id="test-photos">
+        <header class="step-head"><span class="num">03</span><h2>Photograph the test chart</h2></header>
+        <p class="lead-in">The chart is a set of colour squares on your screen. Photographing it shows me whether the
+          colours come out right on your camera.</p>
+        <ol class="install t-steps">
+          <li><h3>Open the chart</h3>
+            <p>Turn your screen brightness up and click the button below. The chart fills the screen; click or press
+              <b>Esc</b> to close it again. On a phone or tablet, turn it sideways first.</p>
+            <p><button class="button primary" type="button" id="t-chart-open">Show test chart</button></p></li>
+          <li><h3>Set up the camera</h3>
+            <p>Shooting mode <b>Auto</b>, flash <b>off</b>. Stand so the chart fills most of the camera's display and
+              hold the camera still.</p></li>
+          <li><h3>Take three photos</h3>
+            <p>One with no film look (the camera's normal colours), then one each with two looks of your choice.</p></li>
+        </ol>
+        <p class="t-sub">Now look at the photos on the camera's display and compare them with the chart:</p>
+        <fieldset class="seg t-ask" data-q="tab"><legend>When you pick a look, do you see its coloured tab on the display?</legend></fieldset>
+        <fieldset class="seg t-ask" data-q="redblue"><legend>In the photo without a look: is the red square red and the blue square blue?</legend></fieldset>
+        <fieldset class="seg t-ask" data-q="grey"><legend>Does the grey strip look grey, without a strong colour cast?</legend></fieldset>
+        <fieldset class="seg t-ask" data-q="looks"><legend>Do the photos with looks look different from the one without?</legend></fieldset>
+        <fieldset class="seg t-ask" data-q="stable"><legend>Did the camera run without freezing or switching off?</legend></fieldset>
+      </section>
+
+      <section class="step" id="test-send">
+        <header class="step-head"><span class="num" id="t-send-num">04</span><h2>Send it</h2></header>
+        <p><label class="t-field">Anything else? (optional)
+          <textarea id="t-notes" rows="3" maxlength="1500" placeholder="What you noticed, in your own words"></textarea></label></p>
+        <p class="lead-in">The report below is written for you. Open it on GitHub (you need a free account)<span
+          id="t-send-photos">, then drag your three photos from the card into the text box</span> and submit.</p>
+        <pre class="t-report" id="t-report" aria-live="polite"></pre>
+        <p class="t-actions">
+          <a class="button primary" id="t-github" href="#" target="_blank" rel="noopener">Open on GitHub</a>
+          <button class="button outline" type="button" id="t-copy">Copy report</button>
+          <a class="button outline" id="t-mail" href="#" hidden>Send by e-mail</a>
+          <span class="muted small" id="t-copied" role="status"></span>
+        </p>
+        <p class="muted small">Camera photos can contain the camera's serial number in their hidden data. That's
+          harmless, but if you'd rather not share it, send only the photos of the chart.</p>
+      </section>
+    </div>
+  </section>
 </main>
+
+<div class="t-chart" id="t-chart" hidden role="dialog" aria-label="Test chart, click to close" tabindex="-1"></div>
 
 <div class="dock" id="dock" hidden>
   <div class="wrap dock-in">

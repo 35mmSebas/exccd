@@ -14,8 +14,9 @@ env:
   XPACK_VERSION: 10.3.1-2.3
 
 # Kameras kommen aus tools/filmsim/cameras.txt: jede wird in einem eigenen
-# Job auf einer frischen Maschine gebaut. Release und Webseite bekommen nur
-# Kameras mit Status "stabil".
+# Job auf einer frischen Maschine gebaut. Das GitHub-Release bekommt nur
+# Kameras mit Status "stabil", die Webseite alle (Status "test" dort als Beta,
+# damit Nutzer sie mit der Testseite #test pruefen koennen).
 jobs:
   setup:
     runs-on: ubuntu-24.04
@@ -188,7 +189,7 @@ jobs:
         run: |
           sudo apt-get update -q && sudo apt-get install -y python3-pil
           gcc -Wall -Wextra -I core -o "$RUNNER_TEMP/test_films_txt" tools/filmsim/test_films_txt.c core/filmsim_txt.c
-          python3 tools/site/build_site.py release/*.zip _site --version "$VERSION"
+          python3 tools/site/build_site.py dist/exccd-$VERSION-*-full.zip _site --version "$VERSION"
           node tools/site/test_zipjoin.mjs _site "$RUNNER_TEMP/zipjoin"
           python3 tools/filmsim/make_curves.py "$RUNNER_TEMP/curves" > /dev/null
           node tools/site/test_curves.mjs _site "$RUNNER_TEMP/curves"

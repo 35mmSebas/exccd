@@ -366,3 +366,22 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .sim-tag { position: absolute; left: 10px; bottom: 10px; padding: 1px 8px; border-radius: 3px; background: rgb(0 0 0 / .7);
            color: #e6e6e8; font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; }
 .foot-hello { color: #9a9a9e; font-size: .85rem; }
+
+/* Kameratest (#test): Fragen untereinander, Bericht als Klartext, Testtafel bildschirmfuellend */
+.t-ask { margin: 0 0 22px; }
+.t-ask legend { color: var(--text); font-size: .95rem; }
+.t-hint { color: var(--warn); max-width: 680px; margin: 18px 0 0; }
+.t-sub { color: #c8c8cb; max-width: 680px; margin: 32px 0 20px; }
+.t-steps .button { margin-top: 6px; }
+.t-field { display: flex; flex-direction: column; gap: 8px; color: var(--muted); font-size: .85rem; max-width: 680px; }
+.t-field input, .t-field textarea { font: inherit; font-size: 1rem; color: var(--text); background: var(--panel);
+  border: 1px solid var(--line-2); border-radius: 4px; padding: 10px 12px; width: 100%; resize: vertical; }
+.t-field input:focus-visible, .t-field textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+#t-fw { margin-top: 8px; }
+.t-report { background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px; padding: 16px 18px; max-width: 680px;
+  white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, Consolas, monospace; font-size: .85rem; color: #d6d6d8; }
+.t-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 22px 0 18px; }
+.t-actions .button.outline { padding: 11px 22px; }
+.t-chart { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; align-items: center;
+  justify-content: center; cursor: zoom-out; }
+.t-chart svg { width: 100%; height: 100%; display: block; }

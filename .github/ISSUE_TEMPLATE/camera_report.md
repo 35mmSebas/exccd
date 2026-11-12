@@ -4,11 +4,12 @@ about: You tried EXCCD on a camera in testing, or want it on another model
 labels: camera
 ---
 
+<!-- Easiest way: the camera test page on the EXCCD website (install → test a camera) fills this in for you. -->
+
 **Camera and firmware:**
 
 **EXCCD version** (or "not supported yet"):
 
 **What worked, what didn't?**
-The checklist in `tools/filmsim/cams/<camera>/kameratest.md` lists what to look at, if there is one.
 
-**Photos** – sample shots with a few looks and a photo of the display.
+**Photos** – the three photos of the test chart (no look, two looks) and, if something looks odd, a photo of the display.

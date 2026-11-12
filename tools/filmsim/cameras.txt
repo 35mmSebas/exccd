@@ -2,7 +2,7 @@
 #
 # plattform        sub   status  name
 #   status: stabil = auf der Kamera getestet, kommt ins Release und auf die Webseite
-#           test   = wird gebaut (CI-Artefakt), aber nicht veroeffentlicht
+#           test   = wird gebaut, steht auf der Webseite als Beta (fuer die Testseite), nicht im Release
 # Pro Kamera: platform/<plattform>/platform_camera.h (Block "EXCCD")
 #             und tools/filmsim/cams/<plattform>/ (Palette, Laschen, Notizen, Kameratest)
 ixus60_sd600     100d  stabil  IXUS 60 / PowerShot SD600
