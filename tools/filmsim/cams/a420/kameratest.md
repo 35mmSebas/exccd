@@ -11,7 +11,7 @@ CHDK verändert die Kamera nicht dauerhaft.
 - [ ] SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - [ ] Mit dem EXCCD-Installer zuerst **Firmware prüfen**: Die Kamera blinkt die Version, der Installer zeigt die Tabelle.
       Unterstützt wird **1.00b**.
-- [ ] Mit dem Installer die Karte für „PowerShot A420“ schreiben, Schreibschutz-Schieber auf **LOCK**.
+- [ ] Auf der Webseite die Looks für genau diese Firmware laden, mit dem Installer die Karte für „PowerShot A420“ schreiben, Schreibschutz-Schieber auf **LOCK**.
 - [ ] Leere Datei `CHDK/FILMTIME.CSV` anlegen (misst die Rechenzeit).
 
 ## Muss

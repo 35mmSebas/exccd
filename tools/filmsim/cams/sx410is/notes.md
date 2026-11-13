@@ -3,7 +3,7 @@
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Angelegt mit `tools/filmsim/add_camera.py`,
 am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00c, 1.00b. EXCCD baut für **1.00c**.
+- Firmware in CHDK: 1.00c, 1.00b. EXCCD baut für **1.00c, 1.00b**.
 - DIGIC 4+, DryOS R55, propset 6
 - Sensor 12 Bit, R G / G B (0x02010100), 5248 x 3920, 21 MP. Sensorfamilie **K4** (20 MP CCD · 12 Bit RGGB · DIGIC 4).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte bis 32 GB (FAT32).
@@ -12,7 +12,6 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 - `FILMSIM_DIAG` ist für den Test an (Options → System → Debug zeigt Propcases).
 - Weißabgleich und Looks sind noch Werte der IXUS 60.
 - 1.00b nutzt in CHDK den Code von 1.00c.
-- Installer und Webseite kennen bisher nur 1.00c (Aufgabe „mehrere-firmwares“).
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 

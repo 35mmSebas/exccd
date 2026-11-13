@@ -2,7 +2,7 @@
 
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.01a, 1.00e. EXCCD baut für **1.01a** (eine Version je Kamera, siehe Aufgabe „mehrere-firmwares“).
+- Firmware in CHDK: 1.01a, 1.00e. EXCCD baut für **1.01a, 1.00e**.
 - VxWorks, DIGIC III, propset 2
 - Sensor 10 Bit, R G / G B (0x02010100), 3152 x 2340, 7 MP – gleiche RAW-Größe wie IXUS 70/75. Sensorfamilie **F3** (7 MP CCD · 10 Bit RGGB · DIGIC III).
 - Kein `PS.FI2`: Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.

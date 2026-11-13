@@ -2,7 +2,7 @@
 
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00a, 1.00b. EXCCD baut für **1.00a** (eine Version je Kamera, siehe Aufgabe „mehrere-firmwares“).
+- Firmware in CHDK: 1.00a, 1.00b. EXCCD baut für **1.00a, 1.00b**.
 - DryOS R23, DIGIC III, propset 2
 - Sensor 12 Bit, R G / G B (0x02010100), 3720 x 2772, 10 MP – gleiche RAW-Größe wie die SX110. Sensorfamilie **B3** (10 MP CCD · 12 Bit RGGB · DIGIC III).
 - Kein `PS.FI2`: Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
@@ -10,7 +10,7 @@ Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, K
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.
 - `FILMSIM_DIAG` ist für den Test an (Options → System → Debug zeigt Propcases).
 - Weißabgleich vorerst von der SX110 übernommen (gemessen an weißem Papier), Laschen fehlen noch (Palette).
-- 1.00b nutzt in CHDK denselben Code wie 1.00a, Installer und Seite kennen bisher nur 1.00a.
+- 1.00b nutzt in CHDK denselben Code wie 1.00a.
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 

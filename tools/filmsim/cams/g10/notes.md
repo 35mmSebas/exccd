@@ -3,7 +3,7 @@
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Angelegt mit `tools/filmsim/add_camera.py`,
 am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.02a, 1.03b, 1.04a. EXCCD baut für **1.04a**.
+- Firmware in CHDK: 1.02a, 1.03b, 1.04a. EXCCD baut für **1.04a, 1.02a, 1.03b**.
 - DIGIC 4, DryOS R31, propset 2
 - Sensor 12 Bit, G B / R G (0x01000201), 4480 x 3348, 15 MP. Sensorfamilie **S4** (14 MP CCD · 12 Bit GBRG · DIGIC 4).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
@@ -11,7 +11,6 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.
 - `FILMSIM_DIAG` ist für den Test an (Options → System → Debug zeigt Propcases).
 - Weißabgleich und Looks sind noch Werte der IXUS 60.
-- Installer und Webseite kennen bisher nur 1.04a (Aufgabe „mehrere-firmwares“).
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 

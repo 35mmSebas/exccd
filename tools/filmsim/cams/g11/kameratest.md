@@ -10,8 +10,8 @@ CHDK verändert die Kamera nicht dauerhaft.
 
 - [ ] SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - [ ] Mit dem EXCCD-Installer zuerst **Firmware prüfen**: Die Kamera blinkt die Version, der Installer zeigt die Tabelle.
-      Unterstützt wird **1.00l**. (1.00f, 1.00h, 1.00j, 1.00k kennt CHDK auch, EXCCD baut sie noch nicht – bitte trotzdem melden.)
-- [ ] Mit dem Installer die Karte für „PowerShot G11“ schreiben, Schreibschutz-Schieber auf **LOCK**.
+      Unterstützt wird **1.00l, 1.00f, 1.00j, 1.00h, 1.00k**.
+- [ ] Auf der Webseite die Looks für genau diese Firmware laden, mit dem Installer die Karte für „PowerShot G11“ schreiben, Schreibschutz-Schieber auf **LOCK**.
 - [ ] Leere Datei `CHDK/FILMTIME.CSV` anlegen (misst die Rechenzeit).
 
 ## Muss

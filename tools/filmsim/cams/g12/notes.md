@@ -2,7 +2,7 @@
 
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00g, 1.00c, 1.00e, 1.00f. EXCCD baut für **1.00g** (eine Version je Kamera, siehe Aufgabe „mehrere-firmwares“).
+- Firmware in CHDK: 1.00g, 1.00c, 1.00e, 1.00f. EXCCD baut für **1.00g, 1.00c, 1.00e, 1.00f**.
 - DryOS R45, DIGIC 4, propset 4
 - Sensor 12 Bit, R G / G B (0x02010100), 3744 x 2784, 10 MP, 1/1,7 Zoll. Sensorfamilie **E4** (10 MP CCD · 12 Bit RGGB · DIGIC 4).
 - Kein `PS.FI2`: Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
@@ -11,7 +11,7 @@ Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, K
 - `FILMSIM_DIAG` ist für den Test an (Options → System → Debug zeigt Propcases).
 - Propset 4: Das Weißabgleich-Menü von EXCCD bleibt aus (Canon zählt dort anders, in CHDK nicht verifiziert). Rezepte setzen keinen Canon-Weißabgleich.
 - Bildschirm 960 breit, Klappdisplay: Positionen ungeprüft.
-- Vier Firmware-Versionen, Installer und Seite kennen bisher nur 1.00g (Aufgabe „mehrere-firmwares“).
+- Vier Firmware-Versionen.
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 

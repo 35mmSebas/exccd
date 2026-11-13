@@ -10,8 +10,8 @@ CHDK verändert die Kamera nicht dauerhaft.
 
 - [ ] SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - [ ] Mit dem EXCCD-Installer zuerst **Firmware prüfen**: Die Kamera blinkt die Version, der Installer zeigt die Tabelle.
-      Unterstützt wird **1.00k**. (1.00j kennt CHDK auch, EXCCD baut sie noch nicht – bitte trotzdem melden.)
-- [ ] Mit dem Installer die Karte für „IXUS 40 / PowerShot SD300“ schreiben, Schreibschutz-Schieber auf **LOCK**.
+      Unterstützt wird **1.00k, 1.00j**.
+- [ ] Auf der Webseite die Looks für genau diese Firmware laden, mit dem Installer die Karte für „IXUS 40 / PowerShot SD300“ schreiben, Schreibschutz-Schieber auf **LOCK**.
 - [ ] Leere Datei `CHDK/FILMTIME.CSV` anlegen (misst die Rechenzeit).
 
 ## Muss

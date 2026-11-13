@@ -3,7 +3,7 @@
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Angelegt mit `tools/filmsim/add_camera.py`,
 am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00f, 1.02b, 1.02d, 1.02c. EXCCD baut für **1.02d**.
+- Firmware in CHDK: 1.00f, 1.02b, 1.02d, 1.02c. EXCCD baut für **1.02d, 1.00f, 1.02b, 1.02c**.
 - DIGIC 4, DryOS R39, propset 3
 - Sensor 12 Bit, R G / G B (0x02010100), 4080 x 3048, 12 MP. Sensorfamilie **G4** (12 MP CCD · 12 Bit RGGB · DIGIC 4).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
@@ -13,7 +13,6 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 - Weißabgleich und Looks sind noch Werte der IXUS 60.
 - **Propset 3 kennt in CHDK keine My-Colors-Propcases:** Looks wirken nur über Kurven und Rohdaten, Schwarzweiß-Looks bleiben farbig. Im Test die Nummern mit Options → System → Debug suchen.
 - 1.02c nutzt in CHDK den Code von 1.02d.
-- Installer und Webseite kennen bisher nur 1.02d (Aufgabe „mehrere-firmwares“).
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 

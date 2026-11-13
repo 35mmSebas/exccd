@@ -10,8 +10,8 @@ CHDK verändert die Kamera nicht dauerhaft.
 
 - [ ] SD-Karte bis 32 GB (FAT32).
 - [ ] Mit dem EXCCD-Installer zuerst **Firmware prüfen**: Die Kamera blinkt die Version, der Installer zeigt die Tabelle.
-      Unterstützt wird **1.01a**. (1.00a kennt CHDK auch, EXCCD baut sie noch nicht – bitte trotzdem melden.)
-- [ ] Mit dem Installer die Karte für „PowerShot SX170 IS“ schreiben, Schreibschutz-Schieber auf **LOCK**.
+      Unterstützt wird **1.01a, 1.00a**.
+- [ ] Auf der Webseite die Looks für genau diese Firmware laden, mit dem Installer die Karte für „PowerShot SX170 IS“ schreiben, Schreibschutz-Schieber auf **LOCK**.
 - [ ] Leere Datei `CHDK/FILMTIME.CSV` anlegen (misst die Rechenzeit).
 
 ## Muss

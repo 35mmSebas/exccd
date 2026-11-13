@@ -2,7 +2,7 @@
 
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00l, 1.00f, 1.00h, 1.00j, 1.00k. EXCCD baut für **1.00l** (eine Version je Kamera, siehe Aufgabe „mehrere-firmwares“).
+- Firmware in CHDK: 1.00l, 1.00f, 1.00h, 1.00j, 1.00k. EXCCD baut für **1.00l, 1.00f, 1.00j, 1.00h, 1.00k**.
 - DryOS R39, DIGIC 4, propset 3
 - Sensor 12 Bit, R G / G B (0x02010100), 3744 x 2784, 10 MP, 1/1,7 Zoll. Sensorfamilie **E4** (10 MP CCD · 12 Bit RGGB · DIGIC 4).
 - Kein `PS.FI2`: Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.

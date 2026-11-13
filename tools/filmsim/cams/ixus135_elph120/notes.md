@@ -2,7 +2,7 @@
 
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00b. EXCCD baut für **1.00b** (eine Version je Kamera, siehe Aufgabe „mehrere-firmwares“).
+- Firmware in CHDK: 1.00b. EXCCD baut für **1.00b**.
 - DryOS R52, DIGIC 4, propset 6
 - Sensor 12 Bit, G B / R G (0x01000201), 4704 x 3504, 16 MP. Sensorfamilie **C4** (16 MP CCD · 12 Bit GBRG · DIGIC 4).
 - Kein `PS.FI2`: Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte bis 32 GB (FAT32).

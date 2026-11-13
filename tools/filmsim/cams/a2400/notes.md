@@ -3,10 +3,9 @@
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Erster Test geplant am 16.11.2026
 an der Kamera eines Freundes, siehe `kameratest.md`.
 
-- Firmware 1.00c, 1.00d und 1.00e, alle drei in CHDK 1.6.1. `cameras.txt`, Installer und Webseite
-  kennen bisher nur **eine** Version je Kamera, deshalb steht dort 1.00e. 1.00c/1.00d bauen mit
-  `make PLATFORM=a2400 PLATFORMSUB=100c firzipsubcomplete`; die ZIPs unterscheiden sich nur in
-  `DISKBOOT.BIN` (und den Textdateien).
+- Firmware 1.00c, 1.00d und 1.00e, alle drei in CHDK 1.6.1. EXCCD baut alle drei (1.00e zuerst);
+  die ZIPs unterscheiden sich nur in `DISKBOOT.BIN` (und den Textdateien). Auf der Webseite wählt
+  man die Firmware, der Installer erkennt sie am Dateinamen.
 - DIGIC 4, DryOS R50, **propset 5** (IXUS 132/145: propset 6). Alle Propcases, die EXCCD nutzt
   (My Colors 188, Custom 177–180/55/59/229, WB-Modus 272, Blitz bereit 212), gibt es in propset 5;
   der WB-Modus zählt wie bei 1/2/3/6.

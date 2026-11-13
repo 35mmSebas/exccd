@@ -3,7 +3,7 @@
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Angelegt mit `tools/filmsim/add_camera.py`,
 am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00b, 1.00c, 1.00d, 1.00f. EXCCD baut für **1.00f**.
+- Firmware in CHDK: 1.00b, 1.00c, 1.00d, 1.00f. EXCCD baut für **1.00f, 1.00b, 1.00c, 1.00d**.
 - DIGIC III, DryOS R23, propset 2
 - Sensor 12 Bit, R G / G B (0x02010100), 3720 x 2772, 10 MP. Sensorfamilie **B3** (10 MP CCD · 12 Bit RGGB · DIGIC III).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
@@ -12,7 +12,6 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 - `FILMSIM_DIAG` ist für den Test an (Options → System → Debug zeigt Propcases).
 - Weißabgleich vorerst von der Sensorfamilie übernommen.
 - 1.00d nutzt in CHDK den Code von 1.00c.
-- Installer und Webseite kennen bisher nur 1.00f (Aufgabe „mehrere-firmwares“).
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 

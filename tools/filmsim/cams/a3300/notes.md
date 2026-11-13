@@ -3,7 +3,7 @@
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Angelegt mit `tools/filmsim/add_camera.py`,
 am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00a, 1.00c, 1.00d. EXCCD baut für **1.00d**.
+- Firmware in CHDK: 1.00a, 1.00c, 1.00d. EXCCD baut für **1.00d, 1.00a, 1.00c**.
 - DIGIC 4, DryOS R47, propset 4
 - Sensor 12 Bit, R G / G B (0x02010100), 4704 x 3504, 16 MP. Sensorfamilie **Z4** (16 MP CCD · 12 Bit RGGB · DIGIC 4).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte bis 32 GB (FAT32).
@@ -13,7 +13,6 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 - Weißabgleich und Looks sind noch Werte der IXUS 60.
 - Propset 4: Das Weißabgleich-Menü von EXCCD bleibt aus (Canon zählt dort anders oder es ist nicht verifiziert).
 - 1.00c nutzt in CHDK den Code von 1.00a.
-- Installer und Webseite kennen bisher nur 1.00d (Aufgabe „mehrere-firmwares“).
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 

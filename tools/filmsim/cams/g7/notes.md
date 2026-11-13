@@ -3,7 +3,7 @@
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Angelegt mit `tools/filmsim/add_camera.py`,
 am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00e, 1.00g, 1.00i, 1.00j. EXCCD baut für **1.00j**.
+- Firmware in CHDK: 1.00e, 1.00g, 1.00i, 1.00j. EXCCD baut für **1.00j, 1.00e, 1.00g, 1.00i**.
 - DIGIC III, VxWorks, propset 1
 - Sensor 10 Bit, R G / G B (0x02010100), 3736 x 2772, 10 MP. Sensorfamilie **L3** (10 MP CCD · 10 Bit RGGB · DIGIC III).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
@@ -11,7 +11,6 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.
 - `FILMSIM_DIAG` ist für den Test an (Options → System → Debug zeigt Propcases).
 - Weißabgleich und Looks sind noch Werte der IXUS 60.
-- Installer und Webseite kennen bisher nur 1.00j (Aufgabe „mehrere-firmwares“).
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 

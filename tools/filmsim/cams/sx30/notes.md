@@ -3,7 +3,7 @@
 Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Angelegt mit `tools/filmsim/add_camera.py`,
 am PC gebaut, Kameratest siehe `kameratest.md`.
 
-- Firmware in CHDK: 1.00e, 1.00h, 1.00l, 1.00m, 1.00n, 1.00p. EXCCD baut für **1.00p**.
+- Firmware in CHDK: 1.00e, 1.00h, 1.00l, 1.00m, 1.00n, 1.00p. EXCCD baut für **1.00p, 1.00e, 1.00h, 1.00l, 1.00m, 1.00n**.
 - DIGIC 4, DryOS R45, propset 4
 - Sensor 12 Bit, G B / R G (0x01000201), 4464 x 3276, 15 MP. Sensorfamilie **R4** (14 MP CCD · 12 Bit GBRG · DIGIC 4).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
@@ -13,7 +13,6 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 - Weißabgleich und Looks sind noch Werte der IXUS 60.
 - Propset 4: Das Weißabgleich-Menü von EXCCD bleibt aus (Canon zählt dort anders oder es ist nicht verifiziert).
 - 1.00m nutzt in CHDK den Code von 1.00l.
-- Installer und Webseite kennen bisher nur 1.00p (Aufgabe „mehrere-firmwares“).
 
 ## Ungeprüft (nur auf der Kamera zu klären)
 
