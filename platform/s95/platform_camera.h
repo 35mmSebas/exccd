@@ -115,7 +115,7 @@
 
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
-    // DIGIC 4, DryOS R45, propset 4, 12 Bit R G / G B, 3744 x 2784 (10 MP, 1/1,7"): Sensorfamilie E (S90/S95/G11/G12).
+    // DIGIC 4, DryOS R45, propset 4, 12 Bit R G / G B, 3744 x 2784 (10 MP, 1/1,7"): Sensorfamilie E4 (S90/S95/G11/G12).
     // Propset 4: Canon-Weissabgleich-Menue von EXCCD bleibt aus (andere Zaehlung, nicht verifiziert).
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
     // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.

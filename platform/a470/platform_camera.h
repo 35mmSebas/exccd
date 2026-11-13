@@ -87,7 +87,7 @@
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
     // DIGIC III, DryOS R23, propset 2, 10 Bit R G / G B, 3152 x 2346 (7 MP)
-    // Eigene Sensorfamilie (noch kein anderer Port mit diesen Werten)
+    // Sensorfamilie X3 (7 MP CCD, 10 Bit RGGB, DIGIC III)
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
     // Weissabgleich: Werte der IXUS 60 (Standard), nach dem Test aus einer DNG messen.
     #define FILMSIM_DIAG                1

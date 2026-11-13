@@ -5,7 +5,7 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 
 - Firmware in CHDK: 1.00b, 1.00c. EXCCD baut für **1.00c**.
 - DIGIC III, DryOS R23, propset 2
-- Sensor 10 Bit, G B / R G (0x01000201), 3336 x 2480, 8 MP. Sensorfamilie D (wie A590/A720).
+- Sensor 10 Bit, G B / R G (0x01000201), 3336 x 2480, 8 MP. Sensorfamilie **D3** (8 MP CCD · 10 Bit GBRG · DIGIC III).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - ALT-Taste: Print (CHDK-Voreinstellung). Menü-Cursor weiß/schwarz.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.

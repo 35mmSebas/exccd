@@ -5,7 +5,7 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 
 - Firmware in CHDK: 1.00d, 1.00e, 1.00f. EXCCD baut für **1.00f**.
 - DIGIC III, DryOS R43, propset 3
-- Sensor 12 Bit, R G / G B (0x02010100), 3720 x 2772, 10 MP. Sensorfamilie B (wie SX110).
+- Sensor 12 Bit, R G / G B (0x02010100), 3720 x 2772, 10 MP. Sensorfamilie **B3** (10 MP CCD · 12 Bit RGGB · DIGIC III).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - ALT-Taste: Print (CHDK-Voreinstellung). Menü-Cursor weiß/schwarz.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.

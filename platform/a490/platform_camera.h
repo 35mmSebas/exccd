@@ -106,7 +106,7 @@
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
     // DIGIC III, DryOS R43, propset 3, 12 Bit R G / G B, 3720 x 2772 (10 MP)
-    // Sensorfamilie B (wie SX110)
+    // Sensorfamilie B3 (10 MP CCD, 12 Bit RGGB, DIGIC III)
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
     // Weissabgleich vorerst von der Familie uebernommen.
     #define FILMSIM_WB_R                470

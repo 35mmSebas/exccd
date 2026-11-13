@@ -5,7 +5,7 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 
 - Firmware in CHDK: 1.00b. EXCCD baut für **1.00b**.
 - DIGIC II, VxWorks, propset 1
-- Sensor 10 Bit, G B / R G (0x01000201), 2392 x 1752, 4 MP. Sensorfamilie eigene (noch kein anderer Port mit diesen Werten).
+- Sensor 10 Bit, G B / R G (0x01000201), 2392 x 1752, 4 MP. Sensorfamilie **N2** (4 MP CCD · 10 Bit GBRG · DIGIC II).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - ALT-Taste: Print (CHDK-Voreinstellung). Menü-Cursor weiß/schwarz.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.

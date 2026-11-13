@@ -81,7 +81,7 @@
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
     // DIGIC II, VxWorks, propset 1, 10 Bit R G / G B, 2672 x 1968 (5 MP)
-    // Eigene Sensorfamilie (noch kein anderer Port mit diesen Werten)
+    // Sensorfamilie H2 (5 MP CCD, 10 Bit RGGB, DIGIC II)
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
     // Weissabgleich: Werte der IXUS 60 (Standard), nach dem Test aus einer DNG messen.
     #define FILMSIM_DIAG                1

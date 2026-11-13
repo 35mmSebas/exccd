@@ -12,7 +12,7 @@ an der Kamera eines Freundes, siehe `kameratest.md`.
   der WB-Modus zählt wie bei 1/2/3/6.
 - Kein `PS.FI2`: Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). FAT32 geht (R47+).
 - Sensor 12 Bit, G B / R G (`cam_CFAPattern` 0x01000201), 4704 x 3504, 16 MP: gleiche Werte wie
-  IXUS 132/145, also vermutlich derselbe Sensor (Sensorfamilie C). Der 12-Bit-Code gilt unverändert.
+  IXUS 132/145, also vermutlich derselbe Sensor (Sensorfamilie C4). Der 12-Bit-Code gilt unverändert.
 - Bildschirm 720 breit mit Seitenkorrektur, CHDK-Farben in die Palette geladen (`CAM_LOAD_CUSTOM_COLORS`).
 - ALT-Taste: Hilfe [?] (EXCCD stellt sie nach vorn), Wiedergabe als Alternative im CHDK-Menü.
   Kein DISP, keine Löschtaste, kein manueller Fokus, keine Blende (nur ND-Filter).

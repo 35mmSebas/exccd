@@ -92,7 +92,7 @@
 
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
-    // DIGIC III, DryOS R31, 12 Bit R G / G B, 3720 x 2772 wie SX110: Sensorfamilie B.
+    // DIGIC III, DryOS R31, 12 Bit R G / G B, 3720 x 2772 wie SX110: Sensorfamilie B3.
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
     // Weissabgleich vorerst von der SX110 (gleiche RAW-Groesse, gemessen an weissem Papier).
     #define FILMSIM_WB_R                470

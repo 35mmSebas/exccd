@@ -80,7 +80,7 @@
 
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
-    // DIGIC III, DryOS R23, 12 Bit R G / G B, 3720 x 2772 wie die SX110: Sensorfamilie B.
+    // DIGIC III, DryOS R23, 12 Bit R G / G B, 3720 x 2772 wie die SX110: Sensorfamilie B3.
     // Weissabgleich vorerst von der SX110 (gemessen), Laschen fehlen (Palette).
     #define FILMSIM_WB_R                470
     #define FILMSIM_WB_B                441

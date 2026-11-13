@@ -5,7 +5,7 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 
 - Firmware in CHDK: 1.00c. EXCCD baut für **1.00c**.
 - DIGIC 4, DryOS R43, propset 3
-- Sensor 12 Bit, R G / G B (0x02010100), 4416 x 3296, 15 MP. Sensorfamilie eigene (noch kein anderer Port mit diesen Werten).
+- Sensor 12 Bit, R G / G B (0x02010100), 4416 x 3296, 15 MP. Sensorfamilie **J4** (14 MP CCD · 12 Bit RGGB · DIGIC 4).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - ALT-Taste: Video (CHDK-Voreinstellung). Menü-Cursor weiß/schwarz.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.

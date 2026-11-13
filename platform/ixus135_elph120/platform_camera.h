@@ -152,7 +152,7 @@
 
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
-    // Gleiche Firmware wie die IXUS 132 (plus WLAN), Sensor 12 Bit G B / R G, 4704 x 3504, Sensorfamilie C.
+    // Gleiche Firmware wie die IXUS 132 (plus WLAN), Sensor 12 Bit G B / R G, 4704 x 3504, Sensorfamilie C4.
     // Noch keine Laschen (Palette fehlt) und kein eigener Weissabgleich:
     // Textkarten in CHDK-Farben.
     // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.

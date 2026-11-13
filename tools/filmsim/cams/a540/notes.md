@@ -5,7 +5,7 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 
 - Firmware in CHDK: 1.00b. EXCCD baut für **1.00b**.
 - DIGIC II, VxWorks, propset 1
-- Sensor 10 Bit, R G / G B (0x02010100), 2888 x 2136, 6 MP. Sensorfamilie A (wie IXUS 60).
+- Sensor 10 Bit, R G / G B (0x02010100), 2888 x 2136, 6 MP. Sensorfamilie **A2** (6 MP CCD · 10 Bit RGGB · DIGIC II).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - ALT-Taste: Print (CHDK-Voreinstellung). Menü-Cursor weiß/schwarz.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.

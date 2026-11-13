@@ -97,7 +97,7 @@
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
     // DIGIC III, DryOS R43, propset 3, 12 Bit R G / G B, 4080 x 3048 (12 MP)
-    // Eigene Sensorfamilie (noch kein anderer Port mit diesen Werten)
+    // Sensorfamilie G3 (12 MP CCD, 12 Bit RGGB, DIGIC III)
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
     // Weissabgleich: Werte der IXUS 60 (Standard), nach dem Test aus einer DNG messen.
     // Propset 3 kennt in CHDK keine My-Colors-Propcases: Looks nur ueber Kurven und Rohdaten.

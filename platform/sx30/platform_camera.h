@@ -145,7 +145,7 @@
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
     // DIGIC 4, DryOS R45, propset 4, 12 Bit G B / R G, 4464 x 3276 (15 MP)
-    // Eigene Sensorfamilie (noch kein anderer Port mit diesen Werten)
+    // Sensorfamilie R4 (14 MP CCD, 12 Bit GBRG, DIGIC 4)
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
     // Weissabgleich: Werte der IXUS 60 (Standard), nach dem Test aus einer DNG messen.
     #define FILMSIM_DIAG                1

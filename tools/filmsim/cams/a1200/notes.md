@@ -5,7 +5,7 @@ am PC gebaut, Kameratest siehe `kameratest.md`.
 
 - Firmware in CHDK: 1.00b, 1.00a, 1.00c. EXCCD baut für **1.00c**.
 - DIGIC 4, DryOS R47, propset 4
-- Sensor 12 Bit, G B / R G (0x01000201), 4104 x 3048, 13 MP. Sensorfamilie eigene (noch kein anderer Port mit diesen Werten).
+- Sensor 12 Bit, G B / R G (0x01000201), 4104 x 3048, 13 MP. Sensorfamilie **I4** (12 MP CCD · 12 Bit GBRG · DIGIC 4).
 - Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte bis 32 GB (FAT32).
 - ALT-Taste: Playback (CHDK-Voreinstellung). Menü-Cursor weiß/schwarz.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.

@@ -4,7 +4,7 @@ Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, K
 
 - Firmware in CHDK: 1.01b, 1.00e. EXCCD baut für **1.01b** (eine Version je Kamera, siehe Aufgabe „mehrere-firmwares“).
 - DryOS R23, DIGIC III, propset 2
-- Sensor 10 Bit, G B / R G (0x01000201), 3336 x 2480, 8 MP. Sensorfamilie D (wie A720).
+- Sensor 10 Bit, G B / R G (0x01000201), 3336 x 2480, 8 MP. Sensorfamilie **D3** (8 MP CCD · 10 Bit GBRG · DIGIC III).
 - Kein `PS.FI2`: Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch.
 - ALT-Taste: Print-Taste. Menü-Cursor weiß/schwarz wie bei den anderen EXCCD-Kameras.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.

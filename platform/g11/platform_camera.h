@@ -114,7 +114,7 @@
 
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
-    // DIGIC 4, DryOS R39, propset 3, 12 Bit R G / G B, 3744 x 2784 (10 MP, 1/1,7"): Sensorfamilie E (S90/S95/G11/G12).
+    // DIGIC 4, DryOS R39, propset 3, 12 Bit R G / G B, 3744 x 2784 (10 MP, 1/1,7"): Sensorfamilie E4 (S90/S95/G11/G12).
     // Propset 3 kennt in CHDK keine My-Colors-Propcases: Looks nur ueber Kurven und Rohdaten
     // (FS_NO_MYCOLORS in core/filmsim.c), S/W-Looks bleiben farbig. Nummern auf der Kamera suchen (FILMSIM_DIAG).
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.

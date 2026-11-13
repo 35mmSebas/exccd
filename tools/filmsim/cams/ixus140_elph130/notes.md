@@ -4,7 +4,7 @@ Status: test (seit v1.10.2, noch nie auf einer Kamera gelaufen). Am PC gebaut, K
 
 - Firmware in CHDK: 1.00a, 1.00b. EXCCD baut für **1.00a** (eine Version je Kamera, siehe Aufgabe „mehrere-firmwares“).
 - DryOS R52, DIGIC 4, propset 6
-- Sensor 12 Bit, G B / R G (0x01000201), 4704 x 3504, 16 MP. Sensorfamilie C (wie IXUS 132/145).
+- Sensor 12 Bit, G B / R G (0x01000201), 4704 x 3504, 16 MP. Sensorfamilie **C4** (16 MP CCD · 12 Bit GBRG · DIGIC 4).
 - Kein `PS.FI2`: Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). SD-Karte bis 32 GB (FAT32).
 - ALT-Taste: Video-Taste (rot). Menü-Cursor weiß/schwarz wie bei den anderen EXCCD-Kameras.
 - Noch keine Laschen (Palette fehlt): Filmauswahl zeigt Textkarten.

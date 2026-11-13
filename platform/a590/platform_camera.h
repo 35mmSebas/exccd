@@ -86,7 +86,7 @@
 
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
-    // DIGIC III, DryOS R23, 10 Bit G B / R G, 3336 x 2480 (8 MP), Sensorfamilie D (wie A720).
+    // DIGIC III, DryOS R23, 10 Bit G B / R G, 3336 x 2480 (8 MP), Sensorfamilie D3 (wie A720).
     // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
     // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.
     #define FILMSIM_DIAG                1

@@ -88,7 +88,7 @@
 
 //--------------------------------------------------
 // EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
-    // Zwilling der IXUS 60 (gleiche Generation, 2888 x 2136, 10 Bit, R G / G B), Sensorfamilie A.
+    // Zwilling der IXUS 60 (gleiche Generation, 2888 x 2136, 10 Bit, R G / G B), Sensorfamilie A2.
     // Annahme (ungeprueft): gleiche Canon-Palette wie die IXUS 60, deshalb deren Laschen und Farben
     // (platform_palette.c wie bei der IXUS 60 angepasst). Falsche Farben in der Filmauswahl -> PALREC.BIN.
     #define FILMSIM_LABELS              1
