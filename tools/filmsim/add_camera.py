@@ -103,7 +103,7 @@ def facts(p, sub):
     mp = round(w * h / 1e6)
     return dict(p=p, sub=sub, fws=fws, hdr=hdr, bits=bits, cfa=cfa, w=w, h=h, mp=mp, propset=propset,
                 alt=(names.group(1) if names else "Print"), fam=fam, os=osver, digic=digic,
-                fat32="CAM_DRYOS_2_3_R47" in hdr, cursor_red=bool(RED_RE.search(hdr)))
+                fat32="CAM_DRYOS_2_3_R47" in hdr, firm_update=(os_ == "vxworks"), cursor_red=bool(RED_RE.search(hdr)))
 
 
 def block(c):
@@ -149,14 +149,16 @@ def patch_tables(c, short, name):
 
     core = read("tools/installer/core.c")
     end = core.index("};\nconst int camera_count")
-    row = '    { %-18s %-36s %d, 0, "%s", "%s" },\n' % ('"%s",' % c["p"], '"%s",' % short, c["fat32"],
-                                                       fmt(c["sub"]), " ".join(fws))
+    # VxWorks-Kameras bekommen von CHDK immer PS.FIR (Start per MENU -> Firm Update)
+    row = '    { %-18s %-36s %d, %d, "%s", "%s" },\n' % ('"%s",' % c["p"], '"%s",' % short, c["fat32"],
+                                                       c["firm_update"], fmt(c["sub"]), " ".join(fws))
     write("tools/installer/core.c", core[:end] + row + core[end:])
 
     site = read("tools/site/build_site.py")
     end = site.index("\n}\n", site.index("CAMERA_META = {")) + 1
-    row = '    "%s": {"name": "%s",\n        "other_firmware": %s, "boot": "%s", "firm_update": False},\n' % (
-        c["p"], name, "[" + ", ".join('"%s"' % o for o in other) + "]", "fat32" if c["fat32"] else "fat16")
+    row = '    "%s": {"name": "%s",\n        "other_firmware": %s, "boot": "%s", "firm_update": %s},\n' % (
+        c["p"], name, "[" + ", ".join('"%s"' % o for o in other) + "]", "fat32" if c["fat32"] else "fat16",
+        c["firm_update"])
     write("tools/site/build_site.py", site[:end] + row + site[end:])
 
     gi = read(".gitignore")

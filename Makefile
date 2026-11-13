@@ -132,7 +132,7 @@ fwprobe: platformcheck
 	$(MAKE) -C $(tools) dancingbits$(EXE)
 	$(MAKE) -C $(camfw) bin_compat.h
 	$(MAKE) -C $(loader) clean
-	$(MAKE) -C $(loader) EXCCD_FW_PROBE=1 main.bin
+	$(MAKE) -C $(loader) EXCCD_FW_PROBE=1 all
 	mkdir -p $(bin)
     ifdef NEED_ENCODED_DISKBOOT
 		$(ENCODE_DISKBOOT) $(loader)/main.bin $(bin)/FWPROBE-$(PLATFORM).BIN $(NEED_ENCODED_DISKBOOT)

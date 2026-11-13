@@ -33,10 +33,17 @@ for cam in $CAMERAS; do
         { tail -20 $log; echo "Fehler, ganzes Log: $log" >&2; exit 1; }
     cp bin/$p-$s-*-full.zip $out/exccd-$version-$p-$s-full.zip
     # Firmware-Pruefprogramm fuer den Installer (tools/installer/probes/)
-    make -s PLATFORM=$p PLATFORMSUB=$s fwprobe >>$log 2>&1 ||
-        { tail -20 $log; echo "Fehler beim fwprobe, ganzes Log: $log" >&2; exit 1; }
-    mkdir -p tools/installer/probes
-    cp bin/FWPROBE-$p.BIN tools/installer/probes/
+    # Ohne Pruefprogramm zeigt der Installer statt der Blink-Tabelle die vers.req-Anleitung,
+    # deshalb ist ein Fehler hier nur eine Warnung (manche CHDK-Loader bauen es nicht).
+    probe="tools/installer/probes/FWPROBE-$p.BIN"
+    if make -s PLATFORM=$p PLATFORMSUB=$s fwprobe >>$log 2>&1; then
+        mkdir -p tools/installer/probes
+        cp bin/FWPROBE-$p.BIN tools/installer/probes/
+    else
+        echo "    Warnung: fwprobe fuer $p nicht gebaut, siehe $log" >&2
+        probe="(kein Pruefprogramm)"
+        make -s -C loader clean >/dev/null 2>&1
+    fi
     make -s PLATFORM=$p PLATFORMSUB=$s clean >/dev/null
-    echo "    -> $out/exccd-$version-$p-$s-full.zip, tools/installer/probes/FWPROBE-$p.BIN"
+    echo "    -> $out/exccd-$version-$p-$s-full.zip, $probe"
 done

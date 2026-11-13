@@ -113,5 +113,4 @@ s80              101b  test    PowerShot S80
 sx170is          101a  test    PowerShot SX170 IS
 sx210is          100c  test    PowerShot SX210 IS
 sx410is          100c  test    PowerShot SX410 IS
-d30              100a  test    PowerShot D30
 tx1              101b  test    PowerShot TX1
