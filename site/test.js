@@ -106,6 +106,19 @@ function renderCameras() {
     box.append(opt(c.id, c.short ?? c.name.replace(/^Canon /, ""), meta, c === state.cam));
   }
   box.append(opt(OTHER, "Another Canon", ["Not supported yet, tell me anyway"], !state.cam));
+  // Suchfeld: Karten ausblenden, die nicht passen ("Another Canon" und die gewaehlte bleiben)
+  for (const [k, label] of [...box.querySelectorAll(".cam-opt")].entries()) {
+    const c = cams[k];
+    label.dataset.search = c ? `${c.name} ${c.short} ${c.id}`.toLowerCase() : "";
+  }
+  const search = $("t-cam-search");
+  search.addEventListener("input", () => {
+    const words = search.value.toLowerCase().split(" ").filter(Boolean);
+    for (const label of box.querySelectorAll(".cam-opt")) {
+      const t = label.dataset.search;
+      label.hidden = !!t && !label.querySelector("input").checked && !words.every((w) => t.includes(w));
+    }
+  });
   renderFirmware();
 }
 
@@ -121,7 +134,7 @@ function renderFirmware() {
   box.querySelectorAll(".seg-opt").forEach((n) => n.remove());
   box.hidden = !state.cam;
   if (!state.cam) { state.fw = ""; return; }
-  const opts = [state.cam.firmware, "Something else", "Don't know"];
+  const opts = [...state.cam.firmwares.map((f) => f.version), "Something else", "Don't know"];
   state.fw = "Don't know";
   for (const v of opts) {
     box.append(segOption("t-fw", v, v, v === state.fw, () => { state.fw = v; update(); }));

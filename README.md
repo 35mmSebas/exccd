@@ -163,16 +163,17 @@ card. EXCCD then adds one line per shot with the time of each step in ms; withou
 When a core change must not touch another camera, `tools/filmsim/compare_build.sh <git-ref> <platform>`
 builds both states with the same version and timestamp and compares `main.bin` and every object file.
 
-GitHub Actions builds every push, one job per camera in `tools/filmsim/cameras.txt`.
+GitHub Actions builds every push, one job per camera in `tools/filmsim/cameras.txt`; each job
+builds all firmware versions listed there for that camera (`tools/filmsim/build.sh`).
 A tag `vX.Y.Z` that matches `FILMSIM_VERSION` in `core/filmsim.h` creates a release with the
-ZIPs of the cameras marked `stabil` and publishes the download page on GitHub Pages.
-Cameras marked `test` are only build artifacts.
+ZIPs of the cameras marked `stabil` (only their first, tested firmware) and publishes the
+download page on GitHub Pages.
 
-The download page is static. `tools/site/build_site.py` splits the firmware ZIP into a base
-ZIP and one small ZIP per look; the browser copies the chosen entries into a new ZIP and adds
-a matching `FILMS.TXT`, without a build per download. It takes one firmware ZIP per camera
-and shows them in a camera menu; cameras marked `test` appear as beta. CI only passes the
-`stabil` ones. To try it locally:
+The download page is static. `tools/site/build_site.py` splits the firmware ZIPs into one base
+ZIP per firmware and one small ZIP per look; the browser copies the chosen entries into a new ZIP
+and adds a matching `FILMS.TXT`, without a build per download. It takes one ZIP per camera and
+firmware and shows all cameras with a search field; cameras marked `test` appear as beta, and
+the visitor picks the firmware version. To try it locally:
 
 ```sh
 python tools/site/build_site.py dist/v1.10.0/*.zip _site

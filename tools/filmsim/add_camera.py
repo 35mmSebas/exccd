@@ -15,8 +15,8 @@ einer anderen Version in camera_list.csv). Fuer jede Kamera:
 
 - platform/<p>/platform_camera.h: Menue-Cursor weiss/schwarz und EXCCD-Block
   (Sensorfamilie, Weissabgleich der Familie, FILMSIM_DIAG fuer den Test)
-- tools/filmsim/cameras.txt, tools/installer/core.c, tools/site/build_site.py,
-  .gitignore (PRIMARY.BIN-Platzhalter)
+- tools/filmsim/cameras.txt, tools/installer/core.c, tools/site/build_site.py
+  (alle Firmwares, die CHDK fuer die Kamera baut; die gewaehlte zuerst)
 - tools/filmsim/cams/<p>/notes.md und kameratest.md
 
 Alles, was sich nur an der Kamera pruefen laesst (Tasten, OSD, Palette, My Colors),
@@ -27,14 +27,9 @@ import os, re, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 VERSION_RE = re.compile(r'#define FILMSIM_VERSION "(.*)"')
 
-# Sensorfamilien: (Bit, Bayer, Breite, Hoehe) -> Name, Beschreibung, WB-Gains (R, B) oder None
-FAMILIES = {
-    (10, 0x02010100, 2888, 2136): ("A", "wie IXUS 60", None),
-    (12, 0x02010100, 3720, 2772): ("B", "wie SX110", (470, 441)),
-    (12, 0x01000201, 4704, 3504): ("C", "wie IXUS 132/145", None),
-    (10, 0x01000201, 3336, 2480): ("D", "wie A590/A720", None),
-    (12, 0x02010100, 3744, 2784): ("E", "wie S90/S95/G11/G12", None),
-}
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import families  # noqa: E402  Sensorfamilien (Kennung, Name, WB-Gains)
+
 CFA_NAME = {0x02010100: "R G / G B", 0x01000201: "G B / R G"}
 
 WHITE = ("    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken\n"
@@ -96,12 +91,15 @@ def facts(p, sub):
         sys.exit("%s: Bayer-Muster 0x%08x kann core/filmsim_raw.h nicht" % (p, cfa))
     propset = int(define(hdr, "CAM_PROPSET"))
     names = re.search(r"CAM_ALT_BUTTON_NAMES\s+\{\s*\"([^\"]+)\"", hdr)
-    fam = FAMILIES.get((bits, cfa, w, h))
+    fam = families.family(p)
+    # alle Firmwares, die CHDK baut: eigene Unterordner und Aliase (SOURCE_FIRMWARE), die gewaehlte zuerst
+    own = [s for s, src in fws if not src and os.path.isdir(os.path.join(ROOT, "platform", p, "sub", s))]
+    subs = [sub] + [s for s, src in fws if s != sub and (s in own or src in own)]
     os_ = info["OS"]
     osver = ("DryOS R%s" % info["OSVER"]) if os_ == "dryos" else "VxWorks"
     digic = {"20": "DIGIC II", "30": "DIGIC III", "40": "DIGIC 4", "41": "DIGIC 4+"}.get(info["DIGIC"], "DIGIC ?")
     mp = round(w * h / 1e6)
-    return dict(p=p, sub=sub, fws=fws, hdr=hdr, bits=bits, cfa=cfa, w=w, h=h, mp=mp, propset=propset,
+    return dict(p=p, sub=sub, subs=subs, fws=fws, hdr=hdr, bits=bits, cfa=cfa, w=w, h=h, mp=mp, propset=propset,
                 alt=(names.group(1) if names else "Print"), fam=fam, os=osver, digic=digic,
                 fat32="CAM_DRYOS_2_3_R47" in hdr, firm_update=(os_ == "vxworks"), cursor_red=bool(RED_RE.search(hdr)))
 
@@ -110,12 +108,12 @@ def block(c):
     sensor = "%d Bit %s, %d x %d (%d MP)" % (c["bits"], CFA_NAME[c["cfa"]], c["w"], c["h"], c["mp"])
     lines = ["// %s, %s, propset %d, %s" % (c["digic"], c["os"], c["propset"], sensor)]
     if c["fam"]:
-        lines.append("// Sensorfamilie %s (%s)" % c["fam"][:2])
+        lines.append("// Sensorfamilie %s (%s)" % (c["fam"]["id"], c["fam"]["name"].replace(" · ", ", ")))
     else:
-        lines.append("// Eigene Sensorfamilie (noch kein anderer Port mit diesen Werten)")
+        lines.append("// Eigene Sensorfamilie (neu, in tools/filmsim/families.py eintragen)")
     lines.append("// Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.")
-    if c["fam"] and c["fam"][2]:
-        r, b = c["fam"][2]
+    if c["fam"] and c["fam"]["wb"]:
+        r, b = c["fam"]["wb"]
         lines += ["// Weissabgleich vorerst von der Familie uebernommen.",
                   "#define FILMSIM_WB_R                %d" % r,
                   "#define FILMSIM_WB_B                %d" % b]
@@ -140,46 +138,40 @@ def patch_header(c):
 
 def patch_tables(c, short, name):
     fws = [fmt(s) for s, _ in c["fws"]]
-    other = [f for f in fws if f != fmt(c["sub"])]
+    built = [fmt(s) for s in c["subs"]]
 
     ct = read("tools/filmsim/cameras.txt")
     if re.search(r"^%s\s" % re.escape(c["p"]), ct, re.M):
         sys.exit("%s steht schon in cameras.txt" % c["p"])
-    write("tools/filmsim/cameras.txt", ct.rstrip("\n") + "\n%-16s %s  test    %s\n" % (c["p"], c["sub"], short))
+    write("tools/filmsim/cameras.txt", ct.rstrip("\n") + "\n%-17s%-30s%-8s%s\n" % (c["p"], ",".join(c["subs"]), "test", short))
 
     core = read("tools/installer/core.c")
     end = core.index("};\nconst int camera_count")
     # VxWorks-Kameras bekommen von CHDK immer PS.FIR (Start per MENU -> Firm Update)
     row = '    { %-18s %-36s %d, %d, "%s", "%s" },\n' % ('"%s",' % c["p"], '"%s",' % short, c["fat32"],
-                                                       c["firm_update"], fmt(c["sub"]), " ".join(fws))
+                                                       c["firm_update"], " ".join(built), " ".join(fws))
     write("tools/installer/core.c", core[:end] + row + core[end:])
 
     site = read("tools/site/build_site.py")
     end = site.index("\n}\n", site.index("CAMERA_META = {")) + 1
-    row = '    "%s": {"name": "%s",\n        "other_firmware": %s, "boot": "%s", "firm_update": %s},\n' % (
-        c["p"], name, "[" + ", ".join('"%s"' % o for o in other) + "]", "fat32" if c["fat32"] else "fat16",
-        c["firm_update"])
+    row = '    "%s": {"name": "%s", "boot": "%s", "firm_update": %s},\n' % (
+        c["p"], name, "fat32" if c["fat32"] else "fat16", c["firm_update"])
     write("tools/site/build_site.py", site[:end] + row + site[end:])
-
-    gi = read(".gitignore")
-    line = "platform/%s/sub/%s/PRIMARY.BIN\n" % (c["p"], c["sub"])
-    if line not in gi:
-        anchor = [l for l in gi.splitlines(True) if l.endswith("/PRIMARY.BIN\n")][-1]
-        i = gi.rindex(anchor) + len(anchor)
-        write(".gitignore", gi[:i] + line + gi[i:])
+    # PRIMARY.BIN-Platzhalter legt tools/filmsim/build.sh an (.gitignore: platform/*/sub/*/PRIMARY.BIN)
 
 
 def docs(c, short):
     version = VERSION_RE.search(read("core/filmsim.h")).group(1)
     fws = [fmt(s) for s, _ in c["fws"]]
     copies = ["%s nutzt in CHDK den Code von %s" % (fmt(s), fmt(src)) for s, src in c["fws"] if src]
-    other = [f for f in fws if f != fmt(c["sub"])]
+    built = [fmt(s) for s in c["subs"]]
+    other = [f for f in fws if f not in built]
     card = ("SD-Karte bis 32 GB (FAT32)" if c["fat32"] else
             "SD-Karte **bis 2 GB** (FAT16) – größere Karten startet diese Kamera nicht automatisch")
     sensor = "%d Bit, %s (0x%08x), %d x %d, %d MP" % (c["bits"], CFA_NAME[c["cfa"]], c["cfa"], c["w"], c["h"], c["mp"])
-    fam = ("%s (%s)" % c["fam"][:2]) if c["fam"] else "eigene (noch kein anderer Port mit diesen Werten)"
+    fam = ("**%s** (%s)" % (c["fam"]["id"], c["fam"]["name"])) if c["fam"] else "neu"
     extra = []
-    if c["fam"] and c["fam"][2]:
+    if c["fam"] and c["fam"]["wb"]:
         extra.append("Weißabgleich vorerst von der Sensorfamilie übernommen.")
     else:
         extra.append("Weißabgleich und Looks sind noch Werte der IXUS 60.")
@@ -191,14 +183,14 @@ def docs(c, short):
     if copies:
         extra.append("; ".join(copies) + ".")
     if other:
-        extra.append("Installer und Webseite kennen bisher nur %s (Aufgabe „mehrere-firmwares“)." % fmt(c["sub"]))
+        extra.append("%s kennt CHDK, baut sie aber nicht." % ", ".join(other))
     d = os.path.join(ROOT, "tools", "filmsim", "cams", c["p"])
     os.makedirs(d, exist_ok=True)
     notes = (
         "# %s\n\n" % short +
         "Status: test (seit %s, noch nie auf einer Kamera gelaufen). Angelegt mit `tools/filmsim/add_camera.py`,\n" % version +
         "am PC gebaut, Kameratest siehe `kameratest.md`.\n\n" +
-        "- Firmware in CHDK: %s. EXCCD baut für **%s**.\n" % (", ".join(fws), fmt(c["sub"])) +
+        "- Firmware in CHDK: %s. EXCCD baut für **%s**.\n" % (", ".join(fws), ", ".join(built)) +
         "- %s, %s, propset %d\n" % (c["digic"], c["os"], c["propset"]) +
         "- Sensor %s. Sensorfamilie %s.\n" % (sensor, fam) +
         "- Start nur per Autoboot (bootfähige Karte, Schreibschutz auf LOCK). %s.\n" % card +
@@ -217,7 +209,7 @@ def docs(c, short):
         "- [ ] `PALREC.BIN` hier ablegen, Laschen bauen, `FILMSIM_LABELS` und `FILMSIM_COLOR_*` setzen\n"
         "- [ ] Weißabgleich aus einer DNG von weißem Papier: `FILMSIM_WB_R/_B`\n"
         "- [ ] `FILMSIM_DIAG` wieder aus, bevor die Kamera `stabil` wird\n")
-    other_txt = (" (%s kennt CHDK auch, EXCCD baut sie noch nicht – bitte trotzdem melden.)" % ", ".join(other)) if other else ""
+    other_txt = (" (%s kennt CHDK auch, EXCCD baut sie nicht – bitte trotzdem melden.)" % ", ".join(other)) if other else ""
     mycolors = ("- [ ] **My Colors suchen:** Options → *System* → *Debug* öffnen, im Canon-FUNC-Menü My Colors zwischen Aus "
                 "und Custom Color umschalten. Display-Foto von der Debug-Seite vorher und nachher.\n"
                 if c["propset"] in (3, 13) else
@@ -231,8 +223,9 @@ def docs(c, short):
         "## Vorbereiten\n\n" +
         "- [ ] %s.\n" % card +
         "- [ ] Mit dem EXCCD-Installer zuerst **Firmware prüfen**: Die Kamera blinkt die Version, der Installer zeigt die Tabelle.\n"
-        "      Unterstützt wird **%s**.%s\n" % (fmt(c["sub"]), other_txt) +
-        "- [ ] Mit dem Installer die Karte für „%s“ schreiben, Schreibschutz-Schieber auf **LOCK**.\n" % short +
+        "      Unterstützt wird **%s**.%s\n" % (", ".join(built), other_txt) +
+        "- [ ] Auf der Webseite die Looks für genau diese Firmware laden, mit dem Installer die Karte für „%s“\n"
+        "      schreiben, Schreibschutz-Schieber auf **LOCK**.\n" % short +
         "- [ ] Leere Datei `CHDK/FILMTIME.CSV` anlegen (misst die Rechenzeit).\n\n"
         "## Muss\n\n"
         "- [ ] **Start:** Kamera startet mit EXCCD. Richtig ist: oben rechts Batterie + Prozent, unten der Filmname.\n" +
@@ -265,7 +258,7 @@ def main():
         patch_header(c)
         patch_tables(c, short, name)
         docs(c, short)
-        print("%-16s %s  %s  Familie %s" % (p, c["sub"], short, c["fam"][0] if c["fam"] else "neu"))
+        print("%-16s %s  %s  Familie %s" % (p, ",".join(c["subs"]), short, c["fam"]["id"] if c["fam"] else "neu"))
 
 
 if __name__ == "__main__":

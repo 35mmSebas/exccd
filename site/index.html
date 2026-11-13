@@ -440,6 +440,11 @@
       <section class="step" id="camera-step">
         <header class="step-head"><span class="num">01</span><h2>Camera</h2></header>
         <div class="camera">
+          <div class="cam-find">
+            <input type="search" id="cam-search" placeholder="Search your model, e.g. IXUS 132, A2400 or SD600"
+              aria-label="Search your camera model" autocomplete="off">
+            <span class="muted" id="cam-count" role="status"></span>
+          </div>
           <fieldset class="cams" id="cams">
             <legend>Which camera do you have?</legend>
           </fieldset>
@@ -521,7 +526,8 @@
         <ol class="install">
           <li><h3>Check the firmware</h3>
             <p>EXCCD has to know where things sit inside the camera's software, and that's different for every
-              firmware version. So it only runs on firmware <b class="cam-fw"></b> of this camera. Not sure which one you have?
+              firmware version. So it only runs on firmware <b class="cam-fw"></b> of this camera, and each version has
+              its own download. Not sure which one you have?
               The installer can check it (<i>Check firmware…</i>), or see
               <a href="#camera-step">how to find it by hand</a>.</p></li>
           <li><h3>Download your looks</h3>
@@ -678,6 +684,10 @@
 
       <section class="step" id="test-camera">
         <header class="step-head"><span class="num">01</span><h2>Your camera</h2></header>
+        <div class="cam-find">
+          <input type="search" id="t-cam-search" placeholder="Search your model, e.g. IXUS 132, A2400 or SD600"
+            aria-label="Search your camera model" autocomplete="off">
+        </div>
         <fieldset class="cams" id="t-cams">
           <legend>Which camera do you have?</legend>
         </fieldset>

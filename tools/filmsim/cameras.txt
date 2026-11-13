@@ -1,116 +1,120 @@
 # Kameras, fuer die EXCCD gebaut wird. Einzige Liste fuer build.sh, CI und Webseite.
 #
-# plattform        sub   status  name
+# plattform       firmwares (sub)               status  name
+#   firmwares: alle Versionen, fuer die EXCCD gebaut wird, mit Komma getrennt, ohne Leerzeichen.
+#              Die erste ist die Hauptversion: bei "stabil" die auf der Kamera getestete.
+#              Aliase aus camera_list.csv (SOURCE_FIRMWARE) sind Kopien ihrer Quelle.
 #   status: stabil = auf der Kamera getestet, kommt ins Release und auf die Webseite
+#                    (Release und "stabil" gelten nur fuer die erste Firmware, die anderen sind Beta)
 #           test   = wird gebaut, steht auf der Webseite als Beta (fuer die Testseite), nicht im Release
 # Pro Kamera: platform/<plattform>/platform_camera.h (Block "EXCCD")
 #             und tools/filmsim/cams/<plattform>/ (Palette, Laschen, Notizen, Kameratest)
-ixus60_sd600     100d  stabil  IXUS 60 / PowerShot SD600
-ixus145_elph135  100c  test    IXUS 145 / PowerShot ELPH 135
-ixus132_elph115  100b  test    IXUS 132 / PowerShot ELPH 115 IS
-sx110is          100b  test    PowerShot SX110 IS
-a2400            100e  test    PowerShot A2400 IS
-ixus65_sd630     100a  test    IXUS 65 / PowerShot SD630
-ixus135_elph120  100b  test    IXUS 135 / PowerShot ELPH 120 IS
-ixus140_elph130  100a  test    IXUS 140 / PowerShot ELPH 130 IS
-ixus150_elph140  100c  test    IXUS 150 / PowerShot ELPH 140 IS
-ixus70_sd1000    102a  test    IXUS 70 / PowerShot SD1000
-ixus75_sd750     102a  test    IXUS 75 / PowerShot SD750
-ixus85_sd770     100a  test    IXUS 85 IS / PowerShot SD770 IS
-ixus90_sd790     100d  test    IXUS 90 IS / PowerShot SD790 IS
-a590             101b  test    PowerShot A590 IS
-a570             101a  test    PowerShot A570 IS
-a720             100c  test    PowerShot A720 IS
-a1000            100b  test    PowerShot A1000 IS
-a2000            100c  test    PowerShot A2000 IS
-a480             100b  test    PowerShot A480
-s95              100k  test    PowerShot S95
-g12              100g  test    PowerShot G12
-sx130is          101f  test    PowerShot SX130 IS
-g11              100l  test    PowerShot G11
-ixus80_sd1100    101a  test    IXUS 80 IS / PowerShot SD1100 IS
-ixus95_sd1200    100c  test    IXUS 95 IS / PowerShot SD1200 IS
-ixus100_sd780    100c  test    IXUS 100 IS / PowerShot SD780 IS
-ixus105_sd1300   100d  test    IXUS 105 / PowerShot SD1300 IS
-ixus120_sd940    103c  test    IXUS 120 IS / PowerShot SD940 IS
-ixus130_sd1400   100c  test    IXUS 130 / PowerShot SD1400 IS
-ixus200_sd980    101d  test    IXUS 200 IS / PowerShot SD980 IS
-ixus860_sd870    100c  test    IXUS 860 IS / PowerShot SD870 IS
-ixus870_sd880    102b  test    IXUS 870 IS / PowerShot SD880 IS
-ixus960_sd950    100d  test    IXUS 960 IS / PowerShot SD950 IS
-ixus970_sd890    100f  test    IXUS 970 IS / PowerShot SD890 IS
-ixus980_sd990    101b  test    IXUS 980 IS / PowerShot SD990 IS
-ixus950_sd850    100c  test    IXUS 950 IS / PowerShot SD850 IS
-ixus850_sd800    100e  test    IXUS 850 IS / PowerShot SD800 IS
-ixus900_sd900    100c  test    IXUS 900 Ti / PowerShot SD900
-ixus800_sd700    101b  test    IXUS 800 IS / PowerShot SD700 IS
-ixus55_sd450     100d  test    IXUS 55 / PowerShot SD450
-ixus750_sd550    100h  test    IXUS 750 / PowerShot SD550
-ixus700_sd500    101b  test    IXUS 700 / PowerShot SD500
-ixus50_sd400     101b  test    IXUS 50 / PowerShot SD400
-ixus160_elph160  100a  test    IXUS 160 / PowerShot ELPH 160
-ixus175_elph180  100c  test    IXUS 175 / PowerShot ELPH 180
-a460             100d  test    PowerShot A460
-a530             100a  test    PowerShot A530
-a540             100b  test    PowerShot A540
-a550             100c  test    PowerShot A550
-a560             100a  test    PowerShot A560
-a580             101b  test    PowerShot A580
-a610             100f  test    PowerShot A610
-a620             100f  test    PowerShot A620
-a630             100c  test    PowerShot A630
-a640             100b  test    PowerShot A640
-a650             100d  test    PowerShot A650 IS
-a700             100b  test    PowerShot A700
-a710             100a  test    PowerShot A710 IS
-a800             100c  test    PowerShot A800
-a810             100e  test    PowerShot A810
-a1100            100c  test    PowerShot A1100 IS
-a1200            100c  test    PowerShot A1200
-a1300            100e  test    PowerShot A1300
-a1400            100b  test    PowerShot A1400
-a2200            100d  test    PowerShot A2200
-a2300            100f  test    PowerShot A2300
-a2500            100a  test    PowerShot A2500
-a2600            100c  test    PowerShot A2600
-a3000            100d  test    PowerShot A3000 IS
-a3100            100d  test    PowerShot A3100 IS
-a3200            100d  test    PowerShot A3200 IS
-a3300            100d  test    PowerShot A3300 IS
-a3400            101b  test    PowerShot A3400 IS
-a4000            101b  test    PowerShot A4000 IS
-a490             100f  test    PowerShot A490
-a495             100f  test    PowerShot A495
-sx100is          100c  test    PowerShot SX100 IS
-sx10             103a  test    PowerShot SX10 IS
-sx20             102d  test    PowerShot SX20 IS
-sx30             100p  test    PowerShot SX30 IS
-sx120is          100b  test    PowerShot SX120 IS
-sx150is          100a  test    PowerShot SX150 IS
-sx160is          100a  test    PowerShot SX160 IS
-sx200is          100c  test    PowerShot SX200 IS
-sx400is          100b  test    PowerShot SX400 IS
-s3is             100a  test    PowerShot S3 IS
-s5is             101b  test    PowerShot S5 IS
-s90              101c  test    PowerShot S90
-g7               100j  test    PowerShot G7
-g9               100i  test    PowerShot G9
-g10              104a  test    PowerShot G10
-d10              100a  test    PowerShot D10
-a2100            100a  test    PowerShot A2100 IS
-a410             100f  test    PowerShot A410
-a420             100b  test    PowerShot A420
-a430             100b  test    PowerShot A430
-a450             100d  test    PowerShot A450
-a470             102c  test    PowerShot A470
-ixus110_sd960    101f  test    IXUS 110 IS / PowerShot SD960 IS
-ixus185_elph185  100a  test    IXUS 185 / PowerShot ELPH 185
-ixus30_sd200     100k  test    IXUS 30 / PowerShot SD200
-ixus40_sd300     100k  test    IXUS 40 / PowerShot SD300
-ixusizoom_sd30   100h  test    IXUS i zoom / PowerShot SD30
-s2is             100g  test    PowerShot S2 IS
-s80              101b  test    PowerShot S80
-sx170is          101a  test    PowerShot SX170 IS
-sx210is          100c  test    PowerShot SX210 IS
-sx410is          100c  test    PowerShot SX410 IS
-tx1              101b  test    PowerShot TX1
+ixus60_sd600     100d,100a                     stabil  IXUS 60 / PowerShot SD600
+ixus145_elph135  100c                          test    IXUS 145 / PowerShot ELPH 135
+ixus132_elph115  100b                          test    IXUS 132 / PowerShot ELPH 115 IS
+sx110is          100b                          test    PowerShot SX110 IS
+a2400            100e,100c,100d                test    PowerShot A2400 IS
+ixus65_sd630     100a                          test    IXUS 65 / PowerShot SD630
+ixus135_elph120  100b                          test    IXUS 135 / PowerShot ELPH 120 IS
+ixus140_elph130  100a,100b                     test    IXUS 140 / PowerShot ELPH 130 IS
+ixus150_elph140  100c                          test    IXUS 150 / PowerShot ELPH 140 IS
+ixus70_sd1000    102a,100c,101b,101a           test    IXUS 70 / PowerShot SD1000
+ixus75_sd750     102a,100b,101a,101b           test    IXUS 75 / PowerShot SD750
+ixus85_sd770     100a,100b                     test    IXUS 85 IS / PowerShot SD770 IS
+ixus90_sd790     100d,100c,100e                test    IXUS 90 IS / PowerShot SD790 IS
+a590             101b,100e                     test    PowerShot A590 IS
+a570             101a,100e                     test    PowerShot A570 IS
+a720             100c                          test    PowerShot A720 IS
+a1000            100b,100a                     test    PowerShot A1000 IS
+a2000            100c,100a,100b                test    PowerShot A2000 IS
+a480             100b                          test    PowerShot A480
+s95              100k,100e,100h,100i           test    PowerShot S95
+g12              100g,100c,100e,100f           test    PowerShot G12
+sx130is          101f,101c,101d                test    PowerShot SX130 IS
+g11              100l,100f,100j,100h,100k      test    PowerShot G11
+ixus80_sd1100    101a,100c,101b                test    IXUS 80 IS / PowerShot SD1100 IS
+ixus95_sd1200    100c,100b                     test    IXUS 95 IS / PowerShot SD1200 IS
+ixus100_sd780    100c,100b                     test    IXUS 100 IS / PowerShot SD780 IS
+ixus105_sd1300   100d,100b,100c                test    IXUS 105 / PowerShot SD1300 IS
+ixus120_sd940    103c,100e,101a,102c,103b      test    IXUS 120 IS / PowerShot SD940 IS
+ixus130_sd1400   100c,100a                     test    IXUS 130 / PowerShot SD1400 IS
+ixus200_sd980    101d,100c,101c                test    IXUS 200 IS / PowerShot SD980 IS
+ixus860_sd870    100c                          test    IXUS 860 IS / PowerShot SD870 IS
+ixus870_sd880    102b,100e,101a                test    IXUS 870 IS / PowerShot SD880 IS
+ixus960_sd950    100d,100c                     test    IXUS 960 IS / PowerShot SD950 IS
+ixus970_sd890    100f,100b,100c,100d           test    IXUS 970 IS / PowerShot SD890 IS
+ixus980_sd990    101b,100e                     test    IXUS 980 IS / PowerShot SD990 IS
+ixus950_sd850    100c                          test    IXUS 950 IS / PowerShot SD850 IS
+ixus850_sd800    100e,100d                     test    IXUS 850 IS / PowerShot SD800 IS
+ixus900_sd900    100c                          test    IXUS 900 Ti / PowerShot SD900
+ixus800_sd700    101b,100b,101a                test    IXUS 800 IS / PowerShot SD700 IS
+ixus55_sd450     100d,100b,100c                test    IXUS 55 / PowerShot SD450
+ixus750_sd550    100h,100f,100g                test    IXUS 750 / PowerShot SD550
+ixus700_sd500    101b,101a                     test    IXUS 700 / PowerShot SD500
+ixus50_sd400     101b,101a                     test    IXUS 50 / PowerShot SD400
+ixus160_elph160  100a,100b                     test    IXUS 160 / PowerShot ELPH 160
+ixus175_elph180  100c,100b,100a                test    IXUS 175 / PowerShot ELPH 180
+a460             100d                          test    PowerShot A460
+a530             100a                          test    PowerShot A530
+a540             100b                          test    PowerShot A540
+a550             100c                          test    PowerShot A550
+a560             100a                          test    PowerShot A560
+a580             101b,100c                     test    PowerShot A580
+a610             100f,100e,100d                test    PowerShot A610
+a620             100f                          test    PowerShot A620
+a630             100c                          test    PowerShot A630
+a640             100b                          test    PowerShot A640
+a650             100d                          test    PowerShot A650 IS
+a700             100b                          test    PowerShot A700
+a710             100a                          test    PowerShot A710 IS
+a800             100c,100b                     test    PowerShot A800
+a810             100e,100b,100d                test    PowerShot A810
+a1100            100c,100b                     test    PowerShot A1100 IS
+a1200            100c,100b,100a                test    PowerShot A1200
+a1300            100e,100b,100d                test    PowerShot A1300
+a1400            100b                          test    PowerShot A1400
+a2200            100d,100b,100c                test    PowerShot A2200
+a2300            100f,100c,100e                test    PowerShot A2300
+a2500            100a                          test    PowerShot A2500
+a2600            100c,100d                     test    PowerShot A2600
+a3000            100d,100b,100c                test    PowerShot A3000 IS
+a3100            100d,100a,100b                test    PowerShot A3100 IS
+a3200            100d,100a,100c                test    PowerShot A3200 IS
+a3300            100d,100a,100c                test    PowerShot A3300 IS
+a3400            101b,100f,101a                test    PowerShot A3400 IS
+a4000            101b,100c,101a,102a           test    PowerShot A4000 IS
+a490             100f,100d,100e                test    PowerShot A490
+a495             100f,100d,100e                test    PowerShot A495
+sx100is          100c,100b                     test    PowerShot SX100 IS
+sx10             103a,100c,101a,101b,102b      test    PowerShot SX10 IS
+sx20             102d,100f,102b,102c           test    PowerShot SX20 IS
+sx30             100p,100e,100h,100l,100m,100n test    PowerShot SX30 IS
+sx120is          100b                          test    PowerShot SX120 IS
+sx150is          100a                          test    PowerShot SX150 IS
+sx160is          100a                          test    PowerShot SX160 IS
+sx200is          100c,100d                     test    PowerShot SX200 IS
+sx400is          100b                          test    PowerShot SX400 IS
+s3is             100a                          test    PowerShot S3 IS
+s5is             101b,101a                     test    PowerShot S5 IS
+s90              101c,100c,101a,101b           test    PowerShot S90
+g7               100j,100e,100g,100i           test    PowerShot G7
+g9               100i,100d,100g,100f,100h      test    PowerShot G9
+g10              104a,102a,103b                test    PowerShot G10
+d10              100a,100b                     test    PowerShot D10
+a2100            100a                          test    PowerShot A2100 IS
+a410             100f,100e                     test    PowerShot A410
+a420             100b                          test    PowerShot A420
+a430             100b                          test    PowerShot A430
+a450             100d                          test    PowerShot A450
+a470             102c,100e,101b,101a           test    PowerShot A470
+ixus110_sd960    101f,100b,101d,101g           test    IXUS 110 IS / PowerShot SD960 IS
+ixus185_elph185  100a                          test    IXUS 185 / PowerShot ELPH 185
+ixus30_sd200     100k                          test    IXUS 30 / PowerShot SD200
+ixus40_sd300     100k,100j                     test    IXUS 40 / PowerShot SD300
+ixusizoom_sd30   100h,100g,100e,100f           test    IXUS i zoom / PowerShot SD30
+s2is             100g,100e,100f,100i           test    PowerShot S2 IS
+s80              101b,100g                     test    PowerShot S80
+sx170is          101a,100a                     test    PowerShot SX170 IS
+sx210is          100c                          test    PowerShot SX210 IS
+sx410is          100c,100b                     test    PowerShot SX410 IS
+tx1              101b,100g                     test    PowerShot TX1

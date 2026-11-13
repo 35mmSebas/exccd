@@ -77,7 +77,6 @@ jobs:
     env:
       VERSION: ${{ needs.setup.outputs.version }}
       PLATFORM: ${{ matrix.platform }}
-      PLATFORMSUB: ${{ matrix.sub }}
     steps:
       - uses: actions/checkout@v4
 
@@ -108,23 +107,22 @@ jobs:
       - name: Firmware bauen
         run: |
           arm-none-eabi-gcc --version | head -1
-          mkdir -p bin dist
-          make PLATFORM=$PLATFORM PLATFORMSUB=$PLATFORMSUB firzipsubcomplete
-          cp bin/$PLATFORM-$PLATFORMSUB-*-full.zip dist/exccd-$VERSION-$PLATFORM-$PLATFORMSUB-full.zip
-          unzip -l dist/*.zip | grep -E 'DISKBOOT.BIN|PS.FIR'
+          # alle Firmwares der Kamera (cameras.txt), Aliase als Kopie, dazu das Pruefprogramm
+          sh tools/filmsim/build.sh $PLATFORM
+          mv dist/$VERSION/*-full.zip dist/
+          for z in dist/*.zip; do echo "$z"; unzip -l "$z" | grep -E 'DISKBOOT.BIN|PS.FIR'; done
           # Firmware-Pruefprogramm fuer den Installer
-          make PLATFORM=$PLATFORM PLATFORMSUB=$PLATFORMSUB fwprobe
-          ls -l bin/FWPROBE-$PLATFORM.BIN
+          ls -l tools/installer/probes/FWPROBE-$PLATFORM.BIN
 
       - uses: actions/upload-artifact@v4
         with:
-          name: exccd-${{ env.VERSION }}-${{ env.PLATFORM }}-${{ env.PLATFORMSUB }}
+          name: exccd-${{ env.VERSION }}-${{ env.PLATFORM }}
           path: dist/*.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: fwprobe-${{ env.PLATFORM }}
-          path: bin/FWPROBE-${{ env.PLATFORM }}.BIN
+          path: tools/installer/probes/FWPROBE-${{ env.PLATFORM }}.BIN
 
   # SD-Karten-Installer fuer Windows (MinGW-Cross-Build, unsigniert)
   installer:
@@ -180,7 +178,8 @@ jobs:
       - name: Stabile Kameras auswaehlen
         run: |
           mkdir -p release
-          for cam in $(awk '!/^#/ && $3 == "stabil" { print $1 "-" $2 }' tools/filmsim/cameras.txt); do
+          # nur die erste Firmware ist auf der Kamera getestet (cameras.txt)
+          for cam in $(awk '!/^#/ && $3 == "stabil" { split($2, s, ","); print $1 "-" s[1] }' tools/filmsim/cameras.txt); do
             cp "dist/exccd-$VERSION-$cam-full.zip" release/
           done
           ls -l release
@@ -193,8 +192,7 @@ jobs:
           node tools/site/test_zipjoin.mjs _site "$RUNNER_TEMP/zipjoin"
           python3 tools/filmsim/make_curves.py "$RUNNER_TEMP/curves" > /dev/null
           node tools/site/test_curves.mjs _site "$RUNNER_TEMP/curves"
-          unzip -tq "$RUNNER_TEMP/zipjoin/exccd-all.zip"
-          unzip -tq "$RUNNER_TEMP/zipjoin/exccd-two.zip"
+          for z in "$RUNNER_TEMP"/zipjoin/*.zip; do unzip -tq "$z"; done
           "$RUNNER_TEMP/test_films_txt" "$RUNNER_TEMP/zipjoin/FILMS-all.TXT"
           tools/installer/test_core tools/filmsim/cameras.txt "$RUNNER_TEMP/installer-site" "$RUNNER_TEMP"/zipjoin/exccd-*.zip
           cp installer/exccd-installer.exe _site/

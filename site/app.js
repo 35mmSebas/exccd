@@ -14,7 +14,7 @@ const svg = (tag, attrs = {}) => {
 };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const state = { site: null, config: null, camera: null, firmwareOk: true, selected: new Set(), knownLooks: new Set() };
+const state = { site: null, config: null, camera: null, fw: null, firmwareOk: true, selected: new Set(), knownLooks: new Set() };
 
 // Spalten von FILMS.TXT (siehe CHDK/FILMS/EXAMPLE.TXT)
 const MODES = { 0: "Canon colours", 1: "Vivid", 2: "Neutral", 3: "Black & white", 4: "Sepia", 5: "Positive film", 11: "Custom colour" };
@@ -72,7 +72,24 @@ function initialCamera() {
   const cams = state.site.cameras;
   let want = new URLSearchParams(location.search).get("camera");
   try { want ??= localStorage.getItem(CAM_KEY); } catch { /* ohne Speicher */ }
+  // bis v1.10.2 hiess die Kamera "<plattform>-<sub>"
+  want = want?.replace(/-\d{3}[a-z]$/, "");
   return cams.find((c) => c.id === want) ?? cams[0];
+}
+
+const camLabel = (cam) => cam.name.replace(/^Canon /, "");
+
+// Suchfeld ueber der Kameraliste: "ixus 132", "a2400", "sd600" ...
+function filterCameras(query) {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  let shown = 0;
+  for (const opt of $("cams").querySelectorAll(".cam-opt")) {
+    const text = opt.dataset.search;
+    const hit = words.every((w) => text.includes(w)) || opt.querySelector("input").checked;
+    opt.hidden = !hit;
+    shown += hit;
+  }
+  $("cam-count").textContent = words.length ? `${shown} of ${state.site.cameras.length} cameras` : "";
 }
 
 function renderCameras() {
@@ -81,13 +98,19 @@ function renderCameras() {
     const input = el("input", { type: "radio", name: "camera", value: cam.id, checked: cam === state.camera });
     input.addEventListener("change", () => setCamera(cam));
     const beta = cam.status !== "stabil";
-    box.append(el("label", { className: "cam-opt" }, input,
+    const fws = cam.firmwares.map((f) => f.version);
+    const label = el("label", { className: "cam-opt" }, input,
       el("span", { className: "cam-opt-box" },
-        el("span", { className: "cam-opt-name", textContent: cam.name.replace(/^Canon /, "") }),
+        el("span", { className: "cam-opt-name", textContent: camLabel(cam) }),
         el("span", { className: "cam-opt-meta" },
-          `Firmware ${cam.firmware}`,
-          ...(beta ? [el("span", { className: "badge", textContent: "Beta" })] : [])))));
+          fws.length === 1 ? `Firmware ${fws[0]}` : `${fws.length} firmware versions`,
+          ...(cam.family ? [el("span", { textContent: `Family ${cam.family.id}`, title: cam.family.name })] : []),
+          ...(beta ? [el("span", { className: "badge", textContent: "Beta" })] : []))));
+    label.dataset.search = `${camLabel(cam)} ${cam.short} ${cam.id}`.toLowerCase();
+    box.append(label);
   }
+  const search = $("cam-search");
+  search.addEventListener("input", () => filterCameras(search.value));
 }
 
 function setCamera(cam) {
@@ -101,28 +124,44 @@ function setCamera(cam) {
   update();
 }
 
+// "1.00c, 1.00d or 1.00e"
+function fwList(cam) {
+  const v = cam.firmwares.map((f) => f.version);
+  return v.length === 1 ? v[0] : `${v.slice(0, -1).join(", ")} or ${v.at(-1)}`;
+}
+
+// Beta-Hinweis: Kamera im Test, oder stabile Kamera mit einer noch nicht getesteten Firmware
+function renderBeta() {
+  const cam = state.camera;
+  $("beta-note").hidden = cam.status === "stabil" && (!state.fw || state.fw.tested);
+}
+
 function renderCamera() {
   const cam = state.camera;
-  $("beta-note").hidden = cam.status === "stabil";
+  // Nur eine Firmware: gleich gewaehlt. Mehrere: erst waehlen, die Dateien sind je Version verschieden.
+  state.fw = cam.firmwares.length === 1 ? cam.firmwares[0] : null;
+  state.firmwareOk = !!state.fw;
+  renderBeta();
   $("ver-link").href = `data/${cam.id}/ver.req`;
   $("vers-link").href = `data/${cam.id}/vers.req`;
   $("fw-example").textContent = `Firmware Ver GM${cam.firmware.toUpperCase()}`;
-  $("fw-note").textContent = "";
-  state.firmwareOk = true;
+  $("fw-note").textContent = state.fw ? "" : "Pick your camera's firmware version, the download is different for each.";
   renderInstall();
 
   const fw = $("fw");
   fw.replaceChildren(fw.querySelector("legend"));
-  const options = [[cam.firmware, true], ...cam.other_firmware.map((v) => [v, false]), ["Other", false]];
-  for (const [v, ok] of options) {
-    const input = el("input", { type: "radio", name: "fw", value: v, checked: ok });
+  const options = [...cam.firmwares.map((f) => [f.version, f]), ...cam.other_firmware.map((v) => [v, null]), ["Other", null]];
+  for (const [v, f] of options) {
+    const input = el("input", { type: "radio", name: "fw", value: v, checked: !!f && f === state.fw });
     input.addEventListener("change", () => {
-      state.firmwareOk = ok;
-      $("fw-note").textContent = ok
+      state.fw = f;
+      state.firmwareOk = !!f;
+      renderBeta();
+      $("fw-note").textContent = f
         ? ""
         : v === "Other"
-          ? `EXCCD needs firmware ${cam.firmware}. Other versions won't work.`
-          : `Firmware ${v} isn't supported yet. Maybe later; for now EXCCD needs ${cam.firmware}.`;
+          ? `EXCCD needs firmware ${fwList(cam)}. Other versions won't work.`
+          : `Firmware ${v} isn't supported yet. Maybe later; for now EXCCD needs ${fwList(cam)}.`;
       update();
     });
     fw.append(el("label", { className: "seg-opt" }, input, el("span", { textContent: v })));
@@ -133,7 +172,7 @@ function renderCamera() {
 function renderInstall() {
   const cam = state.camera;
   for (const e of document.querySelectorAll(".cam-short")) e.textContent = cam.short;
-  for (const e of document.querySelectorAll(".cam-fw")) e.textContent = cam.firmware;
+  for (const e of document.querySelectorAll(".cam-fw")) e.textContent = fwList(cam);
   const fat16 = cam.boot === "fat16";
   $("card-need").textContent = fat16
     ? "an SD card of 2 GB or less (bigger cards won't start EXCCD on this camera)"
@@ -244,7 +283,7 @@ function selectedLooks() {
 function update() {
   const looks = selectedLooks();
   const n = looks.length;
-  const size = state.camera.base_size + looks.reduce((sum, l) => sum + l.size, 0);
+  const size = (state.fw ?? state.camera.firmwares[0]).base_size + looks.reduce((sum, l) => sum + l.size, 0);
 
   const summary = $("summary");
   summary.replaceChildren(
@@ -259,8 +298,10 @@ function update() {
 
   const btn = $("download");
   btn.disabled = n === 0 || !state.firmwareOk;
-  $("dl-camera").textContent = state.camera.name;
-  $("dl-status").textContent = !state.firmwareOk ? "Not available for this firmware." : n === 0 ? "Pick at least one look." : "";
+  $("dl-camera").textContent = state.camera.name + (state.fw ? `, firmware ${state.fw.version}` : "");
+  $("dl-status").textContent = !state.fw
+    ? ($("fw").querySelector("input:checked") ? "Not available for this firmware." : "Pick your firmware version first (step 01).")
+    : n === 0 ? "Pick at least one look." : "";
   $("dock-text").textContent = n ? `${n} look${n === 1 ? "" : "s"} selected` : "No looks selected";
 }
 
@@ -268,16 +309,19 @@ async function download() {
   const btn = $("download");
   const status = $("dl-status");
   const cam = state.camera;
+  const fw = state.fw;
+  if (!fw) return;
   btn.disabled = true;
   status.textContent = "Building ZIP …";
   try {
     const looks = selectedLooks();
     const [base, ...lookZips] = await Promise.all([
-      loadBytes(`data/${cam.id}/base.zip`),
+      loadBytes(`data/${fw.dir}/base.zip`),
       ...looks.map((l) => loadBytes(`data/${cam.id}/looks/${l.id}.zip`)),
     ]);
     const zip = assemble(base, lookZips, looks, state.site.version, new Date());
-    const name = `exccd-${state.site.version}-${cam.id}-${looks.length}looks.zip`;
+    // Plattform und sub im Namen: daran erkennt der Installer Kamera und Firmware
+    const name = `exccd-${state.site.version}-${cam.id}-${fw.sub}-${looks.length}looks.zip`;
     const url = URL.createObjectURL(new Blob([zip], { type: "application/zip" }));
     el("a", { href: url, download: name }).click();
     setTimeout(() => URL.revokeObjectURL(url), 60000);

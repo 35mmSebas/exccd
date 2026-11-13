@@ -152,6 +152,13 @@ button.link { background: none; border: 0; color: var(--link); font: inherit; cu
 .cams { border: 0; padding: 0; margin: 0 0 18px; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
 .cams legend { color: var(--muted); font-size: .85rem; margin-bottom: 10px; padding: 0; }
 .cam-opt { position: relative; cursor: pointer; display: flex; }
+.cam-opt[hidden] { display: none; }
+/* Ueber 100 Kameras: Suchfeld darueber, die Liste scrollt in sich */
+.cam-find { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
+.cam-find input { flex: 1 1 260px; max-width: 100%; font: inherit; color: var(--text); background: var(--panel);
+                  border: 1px solid var(--line-2); border-radius: 6px; padding: 10px 14px; }
+.cam-find input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#cams, #t-cams { max-height: 27rem; overflow-y: auto; padding: 2px 4px 2px 2px; }
 .cam-opt input { position: absolute; opacity: 0; }
 .cam-opt-box { flex: 1; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--line-2); border-radius: 6px;
                padding: 14px 16px; background: var(--panel); }

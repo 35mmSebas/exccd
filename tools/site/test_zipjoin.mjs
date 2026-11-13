@@ -16,33 +16,38 @@ mkdirSync(outDir, { recursive: true });
 let fails = 0;
 const check = (ok, msg) => { if (!ok) { fails++; console.log("FEHLER: " + msg); } };
 
-// Je Kamera; die erste (Vorauswahl der Seite) behaelt die alten Dateinamen
-// fuer die Pruefungen in der CI, die weiteren bekommen ihre ID davor
+// Je Kamera und Firmware die Download-ZIP mit allen Looks, fuer die Hauptfirmware auch
+// die mit zwei Looks. Namen wie im Browser (exccd-<version>-<plattform>-<sub>-...), daran
+// erkennt der Installer (test_core) Kamera und Firmware. FILMS-*.TXT der ersten Kamera
+// ohne Praefix, fuer test_films_txt in der CI.
 site.cameras.forEach((cam, k) => {
-  const data = join(siteDir, "data", cam.id);
-  const base = readFileSync(join(data, "base.zip"));
   const pre = k === 0 ? "" : `${cam.id}-`;
-  for (const [tag, looks] of [["all", cam.looks], ["two", cam.looks.slice(0, 2)]]) {
-    const zips = looks.map((l) => readFileSync(join(data, "looks", l.id + ".zip")));
-    const zip = assemble(base, zips, looks, site.version);
-    writeFileSync(join(outDir, `${pre}exccd-${tag}.zip`), zip);
-    writeFileSync(join(outDir, `${pre}FILMS-${tag}.TXT`), filmsTxt(looks, site.version));
+  check(cam.firmwares.length > 0, `${cam.id}: keine Firmware`);
+  cam.firmwares.forEach((fw, i) => {
+    const base = readFileSync(join(siteDir, "data", fw.dir, "base.zip"));
+    const sets = i === 0 ? [["all", cam.looks], ["two", cam.looks.slice(0, 2)]] : [["all", cam.looks]];
+    for (const [tag, looks] of sets) {
+      const zips = looks.map((l) => readFileSync(join(siteDir, "data", cam.id, "looks", l.id + ".zip")));
+      const zip = assemble(base, zips, looks, site.version);
+      const id = `${cam.id} ${fw.version} ${tag}`;
+      writeFileSync(join(outDir, `exccd-${site.version}-${cam.id}-${fw.sub}-${tag}.zip`), zip);
+      if (i === 0) writeFileSync(join(outDir, `${pre}FILMS-${tag}.TXT`), filmsTxt(looks, site.version));
 
-    const names = new Set(readZip(zip).map((e) => e.name));
-    for (const must of ["DISKBOOT.BIN", "CHDK/FILMS/FILMS.TXT", ...(cam.firm_update ? ["PS.FIR"] : [])]) check(names.has(must), `${cam.id} ${tag}: ${must} fehlt`);
-    check(!names.has("CHDK/FILMS/EXAMPLE.TXT"), `${cam.id} ${tag}: EXAMPLE.TXT gehoert nicht in die Download-ZIP`);
-    for (const l of cam.looks) {
-      const want = looks.includes(l);
-      check(names.has(`CHDK/FILMS/${l.id}.FLM`) === want, `${cam.id} ${tag}: ${l.id}.FLM ${want ? "fehlt" : "zu viel"}`);
-      if (l.curve) {
-        const stem = l.curve.replace(/\.CV$/, "");
-        for (const s of ["", "1", "2"])
-          check(names.has(`CHDK/CURVES/${stem}${s}.CV`) === want, `${cam.id} ${tag}: ${stem}${s}.CV ${want ? "fehlt" : "zu viel"}`);
+      const names = new Set(readZip(zip).map((e) => e.name));
+      for (const must of ["DISKBOOT.BIN", "CHDK/FILMS/FILMS.TXT", ...(cam.firm_update ? ["PS.FIR"] : [])]) check(names.has(must), `${id}: ${must} fehlt`);
+      check(!names.has("CHDK/FILMS/EXAMPLE.TXT"), `${id}: EXAMPLE.TXT gehoert nicht in die Download-ZIP`);
+      for (const l of cam.looks) {
+        const want = looks.includes(l);
+        check(names.has(`CHDK/FILMS/${l.id}.FLM`) === want, `${id}: ${l.id}.FLM ${want ? "fehlt" : "zu viel"}`);
+        if (l.curve) {
+          const stem = l.curve.replace(/\.CV$/, "");
+          for (const s of ["", "1", "2"])
+            check(names.has(`CHDK/CURVES/${stem}${s}.CV`) === want, `${id}: ${stem}${s}.CV ${want ? "fehlt" : "zu viel"}`);
+        }
       }
+      console.log(`${id}: ${looks.length} Looks, ${names.size} Eintraege, ${zip.length} Bytes`);
     }
-    console.log(`${cam.id} ${tag}: ${looks.length} Looks, ${names.size} Eintraege, ${zip.length} Bytes`);
-  }
-
+  });
 });
 
 console.log(fails ? `FEHLGESCHLAGEN (${fails} Fehler)` : "OK");
