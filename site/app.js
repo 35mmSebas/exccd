@@ -1,4 +1,5 @@
 import { assemble } from "./zipjoin.js";
+import { renderShowroom } from "./showroom.js";
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => {
@@ -337,6 +338,7 @@ async function main() {
     a.href = a.getAttribute("href").replace(/^https:\/\/github\.com\/[^/]+\/[^/]+/, state.config.repo);
   }
   renderHero();
+  renderShowroom(state.site);
   renderCameras();
   renderCamera();
   renderLooks();

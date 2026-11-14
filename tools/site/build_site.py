@@ -17,6 +17,8 @@ Download. Dafuer wird jedes Firmware-ZIP hier zerlegt:
     data/<kamera>/ver.req, vers.req  zum Pruefen der Firmware-Version
     data/samples/<ID>-*.jpg          Beispielfotos aus site/samples (falls vorhanden),
                                      <ID>-sim-<n>.jpg = am PC simuliert, die Seite markiert sie
+    showroom/<szene>/<ID>.jpg        Showroom: ein Foto in vielen Looks (site/showroom/scenes.txt,
+                                     Bilder per tools/site/showroom.py), Liste in site.json
     data/site.json                   Version, Kameras, Looks mit FILMS.TXT-Zeile und
                                      Kurvenrezept (fuer die WB-Verschiebung, site/curves.js)
 
@@ -205,6 +207,41 @@ def build_camera(cam, fw_zip, out, site_src, meta):
             "base_size": base_size, "curve": curve, "looks": looks}
 
 
+def read_showroom(site_src, cams, looks):
+    """site/showroom/scenes.txt -> Szenen mit je einem Bild pro Look (tools/site/showroom.py).
+    Reihenfolge der Looks wie EXAMPLE.TXT; <LABEL>-sim.jpg = am PC simuliert."""
+    path = os.path.join(site_src, "showroom", "scenes.txt")
+    if not os.path.exists(path):
+        return []
+    names = {c["platform"]: c["short"] for c in cams}
+    order = [l["id"] for l in looks]
+    scenes = []
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        sid, cam, _src, title = [c.strip() for c in line.split("|", 3)]
+        if cam not in names:
+            sys.exit("showroom/scenes.txt: Kamera %s nicht in cameras.txt" % cam)
+        shots = {}
+        for f in glob.glob(os.path.join(site_src, "showroom", sid, "*.jpg")):
+            m = re.fullmatch(r"([A-Z]+)(-sim)?\.jpg", os.path.basename(f))
+            if not m or m.group(1) not in order:
+                sys.exit("showroom/%s: unbekannter Look %s" % (sid, os.path.basename(f)))
+            label, sim = m.group(1), bool(m.group(2))
+            if label in shots and not shots[label]["sim"]:
+                continue                    # echtes Foto schlaegt Simulation
+            w, h = Image.open(f).size
+            shots[label] = {"look": label, "src": "showroom/%s/%s" % (sid, os.path.basename(f)),
+                            "sim": sim, "w": w, "h": h}
+        if "DAYLITE" not in shots:
+            sys.exit("showroom/%s: DAYLITE.jpg fehlt (neutrales Vergleichsbild)" % sid)
+        scenes.append({"id": sid, "title": title, "camera": names[cam],
+                       "shots": sorted(shots.values(), key=lambda s: order.index(s["look"]))})
+        print("showroom %s: %d Looks" % (sid, len(shots)))
+    return scenes
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("fw_zip", nargs="+", help="Firmware-ZIPs, eines je Kamera")
@@ -232,11 +269,13 @@ def main():
         for name in os.listdir(args.out):
             path = os.path.join(args.out, name)
             shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
-    shutil.copytree(site_src, args.out, ignore=shutil.ignore_patterns("samples", "README.md"), dirs_exist_ok=True)
+    shutil.copytree(site_src, args.out, ignore=shutil.ignore_patterns("samples", "README.md", "scenes.txt"),
+                    dirs_exist_ok=True)
 
     meta = label_meta()
     site = {"version": version,
             "cameras": [build_camera(c, z, args.out, site_src, meta) for c, z in picked]}
+    site["showroom"] = read_showroom(site_src, cams, site["cameras"][0]["looks"])
     with open(os.path.join(args.out, "data", "site.json"), "w", encoding="utf-8") as f:
         json.dump(site, f, indent=1)
 

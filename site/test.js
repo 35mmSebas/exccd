@@ -81,6 +81,16 @@ function closeChart() {
   $("t-chart-open").focus();
 }
 
+// Hinweis auf der Startseite: nur solange es Beta-Kameras gibt, mit deren Kurznamen
+function renderCallout() {
+  const names = state.site.cameras.filter((c) => c.status !== "stabil")
+    .map((c) => (c.short ?? c.name).split(" / ")[0]);
+  if (!names.length) return;
+  $("test-call-cams").textContent = names.length > 1
+    ? `${names.slice(0, -1).join(", ")} or ${names.at(-1)}` : names[0];
+  $("test-call").hidden = false;
+}
+
 // --- Auswahl ----------------------------------------------------------------
 
 function segOption(name, value, label, checked, onChange) {
@@ -216,6 +226,7 @@ async function main() {
     $("t-report").textContent = `Could not load the site data (${err.message}).`;
     return;
   }
+  renderCallout();
   renderCameras();
   renderQuestions();
   $("t-other-box").hidden = !!state.cam;

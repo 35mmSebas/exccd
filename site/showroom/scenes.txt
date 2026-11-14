@@ -1,0 +1,22 @@
+# Showroom: one photo, many looks. One line per scene, in the order the page shows them.
+#
+#   id | camera | source DNG | title
+#
+# id      folder name under site/showroom/ (lowercase, no spaces)
+# camera  platform from tools/filmsim/cameras.txt
+# source  the DNG the looks are developed from; tools/site/showroom.py import
+#         uses it to sort developed JPEGs from the card (FILMLOG.CSV, 3rd column)
+# title   short caption, English
+#
+# The folder holds <LABEL>.jpg per look (label column of CHDK/FILMS/EXAMPLE.TXT),
+# DAYLITE.jpg is the neutral reference and must be there. <LABEL>-sim.jpg is a
+# PC preview (tools/filmsim/simulate_looks.py), the page marks it as simulated.
+
+glass-cube    | sx110is      | CRW_1349.DNG | Glass office cube by the river
+fruit-stall   | sx110is      | CRW_1329.DNG | Fruit stall and a blue car
+neon-bar      | sx110is      | CRW_1381.DNG | Neon signs and a green car at dusk
+tv-tower      | sx110is      | CRW_1346.DNG | TV tower across the river
+statue        | sx110is      | CRW_1320.DNG | Statue in a sandstone niche
+autumn-tree   | sx110is      | CRW_1296.DNG | Autumn tree in the park
+cyclamen      | ixus60_sd600 | CRW_7503.DNG | Cyclamen, close up
+bike-maple    | ixus60_sd600 | CRW_7509.DNG | Maple and bikes in the sun

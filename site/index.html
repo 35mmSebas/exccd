@@ -37,6 +37,14 @@
       </ul>
     </div>
     <div class="nav-item">
+      <a class="nav-main" href="#compare">
+        <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="8" width="30" height="24" rx="1"/><path d="M20 4v32"/><path d="M8 28l6-7 4 4M22 26l4-5 6 7"/></svg>
+        <span>compare</span></a>
+      <ul class="nav-sub">
+        <li><a href="#compare">one photo, many looks</a></li>
+      </ul>
+    </div>
+    <div class="nav-item">
       <a class="nav-main" href="#looks">
         <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="5" y="10" width="20" height="24" rx="2"/><path d="M9 10V6h12v4M25 14h10v16H25M29 14v16M5 16h20M5 28h20"/></svg>
         <span>looks</span></a>
@@ -55,7 +63,6 @@
         <li><a href="#trouble">if it doesn't work</a></li>
         <li><a href="#faq">questions</a></li>
         <li><a href="#contribute">help out</a></li>
-        <li><a href="#test">test a camera</a></li>
       </ul>
     </div>
   </nav>
@@ -148,6 +155,10 @@
       <p class="claim-facts" id="facts"></p>
       <a class="button outline" href="#looks">pick your looks</a>
       <p class="claim-hint">press <b>print</b> on the camera to flip through the looks</p>
+      <a class="test-call" id="test-call" href="#test" hidden>
+        <span class="badge">Needs testers</span>
+        <span>Have an <b id="test-call-cams"></b>? Help me test it, no experience needed&nbsp;→</span>
+      </a>
     </div>
   </section>
 
@@ -162,10 +173,14 @@
     <section class="why wrap" id="why">
       <h2>Why this exists.</h2>
       <div>
-        <p>I shoot a lot of film, but I’ve always loved the unique character of early digital CCD sensors. My 20-year-old IXUS 60 is probably my absolute favorite camera—it’s been with me forever and holds countless memories.</p>
-        <p>When I realized what was actually possible with CHDK under the hood, I was completely hooked. I started using AI as a coding partner to build the UI, refine the script logic, and bring in features inspired by modern cameras—like Auto-ISO with a minimum shutter speed and Fujifilm's JPEG film simulations, matching the color output against original Fuji files using custom YUV matrices and WB shifts.</p>
-        <p>What started as a private experiment for my own IXUS grew into EXCCD. I cleaned up the code and put it online, and I’d be genuinely thrilled if others have fun reviving their old digicams with it, help port it to more models, and share their own recipes along the way.</p>
-        <p>Massive respect to the CHDK developers—their open-source work over the years is the sole reason any of this is possible.</p>
+        <p>I shoot a lot of film, but I also like what early CCD sensors do. My IXUS 60 is nearly 20 years old
+          and still my favourite camera; it has been with me for a long time.</p>
+        <p>When I saw what CHDK makes possible, I started building looks for it, with AI as a coding partner:
+          tone curves on the raw data, channel mixes tuned against reference shots, and a few things newer
+          cameras do, like Auto-ISO with a minimum shutter speed or a white balance shift.</p>
+        <p>It started as an experiment for my own camera. If it brings your old digicam back into use, or you
+          help port it to another model or share a recipe, I'd be very happy.</p>
+        <p>None of this would exist without the CHDK developers and their many years of open-source work.</p>
       </div>
     </section>
 
@@ -277,7 +292,7 @@
         <p class="eyebrow">White balance</p>
         <h2>Your colours, set on the camera.</h2>
         <p>On film, the colour of the light is part of the look: daylight film under a lamp turns warm, in the
-          shade it turns blue. EXCCD lets you play with that the way a Fujifilm camera does, in two layers.</p>
+          shade it turns blue. EXCCD lets you play with that in two layers.</p>
         <svg class="wb-grid" viewBox="0 0 220 220" role="img" aria-label="WB shift grid: cyan to red from left to right, blue and yellow up and down">
           <path class="wb-lines" d="M30 30h160M30 50h160M30 70h160M30 90h160M30 130h160M30 150h160M30 170h160M30 190h160M30 30v160M50 30v160M70 30v160M90 30v160M130 30v160M150 30v160M170 30v160M190 30v160"/>
           <path class="wb-axis" d="M30 110h160M110 30v160"/>
@@ -295,14 +310,15 @@
         </li>
         <li>
           <h3>WB shift</h3>
-          <p>On top of that you nudge the colour on a grid, like the white balance shift on a Fujifilm camera:
+          <p>On top of that you nudge the colour on a grid, like the white balance shift some cameras offer:
             left and right go from cyan to red, up and down between blue and yellow, nine steps each way. A
             few steps towards red and yellow make a look warmer, towards blue it gets cooler.</p>
         </li>
         <li>
           <h3>Works with every look</h3>
           <p>The shift is worked into the tone curve of whichever look you've picked, so it doesn't slow the
-            camera down. Only with the film set to <b>Off</b> it does nothing, because then there's no curve.</p>
+            camera down. Only with the film set to <b>Off</b> it does nothing, because then there's no curve; the menu then shows “needs a look”. With the black-and-white looks the shift has no colour to show; it
+            acts like a weak colour filter instead and changes how bright reds or blues come out.</p>
         </li>
         <li>
           <h3>For the curious</h3>
@@ -317,9 +333,8 @@
       <div class="simple-intro">
         <p class="eyebrow">Recipes</p>
         <h2>Save it as a recipe.</h2>
-        <p>If you've shot Fujifilm, you know recipes: a film simulation plus a handful of settings that
-          together make a look of your own. What always bugged me on my Fuji is that the white balance isn't
-          part of it. In EXCCD it is.</p>
+        <p>Some cameras let you save a film look plus a handful of settings as a recipe, a look of your own
+          that you can call up again. EXCCD does that too, and the white balance and WB shift are part of it.</p>
       </div>
       <ol class="principles">
         <li>
@@ -417,14 +432,14 @@
 
       <h3 class="feat-group" id="look-settings">Look settings · MENU → Look</h3>
       <ul class="feat-grid small-cards">
-        <li><h4>Dynamic+</h4><p>For bright scenes: the camera exposes a little shorter so the sky doesn't burn out, and the curve brings the shadows back up.</p><span class="opts">Off · +1 · +2</span></li>
-        <li><h4>B&amp;W colour filter</h4><p>Works like a coloured filter on the lens in black-and-white photography: yellow, orange or red darken blue skies and make clouds stand out.</p><span class="opts">Off · Yellow · Orange · Red</span></li>
+        <li><h4>Dynamic+</h4><p>For bright scenes: the camera exposes a little shorter so the sky doesn't burn out, and the curve brings the shadows back up. Only when the camera picks the shutter speed: in Tv, M or long shutter mode, and with flash, your exposure stays as it is.</p><span class="opts">Off · +1 · +2</span></li>
+        <li><h4>B&amp;W colour filter</h4><p>Works like a coloured filter on the lens in black-and-white photography: yellow, orange or red darken blue skies and make clouds stand out. Only for the black-and-white looks and Tintype; with other looks the menu shows “B&amp;W only”.</p><span class="opts">Off · Yellow · Orange · Red</span></li>
         <li><h4>Colour noise filter</h4><p>Small sensors make coloured blotches in dark areas. This smooths them out and leaves the fine grey noise alone, which looks more like grain.</p><span class="opts">Off · Auto · Light · Strong</span></li>
       </ul>
 
       <h3 class="feat-group" id="shooting">Camera · MENU</h3>
       <ul class="feat-grid small-cards">
-        <li class="wide"><h4>Auto-ISO with a shutter limit</h4><p>Canon's Auto ISO tends to keep the ISO low and the shutter slow, so indoor photos get blurry. Here you set the slowest time you accept, like the minimum shutter speed setting on many newer cameras. The camera raises the ISO only when it has to, up to a maximum you choose. On Auto the limit follows the zoom: about 1 / focal length, never slower than 1/30. It steps in when the camera's ISO is on Auto, you haven't set a shutter speed yourself and the flash doesn't fire.</p><span class="opts">Off · Auto · 1/8 … 1/500 · max. ISO 200 … 1600</span></li>
+        <li class="wide"><h4>Auto-ISO with a shutter limit</h4><p>Canon's Auto ISO tends to keep the ISO low and the shutter slow, so indoor photos get blurry. Here you set the slowest time you accept, like the minimum shutter speed setting on many newer cameras. The camera raises the ISO only when it has to, up to a maximum you choose. On Auto the limit follows the zoom: about 1 / focal length, never slower than 1/30. It steps in when the camera's ISO is on Auto, you haven't set a shutter speed yourself and the flash doesn't fire. It works in Auto, P, Av and the everyday scene modes (portrait, indoor, kids &amp; pets, landscape, macro), but not in modes that want long exposures, like fireworks, night or long shutter, and not while a script runs. If the camera already picked an ISO above your maximum, it keeps that ISO instead of slowing the shutter down. When Auto-ISO is set but can't step in, the status line shows “A-ISO -”.</p><span class="opts">Off · Auto · 1/8 … 1/500 · max. ISO 200 … 1600</span></li>
         <li><h4>Zone focus</h4><p>Focus at a fixed distance instead of autofocus. Handy on the street: the camera fires right away instead of hunting for focus first.</p><span class="opts">AF · 0.5 m … ∞</span></li>
         <li><h4>Shutter speed</h4><p>Set the exposure time yourself, for long night shots or to freeze movement.</p><span class="opts">Auto · 16″ … 1/1000</span></li>
         <li><h4>ND filter</h4><p>Many of these cameras have a small grey filter inside that cuts the light, often instead of a real aperture. Here you swing it in or out yourself.</p><span class="opts">Auto · In · Out</span></li>
@@ -433,6 +448,48 @@
         <li><h4>Double exposure</h4><p>Two shots on one frame. The second one is mixed into the first in the raw data, much like exposing a negative twice.</p><span class="opts">Off · On</span></li>
       </ul>
     </section>
+  </section>
+
+  <section class="view" id="compare" data-view hidden>
+    <div class="wrap">
+      <header class="features-head sr-head">
+        <p class="eyebrow">Compare</p>
+        <h2>One photo, many looks.</h2>
+        <p class="muted">Each scene was shot once, with a DNG next to the JPEG. Then I developed that same DNG again on
+          the camera, with a different film each time (<a href="#develop">RAW develop</a>). Light, framing and camera
+          stay the same, only the look changes. Drag the line across the photo to compare a look with
+          <b>Daylight 100</b>, the neutral one.</p>
+      </header>
+
+      <div class="sr-scenes" id="sr-scenes" role="group" aria-label="Scene"></div>
+
+      <figure class="sr-stage">
+        <div class="sr-frame" id="sr-frame">
+          <img id="sr-base" alt="" decoding="async">
+          <img id="sr-look" class="sr-top" alt="" decoding="async">
+          <span class="sr-line" aria-hidden="true"></span>
+          <span class="sr-side left" aria-hidden="true">Daylight 100</span>
+          <span class="sr-side right" id="sr-side-look" aria-hidden="true"></span>
+          <span class="sim-tag" id="sr-sim" title="Rendered on a PC from the Daylight 100 photo, not developed on the camera yet" hidden>simulated</span>
+          <input type="range" class="sr-split" id="sr-split" min="0" max="100" value="50" step="0.5"
+            aria-label="Compare with Daylight 100: move left to see more of the look">
+        </div>
+        <figcaption class="sr-caption">
+          <span class="sr-look-name" id="sr-name"></span>
+          <span class="muted" id="sr-desc"></span>
+          <span class="muted small" id="sr-meta"></span>
+        </figcaption>
+      </figure>
+
+      <div class="sr-bar">
+        <div class="sr-looks" id="sr-looks" role="group" aria-label="Look"></div>
+        <label class="sr-compare"><input type="checkbox" id="sr-compare" checked> compare with Daylight 100</label>
+      </div>
+
+      <p class="muted small sr-note" id="sr-note"></p>
+      <p class="next">Like one? <a href="#looks-step">Pick your looks</a> for the download.</p>
+      <p class="muted small sr-empty" id="sr-empty" hidden>No scenes yet. I'm developing the first ones.</p>
+    </div>
   </section>
 
   <section class="view" id="looks" data-view hidden>
@@ -597,8 +654,11 @@
             <p>EXCCD runs from the SD card, like CHDK, and doesn't change the camera's firmware. Without the card,
               the camera behaves exactly as before. Still, it's third-party software, so use it at your own risk.</p></details>
           <details><summary>Do I lose anything compared to the normal camera?</summary>
-            <p>No. Pick <b>Off</b> in the film selection and the camera uses its normal colours again.
-              Canon's menus and modes stay as they are.</p></details>
+            <p>Not much, but a few things. With a look on, the camera is busy for a few seconds after each shot,
+              so there's no quick burst. The <b>Print</b> button opens the film selection instead of printing. EXCCD
+              starts from a locked SD card, and on the IXUS 60 that card can be at most 2 GB. Pick <b>Off</b> in the
+              film selection and the camera uses its normal colours again; Canon's menus and modes stay as they
+              are.</p></details>
           <details><summary>How is this different from a filter app?</summary>
             <p>A filter app works on the finished JPEG, so it starts from a picture the camera has already processed
               and compressed. EXCCD steps in earlier: the tone curve goes onto the sensor's raw data, together with
