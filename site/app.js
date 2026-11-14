@@ -180,6 +180,32 @@ function chips(look) {
   return el("div", { className: "chips" }, ...out);
 }
 
+// Karussell der Look-Karte: mit der Maus darueber laufen die Beispielfotos durch,
+// beim Verlassen zurueck zum ersten; per Touch wischen (Scroll-Snap). Punkte zeigen,
+// wo man ist, der letzte steht fuer die Lasche
+function carousel(wrap, media, count) {
+  const slides = media.children.length;
+  const dots = el("div", { className: "shot-dots", ariaHidden: "true" },
+    ...Array.from({ length: slides }, (_, k) => el("span", { className: k === count ? "dot label" : "dot" })));
+  wrap.append(dots);
+  let timer = 0, i = 0;
+  const go = (n) => { i = n; media.scrollTo({ left: n * media.clientWidth, behavior: reducedMotion ? "instant" : "smooth" }); };
+  const mark = () => {
+    const k = Math.round(media.scrollLeft / media.clientWidth);
+    [...dots.children].forEach((d, j) => d.classList.toggle("on", j === k));
+  };
+  media.addEventListener("scroll", mark, { passive: true });
+  mark();
+  const hover = matchMedia("(hover: hover)");
+  wrap.addEventListener("mouseenter", () => {
+    if (!hover.matches) return;
+    clearInterval(timer);
+    for (const img of media.querySelectorAll("img")) img.loading = "eager";  // die naechsten Fotos vorladen
+    timer = setInterval(() => go((i + 1) % count), 1300);
+  });
+  wrap.addEventListener("mouseleave", () => { clearInterval(timer); if (hover.matches) go(0); });
+}
+
 function renderLooks() {
   const box = $("looks-grid");
   box.replaceChildren();
@@ -191,19 +217,20 @@ function renderLooks() {
       update();
     });
 
-    // Beispielfotos zuerst, die Lasche dahinter
-    // Simulierte Beispielfotos (Dateiname *-sim-*) offen als solche kennzeichnen
-    const media = el("div", { className: "look-media" }, ...look.samples.map((src) => {
-      const sim = /-sim-/.test(src);
-      return el("div", { className: "sample" },
-        el("img", { src, alt: `${sim ? "Simulated sample" : "Sample photo"}, ${look.name}`, loading: "lazy" }),
-        ...(sim ? [el("span", { className: "sim-tag", textContent: "simulated", title: "Rendered on a PC from another photo, not shot on the camera yet" })] : []));
-    }));
+    // Beispielfotos (dieselben wie im Showroom) zuerst, die Lasche dahinter
+    // Simulierte Beispielfotos offen als solche kennzeichnen
+    const media = el("div", { className: "look-media" }, ...look.samples.map((s) =>
+      el("div", { className: "sample" },
+        el("img", { src: s.src, alt: `${s.sim ? "Simulated sample" : "Sample photo"}, ${look.name}: ${s.title}`, loading: "lazy" }),
+        el("span", { className: "shot-title", textContent: s.title }),
+        ...(s.sim ? [el("span", { className: "sim-tag", textContent: "simulated", title: "Rendered on a PC from another photo, not shot on the camera yet" })] : []))));
     media.append(el("img", { src: labelSrc(look), alt: `${look.name} film label`, loading: "lazy", width: 600, height: 440 }));
+    const shots = el("div", { className: "look-shots" }, media);
+    if (look.samples.length > 1) carousel(shots, media, look.samples.length);
 
     const card = el("div", { className: "look" });
     card.append(el("label", { className: "look-pick" },
-      media,
+      shots,
       el("div", { className: "look-body" },
         el("div", { className: "look-head" },
           el("div", {},
@@ -320,7 +347,43 @@ function route() {
   else target.scrollIntoView({ behavior });
 }
 
+// Dropdowns: mit Maus per Hover/Fokus (CSS); per Touch oeffnet das Tippen auf den Menuepunkt
+// die Ansicht und zeigt zugleich die Unterpunkte, Tippen daneben schliesst sie
+function initNav() {
+  const items = [...document.querySelectorAll(".nav-item")];
+  const hover = matchMedia("(hover: hover)");
+  const closeAll = (except) => { for (const i of items) if (i !== except) i.classList.remove("open"); };
+  for (const item of items) {
+    const sub = item.querySelector(".nav-sub");
+    if (!sub) continue;
+    item.classList.add("has-sub");
+    item.querySelector(".nav-main").addEventListener("click", () => {
+      if (hover.matches) return;
+      closeAll(item);
+      item.classList.toggle("open");
+    });
+    sub.addEventListener("click", (e) => {
+      if (!e.target.closest("a")) return;
+      item.classList.remove("open");
+      // Nach der Wahl zuklappen, obwohl Maus/Fokus noch im Dropdown sind
+      item.classList.add("closed");
+      e.target.blur();
+      item.addEventListener("mouseleave", () => item.classList.remove("closed"), { once: true });
+      if (!hover.matches) item.classList.remove("closed");
+    });
+  }
+  document.addEventListener("click", (e) => { if (!e.target.closest(".nav-item")) closeAll(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    closeAll();
+    const item = document.activeElement?.closest(".nav-item");
+    if (item) { item.classList.add("closed"); item.querySelector(".nav-main").focus();
+      item.addEventListener("focusout", () => item.classList.remove("closed"), { once: true }); }
+  });
+}
+
 async function main() {
+  initNav();
   route();
   addEventListener("hashchange", route);
 

@@ -15,8 +15,8 @@ Download. Dafuer wird jedes Firmware-ZIP hier zerlegt:
     data/<kamera>/looks/<ID>.zip     je Look: Kurve + DR-Varianten, Lasche (.FLM)
     data/<kamera>/looks/<ID>.png     Laschen-Vorschau
     data/<kamera>/ver.req, vers.req  zum Pruefen der Firmware-Version
-    data/samples/<ID>-*.jpg          Beispielfotos aus site/samples (falls vorhanden),
-                                     <ID>-sim-<n>.jpg = am PC simuliert, die Seite markiert sie
+    data/samples/<ID>-<szene>.jpg    Beispielfotos der Look-Karten, verkleinert aus den Showroom-Szenen
+                                     in SAMPLE_SCENES; <ID>-sim-<szene>.jpg = am PC simuliert
     showroom/<szene>/<ID>.jpg        Showroom: ein Foto in vielen Looks (site/showroom/scenes.txt,
                                      Bilder per tools/site/showroom.py), Liste in site.json
     data/site.json                   Version, Kameras, Looks mit FILMS.TXT-Zeile und
@@ -192,11 +192,7 @@ def build_camera(cam, fw_zip, out, site_src, meta):
         img = Image.open(os.path.join(ROOT, "tools", "filmsim", "labels_src", look["id"] + ".png"))
         img.convert("RGB").resize((600, 440), Image.LANCZOS).save(
             os.path.join(cam_dir, "looks", look["id"] + ".png"), optimize=True)
-        look["samples"] = []
-        for path in sorted(glob.glob(os.path.join(site_src, "samples", look["id"] + "-*.jpg"))):
-            os.makedirs(samples_out, exist_ok=True)
-            shutil.copy(path, samples_out)
-            look["samples"].append("data/samples/" + os.path.basename(path))
+        look["samples"] = look_samples(look["id"], site_src, samples_out)
 
     curve = {"black": make_curves.BLACK, "white": make_curves.WHITE,
              "gamma": make_curves.GAMMA, "wb": list(make_curves.WB)}
@@ -205,6 +201,40 @@ def build_camera(cam, fw_zip, out, site_src, meta):
             "firmware": "%s.%s" % (sub[0], sub[1:]), "other_firmware": extra["other_firmware"],
             "boot": extra["boot"], "firm_update": extra["firm_update"],
             "base_size": base_size, "curve": curve, "looks": looks}
+
+
+# Beispielfotos der Look-Karten: dieselben Fotos wie im Showroom, je Look diese Szenen
+SAMPLE_SCENES = ["glass-cube", "fruit-stall", "statue"]
+SAMPLE_WIDTH = 720                          # Karte ist ca. 250-360 px breit, also 2x
+
+
+def look_samples(look_id, site_src, samples_out):
+    """Je Szene aus SAMPLE_SCENES ein verkleinertes Showroom-Foto des Looks.
+    Echtes Foto vor <ID>-sim.jpg; die Seite markiert Simulationen."""
+    titles = {}
+    path = os.path.join(site_src, "showroom", "scenes.txt")
+    if os.path.exists(path):
+        for line in open(path, encoding="utf-8"):
+            line = line.strip()
+            if line and not line.startswith("#"):
+                cols = [c.strip() for c in line.split("|", 3)]
+                titles[cols[0]] = cols[3]
+    out = []
+    for sid in SAMPLE_SCENES:
+        for name, sim in ((look_id + ".jpg", False), (look_id + "-sim.jpg", True)):
+            src = os.path.join(site_src, "showroom", sid, name)
+            if not os.path.exists(src):
+                continue
+            dst_name = "%s-%s%s.jpg" % (look_id, "sim-" if sim else "", sid)
+            dst = os.path.join(samples_out, dst_name)
+            if not os.path.exists(dst):     # je Kamera dieselben Bilder, nur einmal rechnen
+                os.makedirs(samples_out, exist_ok=True)
+                img = Image.open(src).convert("RGB")
+                h = round(img.height * SAMPLE_WIDTH / img.width)
+                img.resize((SAMPLE_WIDTH, h), Image.LANCZOS).save(dst, quality=84, optimize=True, progressive=True)
+            out.append({"src": "data/samples/" + dst_name, "sim": sim, "title": titles.get(sid, sid)})
+            break
+    return out
 
 
 def read_showroom(site_src, cams, looks):
@@ -269,7 +299,7 @@ def main():
         for name in os.listdir(args.out):
             path = os.path.join(args.out, name)
             shutil.rmtree(path) if os.path.isdir(path) else os.remove(path)
-    shutil.copytree(site_src, args.out, ignore=shutil.ignore_patterns("samples", "README.md", "scenes.txt"),
+    shutil.copytree(site_src, args.out, ignore=shutil.ignore_patterns("README.md", "scenes.txt"),
                     dirs_exist_ok=True)
 
     meta = label_meta()
