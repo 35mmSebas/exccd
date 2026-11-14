@@ -97,3 +97,6 @@
     // Canon blendet das OSD waehrend der Bildverarbeitung aus (0xC0F1407C Bit 4),
     // der Fortschrittsbalken schaltet es zum Zeichnen frei (core/filmsim.c, osd_unmute)
     #define FILMSIM_OSD_UNMUTE          1
+    #define FILMSIM_OSD_VAR             0x5D5C
+    #define FILMSIM_OSD_ON              0x5D2C
+    #define FILMSIM_OSD_CHECK           { 0xFF932FAC,0x5D5C, 0xFF932FB0,0x5D2C, 0xFF932FB4,0xC0F1407C }   // nur fw 1.00d

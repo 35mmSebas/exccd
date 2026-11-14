@@ -2995,14 +2995,18 @@ static int prog_tick;
 static int prog_dev;                    // 1: RAW entwickeln, 0: normale Aufnahme
 
 #ifdef FILMSIM_OSD_UNMUTE
-//   IXUS 60 (VxWorks): Waehrend der Bildverarbeitung setzt Canon in 0xC0F1407C Bit 4
-//   (ff932f6c, Firmware 1.00d, Kopie in 0x5D5C), das blendet das OSD aus, der Bildschirm
-//   ist schwarz. Zum Zeichnen das Bit im Register loeschen (wie Canons ff880648:
-//   Schattenkopie bei 0x0031xxxx, dann Register, Uebernahme ueber 4078). Canons Variable
-//   bleibt unberuehrt, Canon stellt nach der Aufnahme selbst wieder her.
-//   Gemessen 11.11.: Nur dieses Bit bringt den Balken. 0xC0F14074 (=10 waehrend der
-//   Verarbeitung) zusaetzlich zuruecksetzen zeigt beim RAW entwickeln bunte Bildfehler,
-//   allein bringt es nichts.
+//   Waehrend der Bildverarbeitung setzt Canon in 0xC0F1407C Bit 4 ("MuteOn"), das blendet
+//   das OSD aus, der Bildschirm ist schwarz. Zum Zeichnen das Bit im Register loeschen (wie
+//   Canons eigene Schreibfunktion: Schattenkopie bei 0x0031xxxx, dann Register, Uebernahme
+//   ueber 4078). Canons Variable bleibt unberuehrt, Canon stellt nach der Aufnahme selbst
+//   wieder her. Die RAM-Adressen kommen aus platform_camera.h:
+//     FILMSIM_OSD_VAR    Canons Kopie von 407C
+//     FILMSIM_OSD_ON     1 = Display an
+//     FILMSIM_OSD_CHECK  Adresse/Wert-Paare im ROM, die genau zu dieser Firmware passen
+//   IXUS 60 1.00d: Canon muted bei jeder Aufnahme (ff932f6c). Gemessen 11.11.: Nur dieses
+//   Bit bringt den Balken; 0xC0F14074 zusaetzlich zuruecksetzen zeigt beim RAW entwickeln
+//   bunte Bildfehler, allein bringt es nichts.
+//   SX110 1.00b: Canon muted nur bei Blitz (MuteOn ffc31640, Kopie 0x231C, gefunden 14.11.).
 static void osd_reg(unsigned int a, unsigned int v)
 {
     *(volatile unsigned int *)((a & 0x1FFFF) | 0x300000) = v;
@@ -3010,12 +3014,16 @@ static void osd_reg(unsigned int a, unsigned int v)
 }
 static void osd_unmute(void)
 {
-    // Adressen nur aus Firmware 1.00d belegt: Literale von ff932f6c im ROM pruefen,
-    // bei anderer Firmware (1.00a) nichts tun
-    if (*(const unsigned int *)0xFF932FAC != 0x5D5C || *(const unsigned int *)0xFF932FB0 != 0x5D2C
-        || *(const unsigned int *)0xFF932FB4 != 0xC0F1407C) return;
-    if (*(volatile int *)0x5D2C != 1) return;           // Display aus: nichts anfassen
-    unsigned int v = *(volatile unsigned int *)0x5D5C;
+#ifdef HOST_TEST
+    return;                                             // PC-Test: kein ROM, keine Register
+#endif
+    // Andere Firmware (z. B. IXUS 60 1.00a): nichts tun
+    static const unsigned int chk[] = FILMSIM_OSD_CHECK;
+    unsigned i;
+    for (i = 0; i + 1 < sizeof(chk) / sizeof(chk[0]); i += 2)
+        if (*(const unsigned int *)chk[i] != chk[i + 1]) return;
+    if (*(volatile int *)FILMSIM_OSD_ON != 1) return;   // Display aus: nichts anfassen
+    unsigned int v = *(volatile unsigned int *)FILMSIM_OSD_VAR;
     if (v & 0x10) { osd_reg(0xC0F1407C, v & ~0x10); osd_reg(0xC0F14078, 1); }
 }
 #endif

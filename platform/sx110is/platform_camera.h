@@ -91,3 +91,9 @@
     #define FILMSIM_THUMB_GREYS         { 0xFF,0, 0xAF,55, 0x1F,112, 0x3A,126, 0x1A,164, 0x13,177, 0x11,213 }
     // Testkamera mit defektem Power-Schalter: ALT-Taste 3 s halten schaltet aus.
     #define FILMSIM_POWEROFF_HOLD_MS    3000
+    // Canon blendet bei Blitzfotos das OSD waehrend der Verarbeitung aus (0xC0F1407C Bit 4),
+    // der Fortschrittsbalken schaltet es zum Zeichnen frei (core/filmsim.c, osd_unmute)
+    #define FILMSIM_OSD_UNMUTE          1
+    #define FILMSIM_OSD_VAR             0x231C
+    #define FILMSIM_OSD_ON              0x22E0
+    #define FILMSIM_OSD_CHECK           { 0xFFC31088,0x22DC, 0xFFC314DC,0xC0F1407C, 0xFFC3191C,0xC0F14078 }   // MuteOn, fw 1.00b

@@ -31,6 +31,17 @@ for cam in $CAMERAS; do
     log=$out/build-$p-$s.log
     make -s PLATFORM=$p PLATFORMSUB=$s firzipsubcomplete >$log 2>&1 ||
         { tail -20 $log; echo "Fehler, ganzes Log: $log" >&2; exit 1; }
+    # CHDK im ARAM (SX110): Kern samt bss muss in ARAM_HEAP_SIZE passen. Was uebrig
+    # bleibt, ist der ARAM-Heap; unter 4 KB legt core/memmgmt.c keinen an.
+    mk=platform/$p/sub/$s/makefile.inc
+    if grep -q '^override OPT_CHDK_IN_ARAM=1' $mk; then
+        lim=$(sed -n 's/^ARAM_HEAP_SIZE=\(0x[0-9a-fA-F]*\).*/\1/p' $mk)
+        used=$(arm-none-eabi-size platform/$p/sub/$s/main.elf | awk 'NR==2 { print $4 }')
+        free=$(( lim - used ))
+        echo "    ARAM: $used von $((lim)) Byte belegt, $free frei"
+        [ $free -ge 0 ] || { echo "Fehler: CHDK passt nicht ins ARAM ($p), $(( -free )) Byte zu gross" >&2; exit 1; }
+        [ $free -ge 4096 ] || echo "    Hinweis: unter 4 KB frei, kein ARAM-Heap (malloc nutzt Canon-Speicher)"
+    fi
     cp bin/$p-$s-*-full.zip $out/exccd-$version-$p-$s-full.zip
     # Firmware-Pruefprogramm fuer den Installer (tools/installer/probes/)
     make -s PLATFORM=$p PLATFORMSUB=$s fwprobe >>$log 2>&1 ||

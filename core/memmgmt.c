@@ -53,6 +53,16 @@ static void chdk_heap_create(chdk_heap *h, void *mem, int size, int chdk_in_heap
 
 		h->end = h->start + h->size;
 
+        // EXCCD: Bleibt hinter CHDK kaum Platz (SX110: ARAM 0x32000, CHDK fast genauso
+        // gross), wird suba_init negativ (Kopf 56 + Zelle 12 Byte) und zerschreibt
+        // den Speicher, die Kamera startet nicht. Dann lieber gar keinen Heap anlegen,
+        // malloc nimmt den Canon-Speicher.
+        if (h->size < 4096)
+        {
+            h->heap = 0;
+            return;
+        }
+
         if (heap_testing)
         {
 		    // For testing exmem allocated memory for corruption from normal camera operations
