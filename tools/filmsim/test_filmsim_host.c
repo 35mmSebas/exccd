@@ -65,6 +65,9 @@ extern void filmsim_prog_step(int k);
 
 static int now_ms = 10000;
 long get_tick_count() { return now_ms; }
+int usb_remote_active = 0;
+#include "meminfo.h"
+void GetCombinedMemInfo(cam_meminfo *m) { memset(m, 0, sizeof(*m)); m->free_size = 300 << 10; m->free_block_max_size = 200 << 10; m->free_block_count = 5; }
 
 // --- Texte ------------------------------------------------------------------
 char *lang_str(int id)
@@ -209,6 +212,22 @@ void gui_activate_sub_menu(CMenu *m) { menu_open = m; }
 static int alt_exits = 0;
 void exit_alt(void) { alt_exits++; }
 void exit_alt_on_release(void) { alt_exits++; }
+// RAW-Serie (filmsim_batch_*): hier nur gelinkt, nicht ausgefuehrt
+#include "action_stack.h"
+AS_ID action_stack_create(action_func f) { (void)f; return 1; }
+long action_top(int n) { (void)n; return 0; }
+void action_push(long p) { (void)p; }
+void action_push_press(long k) { (void)k; }
+void action_push_release(long k) { (void)k; }
+void action_push_click(long k) { (void)k; }
+long action_pop_func(int n) { (void)n; return 0; }
+void action_push_func(action_func f) { (void)f; }
+int action_stack_is_finished(AS_ID id) { (void)id; return 1; }
+void action_stack_kill(AS_ID id) { (void)id; }
+int shooting_in_progress() { return camera_info.state.state_shooting_progress != SHOOTING_PROGRESS_NONE; }
+int shooting_is_flash_ready() { return 1; }
+long kbd_get_pressed_key() { return 0; }
+void kbd_key_release_all() { }
 static int conf_saves = 0;
 void conf_save(void) { conf_saves++; }
 
@@ -344,10 +363,14 @@ static void shoot(char *raw)
 }
 
 // Zeit laufen lassen, Hauptschleife nachbilden
+void filmsim_batch_key(void);
+int filmsim_batch_kbd(void);
 static void ticks(int n)
 {
     while (n-- > 0) {
         now_ms += 20;
+        filmsim_batch_key();            // wie kbd_process: RAW-Serie weiterfuehren
+        filmsim_batch_kbd();
         filmsim_tick();
     }
 }
@@ -671,6 +694,33 @@ static void fill_flat(int v)
             set_raw_pixel(x, y, (unsigned short)(v << (CAM_SENSOR_BITS_PER_PIXEL - 10)));
 }
 
+// Mischmatrizen: Grau unter Kunstlicht (Weissabgleich der Aufnahme) bleibt grau
+static void film_by_name(const char *n);
+static void scenario_mixwb(void)
+{
+    int rows = camera_sensor.raw_rows, rowpix = camera_sensor.raw_rowpix, r0 = FS_TEST_ROW0, x, y;
+    int cx = (rowpix / 2) & ~7, cy = ((rows / 2) & ~1) + r0;
+    static const char *looks[] = { "Violet 400", "Turquoise 400", "Infra 200", "Concrete 100" };
+    unsigned k;
+    rawbuf = malloc(rows * camera_sensor.raw_rowlen + 8);
+    camera_on();
+    // Gluehlampe: R * 1,4, B * 3,0 machen Grau (G = 400)
+    host_wb[0] = 1000; host_wb[1] = 1400; host_wb[2] = 3000;
+    int gv = 400, rv = 31 + (369 * 1000 + 700) / 1400, bv = 31 + (369 + 1) / 3;
+    for (k = 0; k < sizeof(looks) / sizeof(looks[0]); k++) {
+        film_by_name(looks[k]);
+        for (y = 0; y < rows; y++)
+            for (x = 0; x < rowpix; x++) {
+                int rrow = ((y - r0) & 1) == 0, v = rrow ? ((x & 1) ? gv : rv) : ((x & 1) ? bv : gv);
+                set_raw_pixel(x, y, (unsigned short)(v << (CAM_SENSOR_BITS_PER_PIXEL - 10)));
+            }
+        filmsim_raw_apply((char *)rawbuf);
+        int r = (RAW10(cx, cy) - 31) * 1400 / 1000, g = RAW10(cx + 1, cy) - 31, b = (RAW10(cx + 1, cy + 1) - 31) * 3;
+        CHECK(r - g < 8 && g - r < 8 && b - g < 8 && g - b < 8, "%s Kunstlicht: R %d G %d B %d", looks[k], r, g, b);
+    }
+    host_wb[0] = host_wb[1] = host_wb[2] = 1000;
+}
+
 static void scenario_develop(void)
 {
     const char *good = "A/DCIM/100CANON/CRW_0012.DNG";
@@ -864,7 +914,11 @@ static void scenario_develop(void)
             CHECK(menu_item(LANG_EXCCD_DEV_FX_DONE) != 0, "Fertig fehlt im dritten Schritt");
             menu_open = fx;
         }
-        CHECK(strstr(osd_text(), "| -1 EV | warm +1") != 0, "Statuszeile: [%s]", drawn);
+        // 360 px = 45 Zeichen: was nicht passt, faellt ganz weg; breiter Bildschirm zeigt alles
+        CHECK(strstr(osd_text(), "| -1 EV") != 0 && strlen(drawn) <= 46 && !strstr(drawn, "warm"), "Statuszeile: [%s]", drawn);
+        camera_screen.width = 720;
+        CHECK(strstr(osd_text(), "| -1 EV | warm +1") != 0, "Statuszeile breit: [%s]", drawn);
+        camera_screen.width = 360;
         develop_shot();
         CHECK(RAW10(cx + 1, cy + r0) == 216, "EV G: %d", RAW10(cx + 1, cy + r0));
         // Belichtung vor der Kette (185 ueber Schwarz), Temperatur danach: R * 1,07, B / 1,07
@@ -1141,6 +1195,7 @@ extern const char* filmsim_wb_enum(int change, int arg);
 extern const char* filmsim_wb_r_enum(int change, int arg);
 extern const char* filmsim_wb_b_enum(int change, int arg);
 extern const char* filmsim_wb_shift_enum(int change, int arg);
+extern const char* filmsim_bwfilter_enum(int change, int arg);
 extern const char* filmsim_recipe_enum(int change, int arg);
 extern void filmsim_recipe_save_menu(int arg);
 extern char filmsim_slot_text[4][32];
@@ -1308,6 +1363,7 @@ static void scenario_aiso(void)
 {
     camera_on();
     short s100 = shooting_get_sv96_from_iso(100), s800 = shooting_get_sv96_from_iso(800);
+    camera_info.state.mode_shooting = MODE_P;
     conf.tv_override_enabled = 0;
     conf.film_aiso = 5; conf.film_aiso_max = 2;                 // 1/60, ISO max 800
     CHECK(strcmp(filmsim_aiso_enum(0, 0), "1/60") == 0, "Menue: %s", filmsim_aiso_enum(0, 0));
@@ -1334,6 +1390,51 @@ static void scenario_aiso(void)
     conf.tv_override_enabled = 0; shooting_set_prop(PROPCASE_IS_FLASH_READY, 1);
     CHECK(filmsim_autoiso() == 0, "Blitz");
     shooting_set_prop(PROPCASE_IS_FLASH_READY, 0);
+    // Szenenmodi mit eigener langer Zeit (Feuerwerk, Langzeit) und Tv/M: nichts tun
+    ex_sv = s100; ex_tv = 96;
+    camera_info.state.mode_shooting = MODE_FIREWORK;
+    CHECK(filmsim_autoiso() == 0 && ex_tv == 96, "Feuerwerk: tv %d", ex_tv);
+    camera_info.state.mode_shooting = MODE_LONG_SHUTTER;
+    CHECK(filmsim_autoiso() == 0, "Langzeit");
+    camera_info.state.mode_shooting = MODE_TV;
+    CHECK(filmsim_autoiso() == 0, "Tv");
+    camera_info.state.mode_shooting = MODE_AV;
+    CHECK(filmsim_autoiso() == 1, "Av soll wirken");
+    // Skript laeuft: Zeit bleibt, wie das Skript sie will
+    camera_info.state.mode_shooting = MODE_P;
+    ex_sv = s100; ex_tv = 96;
+    camera_info.state.state_kbd_script_run = 1;
+    CHECK(filmsim_autoiso() == 0 && ex_tv == 96, "Skript: tv %d", ex_tv);
+    camera_info.state.state_kbd_script_run = 0;
+    // Canon nimmt schon ISO 400, ISO max 200: nicht herunter (Zeit wuerde laenger)
+    conf.film_aiso_max = 0;
+    short s400 = shooting_get_sv96_from_iso(400);
+    ex_sv = s400; ex_tv = 288;
+    filmsim_autoiso();
+    CHECK(ex_sv == s400 && ex_tv == 288, "ueber ISO max gesenkt: sv %d tv %d", ex_sv, ex_tv);
+    conf.film_aiso_max = 2;
+    // Dynamik+: nur wenn die Kamera die Zeit waehlt
+    conf.film_dr = 1;
+    CHECK(filmsim_dr_tv96_shift(1) == 96, "DR in P: %d", filmsim_dr_tv96_shift(1));
+    camera_info.state.mode_shooting = MODE_TV;
+    CHECK(filmsim_dr_tv96_shift(1) == 0, "DR in Tv");
+    camera_info.state.mode_shooting = MODE_M;
+    CHECK(filmsim_dr_tv96_shift(1) == 0, "DR in M");
+    camera_info.state.mode_shooting = MODE_P;
+    conf.film_dr = 0;
+    // Statuszeile: eingestellt, wirkt aber nicht -> "A-ISO -"
+    CHECK(strcmp(filmsim_aiso_str(), "A-ISO 1/60") == 0, "A-ISO P: %s", filmsim_aiso_str());
+    camera_info.state.mode_shooting = MODE_TV;
+    CHECK(strcmp(filmsim_aiso_str(), "A-ISO -") == 0, "A-ISO Tv: %s", filmsim_aiso_str());
+    camera_info.state.mode_shooting = MODE_P;
+    // S/W-Filter auch fuer Tintype, WB-Verschiebung braucht einen Look
+    film_by_name("Tintype 50");
+    CHECK(strcmp(filmsim_bwfilter_enum(0, 0), "B&W only") != 0, "Tintype ohne S/W-Filter");
+    film_by_name("Summer 200");
+    CHECK(strcmp(filmsim_bwfilter_enum(0, 0), "B&W only") == 0, "Farbfilm mit S/W-Filter");
+    CHECK(strcmp(filmsim_wb_shift_enum(0, 0), "0") == 0, "WB mit Look: %s", filmsim_wb_shift_enum(0, 0));
+    filmsim_set(0);
+    CHECK(strcmp(filmsim_wb_shift_enum(0, 0), "needs a look") == 0, "WB bei Aus: %s", filmsim_wb_shift_enum(0, 0));
     // Auto: 1/Brennweite, Tele 105 mm -> mindestens 1/105
     conf.film_aiso = 1; ex_fl = 105000; ex_sv = s100; ex_tv = 480;
     CHECK(filmsim_autoiso() == 1 && ex_tv >= 640 && ex_tv <= 648, "Auto 105 mm: tv %d", ex_tv);
@@ -1356,6 +1457,7 @@ int main(int argc, char **argv)
     else if (strcmp(what, "develop") == 0) scenario_develop();
     else if (strcmp(what, "recipe") == 0) scenario_recipe(root);
     else if (strcmp(what, "aiso") == 0) scenario_aiso();
+    else if (strcmp(what, "mixwb") == 0) scenario_mixwb();
     else if (strcmp(what, "thumb") == 0) scenario_thumb(argc > 3 ? argv[3] : 0, argc > 4 ? argv[4] : 0);
     else { printf("Szenario?\n"); return 2; }
     printf("%s (%d Fehler)\n", fails ? "FEHLER" : "ok", fails);

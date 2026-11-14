@@ -139,6 +139,10 @@ long kbd_process()
     filmsim_poweroff_hold();
 #endif
 
+    // Filmsim: RAW entwickeln in mehreren Looks - jede echte Taste bricht ab
+    extern void filmsim_batch_key(void);
+    filmsim_batch_key();
+
     if( usb_HPtimer_handle==0) usb_remote_key();
 
     if (camera_info.perf.md_af_tuning)
@@ -272,6 +276,11 @@ long kbd_process()
     //  do this after action_stack_process_all so new script is not run until next timeslice
     extern void start_ptp_script();
     start_ptp_script();
+
+    // Filmsim: Serie beim RAW entwickeln - eigene Hilfsschuesse, Tastatur dafuer halten
+    extern int filmsim_batch_kbd(void);
+    if (!kbd_blocked && filmsim_batch_kbd())
+        return 1;
 
     // Filmsim: Zoomhebel bei Stufenzoom / fester Brennweite vor Canon verbergen
     extern int filmsim_zoom_kbd(void);

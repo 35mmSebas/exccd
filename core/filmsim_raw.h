@@ -117,6 +117,17 @@ static const short mix_cyano[3][3] = {
 // Kehrwert des Weissabgleichs fuer mix_block: Rohwert = (n * inv + 32768) >> 16
 #define FS_WBINV(wb) ((1 << 24) / (wb))
 
+// Lichterschutz fuer mix_block (Rohwerte, 10-Bit-Skala): Ab MIX_KNEE gleitet der Block
+// zu Grau in Hoehe seines Gruens, ab MIX_SAT ist er ganz grau. Grund: Gruen saettigt
+// zuerst. Darueber stimmt das Verhaeltnis R : G : B nicht mehr, und Matrizen mit
+// negativen Anteilen (Turquoise, Infra) machen aus weissem Himmel oder Lampen
+// Cyan- oder Magenta-Flecken. Ein grauer Block gibt mit Zeilensumme 256 wieder Grau
+// (Canon zeigt Weiss), bei Cyano den Farbton des Looks. Der weiche Uebergang
+// verhindert eine sichtbare Kante zwischen geschuetzten und gemischten Bloecken.
+// Ein einzelner voller R- oder B-Kanal bleibt Farbe (rote Lampe), wie in raw_gain.
+#define MIX_KNEE 850
+#define MIX_SAT  1000
+
 // Gerundet statt abgeschnitten: Abschneiden senkt R und B staerker als G, das
 // gibt einen Gruenstich in den Schatten. G wird als Summe beider Gruenpixel
 // gerechnet (gg = 2 * Mittel), damit das Halbieren keinen Fehler einbringt.
@@ -132,6 +143,15 @@ static inline __attribute__((always_inline)) void mix_block(const short (*m)[3],
     int g2 =   q[k]   - blk;
     int b  = ((q[k+1] - blk) * wb_b + 128) >> 8;
     int gg = g1 + g2;
+    int gm = p[k+1] > q[k] ? p[k+1] : q[k];
+    if (gm > MIX_KNEE || (p[k] >= MIX_SAT && q[k+1] >= MIX_SAT)) {
+        // t: 0 am Knie .. 256 bei Saettigung
+        int t = (gm >= MIX_SAT || (p[k] >= MIX_SAT && q[k+1] >= MIX_SAT)) ? 256
+              : ((gm - MIX_KNEE) * 256 + (MIX_SAT - MIX_KNEE) / 2) / (MIX_SAT - MIX_KNEE);
+        int n = gg >> 1;                // Grau in Hoehe des Gruens (liegt hier schon nahe Weiss)
+        r += ((n - r) * t + 128) >> 8;
+        b += ((n - b) * t + 128) >> 8;
+    }
     int nr = (2 * m[0][0] * r + m[0][1] * gg + 2 * m[0][2] * b + 256) >> 9;
     int dg = (2 * m[1][0] * r + (m[1][1] - 256) * gg + 2 * m[1][2] * b + 256) >> 9;   // Gruen-Struktur erhalten
     int nb = (2 * m[2][0] * r + m[2][1] * gg + 2 * m[2][2] * b + 256) >> 9;
@@ -455,6 +475,21 @@ static void frame_draw(unsigned char *raw, int rowlen, int row0, int jx, int jy,
 #if CAM_SENSOR_BITS_PER_PIXEL == 12
 #define CV_N 1024
 
+// Eine .CV-Kurve (1024 Werte, 10 Bit) -> Tabelle mit 4096 Eintraegen (12 Bit).
+// Kanalweise, damit die Kamera die Datei ueber einen kleinen Puffer lesen kann.
+static void curve_lut_build_ch(const unsigned short *k, unsigned short *t)
+{
+    int v;
+    for (v = 0; v < 4096; v++) {
+        int i = v >> 2, f = v & 3;
+        int k0 = k[i] > 1023 ? 1023 : k[i];
+        // letzte Stuetzstelle: Steigung fortsetzen (4093..4095)
+        int k1 = (i < CV_N - 1) ? (k[i + 1] > 1023 ? 1023 : k[i + 1]) : 2 * k0 - (k[i - 1] > 1023 ? 1023 : k[i - 1]);
+        int o = k0 * (4 - f) + k1 * f;          // = 4 * Interpolation
+        t[v] = v ? (o < 1 ? 1 : (o > 4095 ? 4095 : o)) : 0;   // 0 = Defekt-Markierung
+    }
+}
+
 // .CV (4 x 1024 Werte, 10 Bit: R, G, G, B) -> Tabelle mit 3 x 4096 Eintraegen
 // in der Reihenfolge R, G, B. Beide G-Kurven sind gleich (make_curves.py prueft
 // das), die zweite wird nicht gelesen. Eine R-Zeile nutzt die Tabellen R + G,
@@ -462,19 +497,9 @@ static void frame_draw(unsigned char *raw, int rowlen, int row0, int jx, int jy,
 static void curve_lut_build(const unsigned short *cv, unsigned short *lut)
 {
     static const unsigned char src[3] = { 0, 1, 3 };
-    int c, v;
-    for (c = 0; c < 3; c++) {
-        const unsigned short *k = cv + src[c] * CV_N;
-        unsigned short *t = lut + c * 4096;
-        for (v = 0; v < 4096; v++) {
-            int i = v >> 2, f = v & 3;
-            int k0 = k[i] > 1023 ? 1023 : k[i];
-            // letzte Stuetzstelle: Steigung fortsetzen (4093..4095)
-            int k1 = (i < CV_N - 1) ? (k[i + 1] > 1023 ? 1023 : k[i + 1]) : 2 * k0 - (k[i - 1] > 1023 ? 1023 : k[i - 1]);
-            int o = k0 * (4 - f) + k1 * f;          // = 4 * Interpolation
-            t[v] = v ? (o < 1 ? 1 : (o > 4095 ? 4095 : o)) : 0;   // 0 = Defekt-Markierung
-        }
-    }
+    int c;
+    for (c = 0; c < 3; c++)
+        curve_lut_build_ch(cv + src[c] * CV_N, lut + c * 4096);
 }
 
 // Kurve auf eine Zeile anwenden: ce fuer gerade Spalten, co fuer ungerade

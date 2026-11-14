@@ -899,8 +899,22 @@
 
 #define LANG_EXCCD_AISO                         767
 #define LANG_EXCCD_AISO_MAX                     768
+#define LANG_EXCCD_NEEDS_LOOK                   769
+#define LANG_EXCCD_RAW_DELETE                   770
+#define LANG_EXCCD_RAW_DEL_ORPHANS              771
+#define LANG_EXCCD_RAW_DEL_ALL                  772
+#define LANG_EXCCD_RAW_DEL_ASK                  773
+#define LANG_EXCCD_RAW_DEL_NONE                 774
+#define LANG_EXCCD_RAW_DEL_DONE                 775
+#define LANG_EXCCD_RAW_DEL_FILE                 776
+#define LANG_EXCCD_RAW_DEL_HINT                 777
+#define LANG_EXCCD_DEV_LIST                     778
+#define LANG_EXCCD_DEV_START                    779
+#define LANG_EXCCD_DEV_ALL                      780
+#define LANG_EXCCD_DEV_NONE                     781
+#define LANG_EXCCD_DEV_FX_MENU                  782
 
-#define GUI_LANG_ITEMS                          768
+#define GUI_LANG_ITEMS                          782
 
 //-------------------------------------------------------------------
 extern void gui_lang_init();

@@ -615,12 +615,18 @@ static void default_file_select(int title, const char* prev_dir, const char* def
     if (module_load(&h_fselect))
         libfselect->file_select(title, prev_dir, default_dir, on_select);
 }
+static void default_raw_clean(int purge)
+{
+    if (module_load(&h_fselect))
+        libfselect->raw_clean(purge);
+}
 
 // Default library - module unloaded
 libfselect_sym default_libfselect =
 {
     { 0,0,0,0,0 },
-    default_file_select
+    default_file_select,
+    default_raw_clean
 };
 
 // Library pointer

@@ -7,7 +7,9 @@
 #include "gui_draw.h"
 
 #define MAX_CONSOLE_LINES       (camera_screen.height/FONT_HEIGHT-1)
-#define MAX_CONSOLE_HISTORY     30
+// EXCCD: 16 statt 30 Zeilen (Skripte sind nicht erreichbar; spart 630 Byte im
+// SX110-Kern mit festem Groessenlimit). Muss >= MAX_CONSOLE_LINES (14 bei 240 px) sein.
+#define MAX_CONSOLE_HISTORY     16
 #define MAX_CONSOLE_LINE_LENGTH 44
 
 // Static buffer for console output

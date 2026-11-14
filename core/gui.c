@@ -2212,7 +2212,7 @@ static CMenuItem chdk_settings_menu_items[] = {
     {0}
 };
 
-CMenu chdk_settings_menu = {0x20,LANG_MENU_CHDK_SETTINGS, chdk_settings_menu_items };
+static CMenu chdk_settings_menu __attribute__((unused)) = {0x20,LANG_MENU_CHDK_SETTINGS, chdk_settings_menu_items };
 
 //-------------------------------------------------------------------
 
@@ -2247,6 +2247,18 @@ static void gui_filmsim_develop(__attribute__ ((unused))int arg)
         return;
     }
     libfselect->file_select(LANG_RAW_DEVELOP_SELECT_FILE, "A/DCIM", "A", filmsim_develop_select);
+}
+
+// RAW loeschen: Browser wie beim Entwickeln, SET loescht (modules/gui_fselect.c)
+static void gui_filmsim_raw_delete(__attribute__ ((unused))int arg)
+{
+    libfselect->file_select(LANG_EXCCD_RAW_DELETE, "A/DCIM", "A", NULL);
+}
+
+// Alle RAW bzw. nur die ohne JPEG loeschen, mit Rueckfrage
+static void gui_filmsim_raw_clean(int purge)
+{
+    libfselect->raw_clean(purge);
 }
 
 // Canon-Bildschirmpalette auf die Karte schreiben (fuer die Laschen-Farben)
@@ -2463,6 +2475,10 @@ static CMenu look_submenu = {0x5f,LANG_EXCCD_LOOK, look_submenu_items };
 static CMenuItem exccd_raw_items[] = {
     MENU_ITEM   (0x5c,LANG_EXCCD_SAVE_RAW,                  MENUITEM_ENUM,      gui_filmsim_raw_enum, 0 ),
     MENU_ITEM   (0x2a,LANG_MENU_RAW_DEVELOP,                MENUITEM_PROC,      gui_filmsim_develop, 0 ),
+    MENU_ITEM   (0x0,(int)"",                               MENUITEM_SEPARATOR, 0, 0 ),
+    MENU_ITEM   (0x33,LANG_EXCCD_RAW_DELETE,                MENUITEM_PROC,      gui_filmsim_raw_delete, 0 ),
+    MENU_ITEM   (0x33,LANG_EXCCD_RAW_DEL_ORPHANS,           MENUITEM_PROC,      gui_filmsim_raw_clean, 1 ),
+    MENU_ITEM   (0x33,LANG_EXCCD_RAW_DEL_ALL,               MENUITEM_PROC,      gui_filmsim_raw_clean, 0 ),
     MENU_ITEM   (0x51,LANG_MENU_BACK,                       MENUITEM_UP,        0, 0 ),
     {0}
 };

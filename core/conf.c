@@ -990,6 +990,10 @@ void conf_restore()
     // clear any "clear on restart" values
     clear_values();
 
+    // EXCCD hat kein Skriptmenue: Ein Autostart aus einer alten CHDK-Konfiguration
+    // (beim Einschalten oder ueber die Print-Taste) liesse sich nicht mehr abschalten
+    conf.script_startup = SCRIPT_AUTOSTART_NONE;
+
     // EXCCD-Optik einmalig uebernehmen: alte Standardfarben und die
     // eingebaute Schrift ersetzen, eigene Einstellungen bleiben
     if (conf.exccd_ui < 2) {

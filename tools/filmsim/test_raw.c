@@ -216,6 +216,32 @@ static void test_mix(void)
         mix_block(mix_violet, p, q, 0, BK, WR, WB, FS_WBINV(WR), FS_WBINV(WB));
         CHECK(p[0] == 0 && p[1] == 200 && q[0] == 200 && q[1] == 200, "mix: Defekt-Block veraendert");
     }
+    // Lichterschutz: Gruen gesaettigt, R und B (nach Weissabgleich) ungleich -> Ergebnis grau,
+    // auch bei Matrizen mit negativen Anteilen
+    {
+        static const short (*const mn[4])[3] = { mix_violet, mix_concrete, mix_turquoise, mix_infra };
+        for (mi = 0; mi < 4; mi++) {
+            int p[2] = { BK + 300, 1023 }, q[2] = { 1023, BK + 520 };
+            mix_block(mn[mi], p, q, 0, BK, WR, WB, FS_WBINV(WR), FS_WBINV(WB));
+            int r = (p[0] - BK) * WR / 256, g = p[1] - BK, b = (q[1] - BK) * WB / 256;
+            CHECK(r > g - 6 && r < g + 6 && b > g - 6 && b < g + 6 && p[1] == q[0],
+                  "mix %d: ausgefressenes Weiss bunt (R %d G %d B %d)", mi, r, g, b);
+        }
+    }
+    // Uebergang am Knie: keine Spruenge, wenn Gruen in Einzelschritten steigt
+    {
+        int g, prev[3] = { -1, -1, -1 }, jump = 0;
+        for (g = MIX_KNEE - 20; g <= MIX_SAT + 10; g++) {
+            int p[2] = { BK + (g - BK) * 200 / WR, g }, q[2] = { g, BK + (g - BK) * 320 / WB };
+            mix_block(mix_infra, p, q, 0, BK, WR, WB, FS_WBINV(WR), FS_WBINV(WB));
+            int v[3] = { p[0], p[1], q[1] }, c;
+            for (c = 0; c < 3; c++) {
+                if (prev[c] >= 0 && (v[c] - prev[c] > 12 || v[c] - prev[c] < -12)) jump = 1;
+                prev[c] = v[c];
+            }
+        }
+        CHECK(!jump, "mix: Sprung am Knie des Lichterschutzes");
+    }
 }
 
 // --- heisse Pixel ------------------------------------------------------------

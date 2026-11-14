@@ -13,7 +13,7 @@ come out of the camera finished.
 
 | Camera | Firmware | Status |
 |---|---|---|
-| Digital IXUS 60 / PowerShot SD600 | 1.00d | tested, offered on the website |
+| Digital IXUS 60 / PowerShot SD600 | 1.00d | tested up to v1.9.x, v1.10 features in testing; offered on the website |
 | IXUS 132 / PowerShot ELPH 115 IS | 1.00b | in testing (built, partly tested) |
 | PowerShot SX110 IS | 1.00b | in testing (built, partly tested) |
 | IXUS 145 / PowerShot ELPH 135 | 1.00c | ported, never run on a real camera |
@@ -24,21 +24,21 @@ come out of the camera finished.
 
 | Look | Type | Character |
 |---|---|---|
-| Daylight 100 | Color slide | Natural balance |
-| Postcard 100 | Color slide | Rich saturation |
-| Blush 100 | Color slide | Soft portrait |
-| Journal 400 | Color slide | Documentary chroma |
-| Studio 160 | Color negative | Neutral shadow |
-| Drugstore 200 | Color negative | Retro negative |
+| Daylight 100 | Colour slide | Natural balance |
+| Postcard 100 | Colour slide | Rich saturation |
+| Blush 100 | Colour slide | Soft portrait |
+| Journal 400 | Colour slide | Documentary chroma |
+| Studio 160 | Colour negative | Neutral shadow |
+| Drugstore 200 | Colour negative | Retro negative |
 | Scene 500 | Cinema | Cinematic flat |
 | Silver 400 | Black and white | Fine mono |
-| Portrait 400 | Color negative | Warm skin |
+| Portrait 400 | Colour negative | Warm skin |
 | Tungsten 800 | Cinema | Neon nights |
-| Expired 200 | Color negative | Faded memory |
-| Cross 100 | Color slide | Cross processed |
-| Violet 400 | Color negative | Purple foliage |
-| Concrete 100 | Color negative | Muted urban |
-| Ember 200 | Color negative | Red scale |
+| Expired 200 | Colour negative | Faded memory |
+| Cross 100 | Colour slide | Cross processed |
+| Violet 400 | Colour negative | Purple foliage |
+| Concrete 100 | Colour negative | Muted urban |
+| Ember 200 | Colour negative | Red scale |
 | Grit 400 | Black and white | Pushed grain |
 | Summer 200 | Colour negative | Golden warmth |
 | Chrome 64 | Colour slide | Deep reds |
@@ -52,7 +52,8 @@ come out of the camera finished.
 | Pastel 400 | Colour negative | Airy soft |
 
 Every look also has two **Dynamic+** variants (DR+1, DR+2) that expose shorter to protect
-highlights and lift the shadows with the curve.
+highlights and lift the shadows with the curve. They only shift the exposure when the camera
+picks the shutter speed: in Tv, M and long shutter mode, and with flash, the normal curve is used.
 
 ## Installation
 
@@ -92,11 +93,13 @@ grouped like this:
 | Recipe | Load C1 to C4 with left/right | |
 | Look: *film* ▸ | White balance, WB shift, Dynamic+, colour noise filter, B/W filter, Effects ▸ (grain, halation, mist, vignette, light leak, date, frame), Save as recipe ▸ | yes |
 | Shutter, Focus, Zoom, Flash, ND filter, Double exposure | Settings for the situation | no |
-| RAW ▸ | Save RAW, RAW develop | no |
+| RAW ▸ | Save RAW, RAW develop, delete RAW files | no |
 | Reset to defaults, System ▸ | Palette, language, build info, bootable card | no |
 
 The name of the active look is shown at the bottom of the screen. For every photo,
-`A/CHDK/FILMLOG.CSV` records which look was active.
+`A/CHDK/FILMLOG.CSV` records which look was active. If a step had to be skipped for lack of
+memory, the line says which (`low memory, skipped: ...`) and the status line shows `low mem!`
+until a photo goes through completely again.
 
 **RAW develop** (Options → RAW): render a saved DNG again with a different look. Set Options → RAW →
 Save RAW to DNG when shooting. Later, choose RAW develop, pick the DNG and the look, then take one
@@ -104,18 +107,25 @@ photo: what is in front of the lens does not matter, the camera only needs a sho
 JPEG engine. The status line shows `Develop <file>: <look>` until then; choose RAW develop
 again to cancel. You get a new JPEG. The DNG stays untouched, your loaded look comes back.
 
-White balance, Dynamic+ level, date stamp and Auto color noise filter come from the original
+White balance, Dynamic+ level, date stamp and Auto colour noise filter come from the original
 photo. The JPEG's Exif data (date, exposure, orientation) comes from the helper shot, so hold
 the camera the same way and do not use digital zoom. `FILMLOG.CSV` names the source file in a
 third column. Canon's JPEG engine only runs after a shot, so this cannot run in playback mode.
 
+**Deleting RAW files** (Options → RAW): Canon's own delete only removes the JPEG, so DNGs pile up
+on the card. *Delete RAW...* opens the same browser as RAW develop; SET deletes the DNG under the
+cursor, also in full view (Right), after a yes/no question. *Delete RAW without JPEG* removes every
+DNG whose JPEG you already deleted in Canon playback. *Delete all RAW* removes every DNG on the card.
+Both say how many files and MB first; JPEGs are never touched.
+
 **White balance** (Options → Look): sets the camera's own white balance (Auto, Daylight, Cloudy,
 Tungsten, Fluorescent, Fluorescent H, Custom). **WB shift** fine-tunes the colour on top of
-that, on a grid like the white balance shift of a Fujifilm camera: left/right moves from cyan to
+that, on a grid like the white balance shift some cameras offer: left/right moves from cyan to
 red, up/down from yellow to blue, each −9 to +9. SET applies, MENU cancels, the zoom lever goes
 back to 0. The shift is worked into the look's tone curve,
 so it costs no time per photo. It only shows in the photo, not on the screen, and it is off
-while the film is Off. One step is about 3 %; this is not calibrated yet.
+while the film is Off (the menu then shows "needs a look"). With black-and-white looks it works
+like a weak colour filter. One step is about 3 %; this is not calibrated yet.
 
 **Recipes** (Options → Recipe): a recipe stores the film, white balance, WB shift, Dynamic+,
 colour noise filter, B/W filter and all effects in one of four slots, C1 to C4. Choosing a
@@ -126,7 +136,8 @@ slots with their names, one press saves (a used slot asks first). A new slot is 
 line show a `*` after its slot. The recipes live in `A/CHDK/FILMS/RECIPES.TXT`, a text file you
 can edit on the PC to rename recipes, write new ones or share them (the file explains the
 format). `wb = keep` leaves the camera's white balance as it is. Mistakes in the file end up in
-`A/CHDK/FILMS/RECIPES.LOG`. Saving on the camera rewrites the file, so your own comments in it
+`A/CHDK/FILMS/RECIPES.LOG`, and so does the reason when saving fails (file over 8 KB or
+unreadable, card full). Saving on the camera rewrites the file, so your own comments in it
 are lost.
 
 ## Building
@@ -158,7 +169,9 @@ gcc -Wall -Wextra -I core -DCAM_SENSOR_BITS_PER_PIXEL=12 -o test_raw12 tools/fil
 ```
 
 To measure the processing time per shot on a camera, put an empty file `A/CHDK/FILMTIME.CSV` on the
-card. EXCCD then adds one line per shot with the time of each step in ms; without the file nothing is written.
+card. EXCCD then adds one line per shot with the time of each step in ms and the free memory before
+and after (total, largest block, number of blocks, in KB); without the file nothing is written.
+A largest block that keeps shrinking over many shots means the memory is fragmenting.
 
 When a core change must not touch another camera, `tools/filmsim/compare_build.sh <git-ref> <platform>`
 builds both states with the same version and timestamp and compares `main.bin` and every object file.

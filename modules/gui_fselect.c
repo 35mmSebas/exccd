@@ -109,6 +109,9 @@ static coord list_w;                 // Filmsim: Breite der Dateiliste (sonst = 
 // Ordner, rechts das Vorschaubild der markierten DNG (filmsim_dng_thumb in core/filmsim.c).
 // Das Bild kommt erst, wenn der Cursor kurz steht, damit das Blaettern schnell bleibt.
 static int dev_mode;
+// EXCCD: "RAW loeschen" nutzt denselben Browser (dev_mode = 1), SET loescht statt zu entwickeln
+static int del_mode;
+static int del_keep_n = -1;          // nach dem Loeschen: Cursor auf diese Position statt ans Ende
 static void *thumb_for;              // fuer welche Datei das Vorschaubild gezeichnet ist
 static int thumb_since;              // seit wann der Cursor auf dieser Datei steht
 static void *thumb_sel;
@@ -729,7 +732,9 @@ void gui_fselect_init(int title, const char* prev_dir, const char* default_dir, 
 
     main_w = SPACING + NAME_FONT_SIZE + FONT_WIDTH + SIZE_FONT_SIZE + FONT_WIDTH + TIME_FONT_SIZE + SPACING + SCROLLBAR;
     list_w = main_w;
-    dev_mode = (title == LANG_RAW_DEVELOP_SELECT_FILE);
+    del_mode = (title == LANG_EXCCD_RAW_DELETE);
+    dev_mode = del_mode || (title == LANG_RAW_DEVELOP_SELECT_FILE);
+    del_keep_n = -1;
     if (dev_mode)
     {
         // schmale Liste (nur Namen), daneben das Vorschaubild, fast die ganze Breite
@@ -884,7 +889,19 @@ void gui_fselect_draw(int enforce_redraw)
     {
         gui_fselect_readdir = 0;
         gui_fselect_read_dir();
-        if (dev_mode)
+        if (del_keep_n >= 0 && items.tail)
+        {
+            // geloeschte Datei: auf den Nachfolger (bzw. den neuen letzten Eintrag)
+            int n = del_keep_n;
+            del_keep_n = -1;
+            while (selected->next && n-- > 0)
+                fselect_goto_next(1);
+            if (fullview && selected->isdir)
+                fselect_full_step(-1);
+            if (fullview && selected->isdir)
+                fullview = 2;               // keine RAW mehr im Ordner: zurueck zur Liste
+        }
+        else if (dev_mode)
             fselect_select_tail();
     }
 
@@ -1059,7 +1076,7 @@ void gui_fselect_draw(int enforce_redraw)
 
         if (dev_mode)
         {
-            strcpy(dbuf, lang_str(LANG_EXCCD_DEV_FULL_HINT));    // Filmsim: Hinweis aufs Vollbild
+            strcpy(dbuf, lang_str(del_mode ? LANG_EXCCD_RAW_DEL_HINT : LANG_EXCCD_DEV_FULL_HINT));    // Filmsim: Hinweis aufs Vollbild
         }
         else if (sum_size)
         {
@@ -1097,6 +1114,135 @@ static void fselect_delete_file_cb(unsigned int btn)
         gui_fselect_readdir = 1;
     }
     gui_fselect_redraw = 2;
+}
+
+// EXCCD: eine RAW im Loesch-Browser (Liste oder Vollbild), danach steht der Cursor auf der naechsten
+static void fselect_del_raw_cb(unsigned int btn)
+{
+    if (btn == MBOX_BTN_YES && selected)
+    {
+        started();
+        delete_file(items.dir, selected->name);
+        finished();
+        del_keep_n = selected->n;
+        gui_fselect_readdir = 1;
+    }
+    thumb_for = 0;
+    gui_fselect_redraw = 2;
+}
+
+static void fselect_del_raw_ask()
+{
+    sprintf(buf, lang_str(LANG_EXCCD_RAW_DEL_FILE), selected->name);
+    gui_mbox_init(LANG_EXCCD_RAW_DELETE, (int)buf, MBOX_TEXT_CENTER|MBOX_BTN_YES_NO|MBOX_DEF_BTN2, fselect_del_raw_cb);
+}
+
+// EXCCD: alle RAW in den Kameraordnern unter A/DCIM loeschen (purge: nur die ohne JPEG gleicher
+// Nummer, in irgendeinem Kameraordner, wie "Purge RAW" auf A/DCIM). Erst zaehlen, dann fragen.
+#define CLEAN_MAX_NUM   10000           // Bildnummern 0000-9999
+static int clean_purge, clean_cnt, clean_kb, clean_total;
+static unsigned char *clean_jpg;        // Bitfeld: es gibt ein JPEG mit dieser Nummer
+
+static int clean_num(const char *name)
+{
+    int i, n = 0;
+    for (i = 4; i < 8; i++)
+    {
+        if (name[i] < '0' || name[i] > '9') return -1;
+        n = n * 10 + name[i] - '0';
+    }
+    return n;
+}
+
+// pass 0: JPEG-Nummern sammeln, 1: zaehlen, 2: loeschen
+static void clean_walk(int pass)
+{
+    DIR *d = opendir_fselect("A/DCIM"), *f;
+    fs_dirent de, fe;
+    char path[32];
+    if (!d) return;
+    while (fs_readdir(d, &de, "A/DCIM"))
+    {
+        if (de.deleted || !de.isdir || de.isparent || de.iscurrent || strlen(de.de->d_name) > 12)
+            continue;
+        sprintf(path, "A/DCIM/%s", de.de->d_name);
+        f = opendir_fselect(path);
+        if (!f) continue;
+        while (fs_readdir(f, &fe, path))
+        {
+            const char *nm = fe.de->d_name;
+            if (fe.deleted || fe.isdir) continue;
+            int n = clean_num(nm);
+            if (pass == 0)
+            {
+                if (is_jpg(nm) && n >= 0)
+                    clean_jpg[n >> 3] |= 1 << (n & 7);
+                continue;
+            }
+            if (!is_raw(nm)) continue;
+            if (clean_purge && (n < 0 || (clean_jpg[n >> 3] & (1 << (n & 7)))))
+                continue;
+            clean_cnt++;
+            clean_kb += (fe.size + 1023) >> 10;
+            if (pass == 2)
+            {
+                if (clean_total)
+                    draw_progress_bar(lang_str(LANG_EXCCD_RAW_DELETE), clean_cnt * 100 / clean_total);
+                delete_file(path, nm);
+            }
+        }
+        closedir(f);
+    }
+    closedir(d);
+}
+
+static void clean_end_cb(__attribute__ ((unused))unsigned int btn)
+{
+    if (clean_jpg) free(clean_jpg);
+    clean_jpg = 0;
+    running = 0;                        // Modul darf wieder entladen werden
+}
+
+static void clean_do_cb(unsigned int btn)
+{
+    if (btn != MBOX_BTN_YES)
+    {
+        clean_end_cb(btn);
+        return;
+    }
+    clean_total = clean_cnt;
+    clean_cnt = clean_kb = 0;
+    started();
+    clean_walk(2);
+    finished();
+    sprintf(buf, lang_str(LANG_EXCCD_RAW_DEL_DONE), clean_cnt, clean_kb >> 10);
+    gui_mbox_init(LANG_EXCCD_RAW_DELETE, (int)buf, MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, clean_end_cb);
+}
+
+static void fselect_raw_clean(int purge)
+{
+    if (running) return;                // Browser offen oder schon am Loeschen
+    running = 2;
+    clean_purge = purge;
+    clean_cnt = clean_kb = 0;
+    clean_jpg = 0;
+    if (purge)
+    {
+        clean_jpg = malloc(CLEAN_MAX_NUM / 8);
+        if (!clean_jpg) { running = 0; return; }
+        memset(clean_jpg, 0, CLEAN_MAX_NUM / 8);
+        clean_walk(0);
+    }
+    clean_walk(1);
+    if (clean_cnt == 0)
+    {
+        gui_mbox_init(purge ? LANG_EXCCD_RAW_DEL_ORPHANS : LANG_EXCCD_RAW_DEL_ALL, LANG_EXCCD_RAW_DEL_NONE,
+                      MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_OK, clean_end_cb);
+        return;
+    }
+    sprintf(buf, lang_str(LANG_EXCCD_RAW_DEL_ASK), clean_cnt, (clean_kb + 512) >> 10);
+    gui_mbox_init(purge ? LANG_EXCCD_RAW_DEL_ORPHANS : LANG_EXCCD_RAW_DEL_ALL, (int)buf,
+                  MBOX_FUNC_RESTORE|MBOX_TEXT_CENTER|MBOX_BTN_YES_NO|MBOX_DEF_BTN2, clean_do_cb);
 }
 
 // Find a JPG matching a given RAW name. If 'nested' > 0 search recursively in
@@ -1658,6 +1804,12 @@ int gui_fselect_kbd_process()
             fullview = 2;
         if (key != KEY_SET)
             return 0;
+        if (del_mode)                   // SET im Loesch-Browser: Rueckfrage, Vollbild bleibt
+        {
+            if (selected && !selected->isdir)
+                fselect_del_raw_ask();
+            return 0;
+        }
         fullview = 2;                   // SET: weiter wie in der Liste, also entwickeln
         gui_fselect_redraw = 0;
     }
@@ -1671,6 +1823,13 @@ int gui_fselect_kbd_process()
         }
         return 0;
     }
+    else if (del_mode && key == KEY_SET && selected && selected->isvalid && !selected->isdir)
+    {
+        fselect_del_raw_ask();
+        return 0;
+    }
+    else if (del_mode && key == KEY_LEFT)
+        return 0;                       // kein CHDK-Dateimenue im Loesch-Browser
 
     switch (key)
     {
@@ -1864,7 +2023,10 @@ int _module_can_unload()
 
 int _module_exit_alt()
 {
-    exit_fselect(0);
+    if (running == 2)                   // EXCCD: RAW loeschen ohne Browser, Rueckfrage verfaellt
+        clean_end_cb(0);
+    else
+        exit_fselect(0);
     return 0;
 }
 
@@ -1876,7 +2038,8 @@ libfselect_sym _libfselect =
         0, _module_unloader, _module_can_unload, _module_exit_alt, 0
     },
 
-    gui_fselect_init
+    gui_fselect_init,
+    fselect_raw_clean
 };
 
 ModuleInfo _module_info = {
