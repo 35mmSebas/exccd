@@ -83,7 +83,7 @@ for cam in $CAMERAS; do
             # bleibt, ist der ARAM-Heap; unter 4 KB legt core/memmgmt.c keinen an.
             mk=platform/$p/sub/$s/makefile.inc
             if grep -q '^override OPT_CHDK_IN_ARAM=1' $mk; then
-                lim=$(sed -n 's/^ARAM_HEAP_SIZE=\(0x[0-9a-fA-F]*\).*//p' $mk)
+                lim=$(sed -n 's/^ARAM_HEAP_SIZE=\(0x[0-9a-fA-F]*\).*/\1/p' $mk)
                 used=$(arm-none-eabi-size platform/$p/sub/$s/main.elf | awk 'NR==2 { print $4 }')
                 free=$(( lim - used ))
                 echo "    ARAM: $used von $((lim)) Byte belegt, $free frei"
