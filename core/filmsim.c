@@ -98,7 +98,10 @@ static void prog_rows(int done, int total);
 #endif
 
 #ifndef PROPCASE_MY_COLORS
-    #error "Filmsimulation braucht PROPCASE_MY_COLORS (propset)"
+// Propset ohne bekannte My-Colors-Propcases (CHDK propset 3, z. B. G11): Looks wirken
+// nur ueber Kurven und Rohdaten, Canons Farbeinstellungen bleiben unangetastet.
+// Die Propcase-Nummern lassen sich auf der Kamera mit FILMSIM_DIAG finden.
+#define FS_NO_MYCOLORS 1
 #endif
 
 // Eingebaute Tabelle, falls A/CHDK/FILMS/FILMS.TXT fehlt oder unbrauchbar ist
@@ -390,6 +393,9 @@ static int preview_pending = 0;
 static void set_canon_props(const filmsim_t *s)
 {
     set_count++;
+#ifdef FS_NO_MYCOLORS
+    (void)s;
+#else
     shooting_set_prop(PROPCASE_MY_COLORS, s->mycolors);
     if (s->mycolors == MC_CUSTOM) {
         shooting_set_prop(PROPCASE_CUSTOM_CONTRAST,   s->contrast);
@@ -400,10 +406,15 @@ static void set_canon_props(const filmsim_t *s)
         shooting_set_prop(PROPCASE_CUSTOM_BLUE,       s->blue);
         shooting_set_prop(PROPCASE_CUSTOM_SKIN_TONE,  s->skin);
     }
+#endif
 }
 
 static int canon_props_match(const filmsim_t *s)
 {
+#ifdef FS_NO_MYCOLORS
+    (void)s;
+    return 1;
+#else
     if (shooting_get_prop(PROPCASE_MY_COLORS) != s->mycolors) return 0;
     if (s->mycolors != MC_CUSTOM) return 1;
     return shooting_get_prop(PROPCASE_CUSTOM_CONTRAST)   == s->contrast
@@ -413,6 +424,7 @@ static int canon_props_match(const filmsim_t *s)
         && shooting_get_prop(PROPCASE_CUSTOM_GREEN)      == s->green
         && shooting_get_prop(PROPCASE_CUSTOM_BLUE)       == s->blue
         && shooting_get_prop(PROPCASE_CUSTOM_SKIN_TONE)  == s->skin;
+#endif
 }
 
 //-------------------------------------------------------------------
@@ -876,8 +888,12 @@ void filmsim_set(int v)
     look_text_update();
     if (v == 0) {
         // zurueck auf Canon-Standard
+#ifndef FS_NO_MYCOLORS
         if (!was_off && filmsim_photo_mode())
             shooting_set_prop(PROPCASE_MY_COLORS, MC_OFF);
+#else
+        (void)was_off;
+#endif
         set_curve(current());
     } else {
         filmsim_apply();

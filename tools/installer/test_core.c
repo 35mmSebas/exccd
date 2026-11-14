@@ -107,28 +107,35 @@ static void test_names(void)
     CHECK(!zip_name_safe(""));
 }
 
-#define MAX_KNOWN 16
+#define MAX_KNOWN 256
 
 static void test_cameras(const char *path)
 {
     FILE *f = fopen(path, "r");
-    char line[256];
+    char line[512];
     int n = 0;
     CHECK(f != NULL);
     if (!f)
         return;
     while (fgets(line, sizeof(line), f)) {
-        char plat[64], sub[16], fw[8];
+        char plat[64], sub[160], fw[200] = "";
         const camera *cam;
-        if (line[0] == '#' || sscanf(line, "%63s %15s", plat, sub) != 2)
+        if (line[0] == '#' || sscanf(line, "%63s %159s", plat, sub) != 2)
             continue;
         n++;
         if (!(cam = camera_find(plat))) {
             printf("FAIL: camera %s from cameras.txt is missing in core.c\n", plat);
             failures++;
         } else {
-            /* sub "100d" is firmware "1.00d" */
-            snprintf(fw, sizeof(fw), "%c.%s", sub[0], sub + 1);
+            /* subs "100d,100a" are firmwares "1.00d 1.00a" */
+            for (char *s = strtok(sub, ","); s; s = strtok(NULL, ",")) {
+                char v[8];
+                snprintf(v, sizeof(v), "%c.%s", s[0], s + 1);
+                if (fw[0])
+                    strcat(fw, " ");
+                strcat(fw, v);
+                CHECK(camera_has_fw(cam, v));
+            }
             if (strcmp(cam->fw, fw) != 0) {
                 printf("FAIL: %s: core.c says firmware %s, cameras.txt %s\n", plat, cam->fw, fw);
                 failures++;
@@ -140,7 +147,8 @@ static void test_cameras(const char *path)
 
     /* known_fw against camera_list.csv in the repo root (cameras.txt is in tools/filmsim/) */
     {
-        char csv[512], known[MAX_KNOWN][128];
+        char csv[512];
+        static char known[MAX_KNOWN][128];
         const char *slash = strrchr(path, '/');
         snprintf(csv, sizeof(csv), "%.*s../../camera_list.csv", slash ? (int)(slash - path + 1) : 0, path);
         memset(known, 0, sizeof(known));
@@ -174,6 +182,16 @@ static void test_cameras(const char *path)
     CHECK(camera_detect(NULL, "C:\\Users\\x\\Downloads\\exccd-v1.9.24-ixus132_elph115-100b-3looks (1).zip")
           == camera_find("ixus132_elph115"));
     CHECK(camera_detect(NULL, "exccd-v1.9.24-sx110is2-100b.zip") == NULL);
+    {
+        const camera *g11 = camera_find("g11"), *a2400 = camera_find("a2400");
+        char v[8];
+        CHECK(camera_has_fw(a2400, "1.00d") && !camera_has_fw(a2400, "1.00a"));
+        CHECK(zip_firmware(NULL, a2400, "exccd-v1.10.2-a2400-100d-3looks.zip", v) && strcmp(v, "1.00d") == 0);
+        CHECK(zip_firmware(NULL, g11, "C:\\Downloads\\EXCCD-v1.10.2-G11-100H-7looks (1).zip", v) &&
+              strcmp(v, "1.00h") == 0);
+        CHECK(!zip_firmware(NULL, a2400, "exccd-v1.10.2-a2400-100a-3looks.zip", v));
+        CHECK(!zip_firmware(NULL, a2400, "exccd-v1.10.2-a2400.zip", v));
+    }
     CHECK(camera_detect(NULL, "random.zip") == NULL);
 
     {
@@ -269,8 +287,13 @@ static void test_zip(const char *path, const char *outdir)
         free(buf);
         files++;
     }
-    printf("%s: %d entries, %d files, %llu bytes, camera %s\n", path, z.count, files,
-           (unsigned long long)zip_total_size(&z), cam ? cam->name : "(unknown)");
+    char fw[8] = "?";
+    if (cam && !zip_firmware(&z, cam, path, fw)) {
+        printf("FAIL %s: firmware of the download not found\n", path);
+        failures++;
+    }
+    printf("%s: %d entries, %d files, %llu bytes, camera %s, firmware %s\n", path, z.count, files,
+           (unsigned long long)zip_total_size(&z), cam ? cam->name : "(unknown)", fw);
     zip_close(&z);
     free(data);
 }

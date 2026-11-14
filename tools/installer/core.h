@@ -47,7 +47,8 @@ typedef struct {
     const char *name;       /* shown to the user */
     int fat32_boot;         /* 1: boots from FAT32 (DryOS R47+); 0: FAT12/16 only */
     int firm_update;        /* 1: can start EXCCD via MENU -> Firm Update (PS.FIR) */
-    const char *fw;         /* the firmware EXCCD is built for, "1.00d" (sub in cameras.txt) */
+    const char *fw;         /* the firmwares EXCCD is built for, "1.00d 1.00a" (subs in cameras.txt,
+                             * the first is the main one) */
     const char *known_fw;   /* all versions CHDK knows, "1.00a 1.00d" (camera_list.csv) */
 } camera;
 
@@ -55,6 +56,14 @@ extern const camera cameras[];
 extern const int camera_count;
 
 const camera *camera_find(const char *platform);
+
+/* 1 if EXCCD is built for version v ("1.00d", only the first 5 characters count). */
+int camera_has_fw(const camera *cam, const char *v);
+
+/* The firmware a download is for, as "1.00d" in out (6 bytes): from the file name
+ * (exccd-<ver>-<platform>-<sub>-...zip) or, failing that, the ZIP comment
+ * ("CHDK... for <platform> fw:<sub>"). Returns 1 if found. */
+int zip_firmware(const zip_file *z, const camera *cam, const char *filename, char *out);
 
 /* Guess the camera from the ZIP comment ("CHDK for <platform> fw:...") or,
  * failing that, from the file name (exccd-<ver>-<platform>-<sub>-...zip).

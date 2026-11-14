@@ -83,5 +83,18 @@
 
     #undef  CAM_DEFAULT_MENU_CURSOR_BG
     #undef  CAM_DEFAULT_MENU_CURSOR_FG
-    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_RED      // Override menu cursor colors
-    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_WHITE    // Override menu cursor colors
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // Zwilling der IXUS 60 (gleiche Generation, 2888 x 2136, 10 Bit, R G / G B), Sensorfamilie A2.
+    // Annahme (ungeprueft): gleiche Canon-Palette wie die IXUS 60, deshalb deren Laschen und Farben
+    // (platform_palette.c wie bei der IXUS 60 angepasst). Falsche Farben in der Filmauswahl -> PALREC.BIN.
+    #define FILMSIM_LABELS              1
+    #define FILMSIM_COLOR_BG            0xFF
+    #define FILMSIM_COLOR_GREY          0xA3
+    #define FILMSIM_COLOR_RULE          0xFA
+    #define FILMSIM_THUMB_GREYS         { 0xFF,0, 0xFA,71, 0x3F,122, 0x1F,168, 0x11,197 }
+    // Weissabgleich: Werte der IXUS 60 (Standard)
+    #define FILMSIM_DIAG                1

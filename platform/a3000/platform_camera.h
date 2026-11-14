@@ -76,3 +76,17 @@
     #define CAM_SD_OVER_IN_MF               1
 
 //--------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // DIGIC III, DryOS R43, propset 3, 12 Bit G B / R G, 3720 x 2772 (10 MP)
+    // Sensorfamilie Q3 (10 MP CCD, 12 Bit GBRG, DIGIC III)
+    // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
+    // Weissabgleich: Werte der IXUS 60 (Standard), nach dem Test aus einer DNG messen.
+    // Propset 3 kennt in CHDK keine My-Colors-Propcases: Looks nur ueber Kurven und Rohdaten.
+    #define FILMSIM_DIAG                1

@@ -92,3 +92,16 @@
     #define CAM_SD_OVER_IN_MF               1
 
 //--------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // DIGIC 4, DryOS R45, propset 4, 12 Bit R G / G B, 4080 x 3048 (12 MP): eigene Sensorfamilie.
+    // Propset 4: Canon-Weissabgleich-Menue von EXCCD bleibt aus (andere Zaehlung, nicht verifiziert).
+    // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
+    // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.
+    #define FILMSIM_DIAG                1

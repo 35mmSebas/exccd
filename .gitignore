@@ -48,8 +48,6 @@ platform/ixus60_sd600/libplatform.a
 platform/ixus60_sd600/main.o
 platform/ixus60_sd600/platform_palette.o
 platform/ixus60_sd600/shooting.o
-platform/ixus60_sd600/sub/100d/PRIMARY.BIN
-platform/ixus145_elph135/sub/100c/PRIMARY.BIN
 platform/ixus60_sd600/sub/100d/bin_compat.h
 platform/ixus60_sd600/sub/100d/boot.o
 platform/ixus60_sd600/sub/100d/camera_info.thm.o
@@ -141,6 +139,6 @@ tools/stubs_load.o
 
 # EXCCD-Webseite, gebaut mit tools/site/build_site.py
 /_site/
-platform/ixus132_elph115/sub/100b/PRIMARY.BIN
-platform/sx110is/sub/100b/PRIMARY.BIN
 /.claude/
+# Leere Platzhalter, damit der Build keine Firmware-Dumps sucht
+platform/*/sub/*/PRIMARY.BIN

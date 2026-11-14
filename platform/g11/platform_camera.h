@@ -106,3 +106,17 @@
     #define CAM_HAS_CANON_RAW                   1   // has native Canon raw
 
 //--------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // DIGIC 4, DryOS R39, propset 3, 12 Bit R G / G B, 3744 x 2784 (10 MP, 1/1,7"): Sensorfamilie E4 (S90/S95/G11/G12).
+    // Propset 3 kennt in CHDK keine My-Colors-Propcases: Looks nur ueber Kurven und Rohdaten
+    // (FS_NO_MYCOLORS in core/filmsim.c), S/W-Looks bleiben farbig. Nummern auf der Kamera suchen (FILMSIM_DIAG).
+    // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
+    // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.
+    #define FILMSIM_DIAG                1

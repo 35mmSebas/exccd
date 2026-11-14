@@ -82,8 +82,8 @@
     #define CAM_BITMAP_WIDTH                720   // Actual width of bitmap screen in bytes
 
     #define CAM_ADJUSTABLE_ALT_BUTTON       1    // ALT-button can be set from menu
-    #define CAM_ALT_BUTTON_NAMES            { "Playback", "Help" }
-    #define CAM_ALT_BUTTON_OPTIONS          { KEY_PRINT, KEY_HELP }
+    #define CAM_ALT_BUTTON_NAMES            { "Help", "Playback" }     // EXCCD: Hilfe-Taste zuerst, Wiedergabe bleibt frei
+    #define CAM_ALT_BUTTON_OPTIONS          { KEY_HELP, KEY_PRINT }
     #undef  CAM_HAS_DISP_BUTTON
 
     #define CAM_HAS_FILEWRITETASK_HOOK      1
@@ -103,5 +103,19 @@
 
     #define CAM_SD_OVER_IN_AF               1
     #define CAM_SD_OVER_IN_MF               1
- 
+
 //--------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // Sensor wie IXUS 132/145 (12 Bit, G B / R G, 4704 x 3504), Sensorfamilie C4.
+    // Noch keine Laschen (Palette fehlt) und kein eigener Weissabgleich:
+    // Textkarten in CHDK-Farben, WB-Gains der IXUS 60.
+    // Nach dem Kameratest: FILMSIM_LABELS/_COLOR_* und FILMSIM_WB_R/_B setzen.
+    // Testphase: System -> Debug zeigt Propcases (My Colors = 188 in propset 5)
+    #define FILMSIM_DIAG                1

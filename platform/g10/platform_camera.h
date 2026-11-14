@@ -137,3 +137,16 @@
     #define CAM_HAS_CANON_RAW                   1   // has native Canon raw
 
 //--------------------------------------------------
+
+    #undef  CAM_DEFAULT_MENU_CURSOR_BG
+    #undef  CAM_DEFAULT_MENU_CURSOR_FG
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // DIGIC 4, DryOS R31, propset 2, 12 Bit G B / R G, 4480 x 3348 (15 MP)
+    // Sensorfamilie S4 (14 MP CCD, 12 Bit GBRG, DIGIC 4)
+    // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
+    // Weissabgleich: Werte der IXUS 60 (Standard), nach dem Test aus einer DNG messen.
+    #define FILMSIM_DIAG                1

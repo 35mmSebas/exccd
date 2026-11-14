@@ -35,7 +35,8 @@ dump() { arm-none-eabi-objdump -s -d "$1" 2>/dev/null | tail -n +3; }
 result=0
 
 for cam in $CAMERAS; do
-    p=${cam%:*} s=${cam#*:}
+    # nur die erste (Haupt-)Firmware aus cameras.txt
+    p=${cam%%:*} s=${cam#*:} s=${s%%,*}
     echo "=== $p $s: $ref gegen aktuellen Stand"
     for dir in "$wt" .; do
         (cd "$dir" && make -s PLATFORM=$p PLATFORMSUB=$s clean >/dev/null &&

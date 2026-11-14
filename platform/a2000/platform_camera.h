@@ -79,5 +79,14 @@
 
     #undef  CAM_DEFAULT_MENU_CURSOR_BG
     #undef  CAM_DEFAULT_MENU_CURSOR_FG
-    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_RED      // Override menu cursor colors
-    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_WHITE    // Override menu cursor colors
+    #define CAM_DEFAULT_MENU_CURSOR_BG  IDX_COLOR_WHITE    // EXCCD: weisser Balken
+    #define CAM_DEFAULT_MENU_CURSOR_FG  IDX_COLOR_BLACK    // EXCCD: schwarze Schrift
+
+//--------------------------------------------------
+// EXCCD (Bedeutung siehe Kopf von core/filmsim.c)
+    // DIGIC III, DryOS R31, 12 Bit R G / G B, 3720 x 2772 wie SX110: Sensorfamilie B3.
+    // Noch keine Laschen (Palette fehlt): Textkarten in CHDK-Farben.
+    // Weissabgleich vorerst von der SX110 (gleiche RAW-Groesse, gemessen an weissem Papier).
+    #define FILMSIM_WB_R                470
+    #define FILMSIM_WB_B                441
+    #define FILMSIM_DIAG                1

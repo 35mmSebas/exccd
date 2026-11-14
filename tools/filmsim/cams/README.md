@@ -25,8 +25,15 @@ The existing notes and checklists are in German. English is perfectly fine for n
 
 ## Adding a camera
 
+**Quick way:** `python tools/filmsim/add_camera.py LIST` does steps 2 and 4–6 for every camera in LIST
+(one per line: `platform | short name | name for the site [| sub]`). It reads sensor, Bayer pattern,
+propset and all firmware versions from the CHDK port, assigns the sensor family
+(`tools/filmsim/families.py`) and writes `notes.md` and `kameratest.md`. Then build (step 7) and check the result by hand.
+
 1. **Branch** `<platform>` from `main`. It only lives until the camera test.
-2. **Entry** in `tools/filmsim/cameras.txt` with status `test`.
+2. **Entry** in `tools/filmsim/cameras.txt` with status `test`: all firmware versions CHDK builds,
+   comma-separated, the one you test first. Aliases (`SOURCE_FIRMWARE` in `camera_list.csv`)
+   are copies of their source build. A new sensor also gets a letter in `tools/filmsim/families.py`.
 3. **Check CHDK:** the camera must exist in CHDK 1.6.1 (`platform/<platform>/sub/<fw>/`).
    The core handles 10 and 12 bit and the Bayer patterns R G / G B and G B / R G. For
    anything else the build stops with `#error`; then extend `core/filmsim_raw.h` and test
@@ -38,7 +45,7 @@ The existing notes and checklists are in German. English is perfectly fine for n
    (template: `ixus145_elph135/`).
 6. **Boot rules** for the SD installer: add the camera to the table in
    `tools/installer/core.c` (FAT32 only for DryOS R47+). `test_core` checks it against
-   `cameras.txt`. For the download page add an entry to `CAMERA_META` in
+   `cameras.txt` (the `fw` column lists every firmware, same order). For the download page add an entry to `CAMERA_META` in
    `tools/site/build_site.py`.
 7. **Build:** `tools/filmsim/build.sh <platform>`
 8. **Check the other cameras:** `tools/filmsim/compare_build.sh main` must report

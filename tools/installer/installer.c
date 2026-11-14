@@ -39,7 +39,7 @@ enum {
     S_ERR_BOOT, S_ERR_VERIFY, S_DONE, S_DONE_FILES_ONLY, S_FAILED, S_ZIP_FILTER,
     S_PROBE, S_PROBE_TITLE, S_PROBE_CONFIRM, S_PROBE_NEED_CAM, S_PROBE_BAD_CARD, S_LOG_PROBE,
     S_LOG_REQ, S_PROBE_DONE_BLINK, S_PROBE_DONE_REQ, S_PROBE_REQ_HOWTO, S_PROBE_SHORT,
-    S_PROBE_LONG, S_PROBE_OK, S_PROBE_NO, S_COUNT
+    S_PROBE_LONG, S_PROBE_OK, S_PROBE_NO, S_ZIP_FW, S_COUNT
 };
 
 static const wchar_t *str_en[S_COUNT] = {
@@ -53,6 +53,8 @@ static const wchar_t *str_en[S_COUNT] = {
     [S_INSTALL] = L"3   Install EXCCD on the card",
     [S_ZIP_NONE] = L"Pick the ZIP you downloaded from the EXCCD website, or drop it on this window.",
     [S_ZIP_FOUND] = L"Download: %ls",
+    [S_ZIP_FW] = L"This download is for firmware %hs. Your camera must have exactly this version "
+                 L"(\"Check firmware\" tells you).",
     [S_ZIP_READ_FAIL] = L"The file can't be read.",
     [S_ZIP_BAD] = L"This is not a valid ZIP file (%hs).",
     [S_ZIP_NOT_EXCCD] = L"This ZIP is not an EXCCD download (no DISKBOOT.BIN and CHDK folder).",
@@ -112,17 +114,18 @@ static const wchar_t *str_en[S_COUNT] = {
                            L"4. After about 30 seconds the camera switches itself off. "
                            L"If it keeps blinking, take the battery out.\n"
                            L"5. Unlock the card again.\n"
-                           L"6. Is it the version marked ✓? Then put the card back in the card reader, "
-                           L"choose your EXCCD download and click \"Install EXCCD on the card\". "
+                           L"6. Is it a version marked ✓? Then put the card back in the card reader, "
+                           L"choose the EXCCD download for exactly this version and click "
+                           L"\"Install EXCCD on the card\". "
                            L"That replaces the test with EXCCD.\n\n"
                            L"If nothing blinks, unlock the card and check this way:\n%ls",
     [S_PROBE_SHORT] = L"%d× short",
     [S_PROBE_LONG] = L"%d× long + ",
     [S_PROBE_OK] = L"EXCCD works",
     [S_PROBE_NO] = L"no EXCCD for this version",
-    [S_PROBE_DONE_REQ] = L"Ready!\n\nPut the card in the %ls (not locked).\n\n%ls\n\nEXCCD needs firmware %ls. "
-                         L"If your camera shows it, put the card back in the card reader, choose your EXCCD "
-                         L"download and click \"Install EXCCD on the card\".",
+    [S_PROBE_DONE_REQ] = L"Ready!\n\nPut the card in the %ls (not locked).\n\n%ls\n\nEXCCD works with firmware %ls. "
+                         L"If your camera shows one of them, put the card back in the card reader, choose the "
+                         L"EXCCD download for exactly this version and click \"Install EXCCD on the card\".",
     [S_PROBE_REQ_HOWTO] = L"Switch the camera on in playback mode, hold FUNC/SET and press DISP. "
                           L"The camera shows a line like \"Firmware Ver GM1.00D\", the letter at the end counts.",
 };
@@ -138,6 +141,8 @@ static const wchar_t *str_de[S_COUNT] = {
     [S_INSTALL] = L"3   EXCCD auf die Karte installieren",
     [S_ZIP_NONE] = L"Wähle die ZIP, die du auf der EXCCD-Webseite geladen hast, oder zieh sie auf dieses Fenster.",
     [S_ZIP_FOUND] = L"Download: %ls",
+    [S_ZIP_FW] = L"Dieser Download ist für Firmware %hs. Deine Kamera muss genau diese Version haben "
+                 L"(\"Firmware prüfen\" zeigt sie dir).",
     [S_ZIP_READ_FAIL] = L"Die Datei lässt sich nicht lesen.",
     [S_ZIP_BAD] = L"Das ist keine gültige ZIP-Datei (%hs).",
     [S_ZIP_NOT_EXCCD] = L"Diese ZIP ist kein EXCCD-Download (kein DISKBOOT.BIN und CHDK-Ordner).",
@@ -197,17 +202,19 @@ static const wchar_t *str_de[S_COUNT] = {
                            L"4. Nach etwa 30 Sekunden schaltet sich die Kamera selbst aus. "
                            L"Blinkt sie weiter, Akku herausnehmen.\n"
                            L"5. Karte wieder entsperren.\n"
-                           L"6. Ist es die Version mit ✓? Dann die Karte wieder in den Kartenleser stecken, "
-                           L"deinen EXCCD-Download wählen und auf \"EXCCD auf die Karte installieren\" klicken. "
+                           L"6. Ist es eine Version mit ✓? Dann die Karte wieder in den Kartenleser stecken, "
+                           L"den EXCCD-Download für genau diese Version wählen und auf "
+                           L"\"EXCCD auf die Karte installieren\" klicken. "
                            L"Das ersetzt den Test durch EXCCD.\n\n"
                            L"Falls nichts blinkt, Karte entsperren und so prüfen:\n%ls",
     [S_PROBE_SHORT] = L"%d× kurz",
     [S_PROBE_LONG] = L"%d× lang + ",
     [S_PROBE_OK] = L"EXCCD läuft",
     [S_PROBE_NO] = L"kein EXCCD für diese Version",
-    [S_PROBE_DONE_REQ] = L"Fertig!\n\nKarte in die %ls stecken (nicht gesperrt).\n\n%ls\n\nEXCCD braucht Firmware %ls. "
-                         L"Zeigt deine Kamera diese Version, die Karte wieder in den Kartenleser stecken, deinen "
-                         L"EXCCD-Download wählen und auf \"EXCCD auf die Karte installieren\" klicken.",
+    [S_PROBE_DONE_REQ] = L"Fertig!\n\nKarte in die %ls stecken (nicht gesperrt).\n\n%ls\n\nEXCCD läuft mit Firmware %ls. "
+                         L"Zeigt deine Kamera eine davon, die Karte wieder in den Kartenleser stecken, den "
+                         L"EXCCD-Download für genau diese Version wählen und auf \"EXCCD auf die Karte installieren\" "
+                         L"klicken.",
     [S_PROBE_REQ_HOWTO] = L"Kamera im Wiedergabemodus einschalten, FUNC/SET halten und DISP drücken. "
                           L"Die Kamera zeigt eine Zeile wie \"Firmware Ver GM1.00D\", es zählt der Buchstabe am Ende.",
 };
@@ -365,6 +372,13 @@ static void load_zip(const wchar_t *path)
     SendMessageW(g_camera, CB_SETCURSEL, cam ? (WPARAM)(cam - cameras) + 1 : 0, 0);
     fmt(msg, 512, T(S_ZIP_FOUND), wcsrchr(path, L'\\') ? wcsrchr(path, L'\\') + 1 : path);
     append_log(msg);
+    {
+        char fw[8];
+        if (zip_firmware(&g_zip, cam, utf8, fw)) {
+            fmt(msg, 512, T(S_ZIP_FW), fw);
+            append_log(msg);
+        }
+    }
     update_state();
 }
 
@@ -1007,7 +1021,7 @@ static void probe_blinks(wchar_t *buf, const char *v)
 static void probe_done(int ok, int blink)
 {
     const camera *cam = g_probe_cam;
-    wchar_t msg[2048], name[64], fw[16], table[512] = L"", blinks[64], line[160];
+    wchar_t msg[2048], name[64], fw[96], table[1024] = L"", blinks[64], line[160];
 
     if (!ok || !cam) {
         append_log(T(S_FAILED));
@@ -1015,11 +1029,16 @@ static void probe_done(int ok, int blink)
         return;
     }
     MultiByteToWideChar(CP_UTF8, 0, cam->name, -1, name, 64);
-    MultiByteToWideChar(CP_UTF8, 0, cam->fw, -1, fw, 16);
+    /* "1.00d 1.00a" -> "1.00d, 1.00a" */
+    fw[0] = 0;
+    for (const char *v = cam->fw; *v; v += v[5] ? 6 : 5) {
+        fmt(line, 160, L"%ls%.5hs", fw[0] ? L", " : L"", v);
+        wcscat(fw, line);
+    }
     if (blink) {
         /* one row per version CHDK knows for this camera */
         for (const char *v = cam->known_fw; *v; v += v[5] ? 6 : 5) {
-            int own = strncmp(v, cam->fw, 5) == 0;
+            int own = camera_has_fw(cam, v);
             probe_blinks(blinks, v);
             fmt(line, 160, L"%ls%ls  =  %.5hs   %ls %ls", table[0] ? L"\n" : L"", blinks, v,
                 own ? L"✓" : L"✗", T(own ? S_PROBE_OK : S_PROBE_NO));
