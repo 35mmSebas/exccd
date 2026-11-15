@@ -19,7 +19,7 @@
         <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="15"/><path d="M20 17v11M20 12v1.5"/></svg>
         <span>about</span></a>
       <ul class="nav-sub">
-        <li><a href="#why">why</a></li>
+        <li><a href="#what">what this is</a></li>
         <li><a href="#how">how it works</a></li>
         <li><a href="#status">beta status</a></li>
         <li><a href="#support">it's free</a></li>
@@ -151,32 +151,30 @@
         the 2000s, with your own recipes, raw develop on the camera and a few things newer cameras do</p>
       <p class="claim-facts" id="facts"></p>
       <a class="button outline" href="#looks">pick your looks</a>
-      <p class="claim-hint">press <b>print</b> on the camera to flip through the looks</p>
-      <a class="test-call" id="test-call" href="#test" hidden>
-        <span class="badge">Needs testers</span>
-        <span>Have an <b id="test-call-cams"></b>? Help me test it, no experience needed&nbsp;→</span>
-      </a>
+      <a class="button testers" id="test-call" href="#contribute" hidden>help test a camera&nbsp;→</a>
+      <p class="claim-hint" id="test-call-note" hidden></p>
     </div>
   </section>
 
   <section class="view" id="about" data-view hidden>
     <header class="view-head wrap">
       <p class="eyebrow">about</p>
-      <h1>Press Print, pick a film, take the picture.</h1>
+      <h1>Press a button, pick a film, take the picture.</h1>
       <p class="lead">The look is applied inside the camera, while the photo is being made. What lands on the card
         is the finished JPEG, no app or editing afterwards.</p>
     </header>
 
-    <section class="why wrap" id="why">
-      <h2>Why this exists.</h2>
+    <section class="why wrap" id="what">
+      <h2>What this is.</h2>
       <div>
-        <p>I shoot a lot of film, but I also like what early CCD sensors do. My IXUS 60 is nearly 20 years old
-          and still my favourite camera; it has been with me for a long time.</p>
-        <p>When I saw what CHDK makes possible, I started building looks for it, with AI as a coding partner:
-          tone curves on the raw data, channel mixes tuned against reference shots, and a few things newer
-          cameras do, like Auto-ISO with a minimum shutter speed or a white balance shift.</p>
-        <p>It started as an experiment for my own camera. If it brings your old digicam back into use, or you
-          help port it to another model or share a recipe, I'd be very happy.</p>
+        <p>EXCCD is an add-on for CHDK, the free community extension for old Canon compacts. It puts
+          film-inspired looks on cameras with early CCD sensors: cameras that are now close to 20 years old,
+          but still have a character newer sensors don't.</p>
+        <p>The looks work on the raw sensor data: tone curves, channel mixes tuned against reference shots,
+          and Canon's own colour settings. On top come a few things newer cameras do, like Auto-ISO with a
+          minimum shutter speed or a white balance shift.</p>
+        <p>It started as an experiment on a single IXUS 60 and is being ported to more models step by step.
+          Much of the code was written with AI as a coding partner.</p>
         <p>None of this would exist without the CHDK developers and their many years of open-source work.</p>
       </div>
     </section>
@@ -197,7 +195,7 @@
         </li>
         <li>
           <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="36" height="24" rx="3"/><circle cx="24" cy="26" r="7"/><path d="M16 14l3-5h10l3 5"/></svg>
-          <h3>Press Print, shoot</h3>
+          <h3>Pick a look, shoot</h3>
           <p>Each look sets Canon's own colour settings and bends the raw sensor data with a tone curve, before the
             camera turns it into a JPEG. That's why it behaves like a camera setting, not like a filter on top.</p>
         </li>
@@ -205,7 +203,7 @@
       <p class="how-note"><b>Give it a moment.</b> These cameras run on old Canon DIGIC processors that were never
         meant to do this. After each shot they take a few seconds to think, a little longer with heavier looks and
         effects. A small bar on the screen shows how far along it is, so you know the camera is busy and not stuck.
-        I've come to like that pause; it slows you down a bit, in a good way. Just don't expect a burst mode
+        The pause slows you down a bit, which suits this kind of camera. Just don't expect a burst mode
         any time soon ;)</p>
     </section>
 
@@ -215,10 +213,10 @@
         <h2>Work in progress, and that's fine.</h2>
       </div>
       <div>
-        <p>EXCCD is a hobby project, and it isn't finished. I use it on my IXUS 60 all the time, but every camera
+        <p>EXCCD is a hobby project, and it isn't finished. It is used daily on an IXUS 60, but every camera
           model is a bit different inside: another sensor, another colour matrix (the maths that turns sensor
-          values into colours), another firmware. So whenever real photos from a camera come in, I re-tune the
-          looks, and things will keep changing between versions.</p>
+          values into colours), another firmware. So whenever real photos from a camera come in, the looks get
+          re-tuned, and things will keep changing between versions.</p>
         <ul class="status-list">
           <li><span class="dot ok" aria-hidden="true"></span><b>Tested</b> – IXUS 60 / SD600. Used day to day; the newest
             features are still being checked.</li>
@@ -228,7 +226,7 @@
             Built, but nobody has run it on a real camera yet.</li>
         </ul>
         <p class="muted small">You can only download for cameras that are ready for it. Some sample photos are
-          simulated on a PC from other shots until I've taken real ones with that camera; those are marked
+          simulated on a PC from other shots until real photos from that camera are available; those are marked
           “simulated”.</p>
       </div>
     </section>
@@ -240,11 +238,11 @@
           <h2>It's free.</h2>
         </div>
         <div>
-          <p>There's nothing to pay, and there won't be. I built this for fun and for my own camera.</p>
+          <p>There's nothing to pay, and there won't be. EXCCD is a hobby project with no commercial side.</p>
           <p>The code is GPL v2, the same licence as CHDK, so anyone can read it, change it and pass it on. The
             looks themselves (curves, labels, film table) are CC BY-SA 4.0. Everything is on
-            <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>. If you find a bug, have an
-            idea or want to help bring it to <a href="#contribute">another camera</a>, I'm happy to hear from you.</p>
+            <a class="repo-link" href="https://github.com/35mmSebas/exccd">GitHub</a>. Bug reports, ideas and help
+            with bringing it to <a href="#contribute">another camera</a> are always welcome.</p>
         </div>
       </section>
     </div>
@@ -255,14 +253,16 @@
       <div class="simple-intro">
         <p class="eyebrow">Keeping it simple</p>
         <h2>Still a point-and-shoot.</h2>
-        <p>CHDK can do a lot, and you see that in its menus: hundreds of settings. For EXCCD I only kept what I
-          actually use when I'm out shooting. You pick a film, the screen stays clean, and everything else waits
+        <p>CHDK can do a lot, and you see that in its menus: hundreds of settings. EXCCD keeps only what you
+          actually need when you're out shooting. You pick a film, the screen stays clean, and everything else waits
           in a short options menu.</p>
       </div>
       <ol class="principles">
         <li>
           <h3>One button</h3>
-          <p><b>Print</b> opens the film selection, the arrow keys flip through the films, <b>FUNC/SET</b>
+          <p><span class="if-cam">On the <span class="cam-short"></span>, <b class="cam-alt"></b></span><span
+            class="if-generic">A single key (<b>Print</b> or <b>Playback</b> on most models)</span> opens
+            the film selection, the arrow keys flip through the films, <b>FUNC/SET</b>
             picks one. That's all you need to know to get started.</p>
         </li>
         <li>
@@ -452,7 +452,7 @@
       <header class="features-head sr-head">
         <p class="eyebrow">Compare</p>
         <h2>One photo, many looks.</h2>
-        <p class="muted">Each scene was shot once, with a DNG next to the JPEG. Then I developed that same DNG again on
+        <p class="muted">Each scene was shot once, with a DNG next to the JPEG. Then that same DNG was developed again on
           the camera, with a different film each time (<a href="#develop">RAW develop</a>). Light, framing and camera
           stay the same, only the look changes. Drag the line across the photo to compare a look with
           <b>Daylight 100</b>, the neutral one.</p>
@@ -485,7 +485,7 @@
 
       <p class="muted small sr-note" id="sr-note"></p>
       <p class="next">Like one? <a href="#looks-step">Pick your looks</a> for the download.</p>
-      <p class="muted small sr-empty" id="sr-empty" hidden>No scenes yet. I'm developing the first ones.</p>
+      <p class="muted small sr-empty" id="sr-empty" hidden>No scenes yet. The first ones are on the way.</p>
     </div>
   </section>
 
@@ -503,7 +503,7 @@
             <legend>Which camera do you have?</legend>
           </fieldset>
           <p class="beta-note" id="beta-note" role="status" hidden>Beta: EXCCD is built for this camera, but it hasn't been
-            fully tested on one yet. Expect rough edges, and please tell me how it goes with the
+            fully tested on one yet. Expect rough edges, and please report how it goes with the
             <a href="#test">camera test</a>.</p>
           <fieldset class="seg" id="fw">
             <legend>Firmware version</legend>
@@ -566,9 +566,12 @@
     <div class="wrap">
       <section class="step first" id="install-steps">
         <header class="step-head"><span class="num">01</span><h2>Install, step by step</h2></header>
-        <p class="lead-in">Takes about ten minutes. The camera's firmware isn't changed; everything happens on the SD
-          card. Instructions for
-          <b class="cam-short"></b> · <a href="#camera-step">other camera</a></p>
+        <p class="lead-in">Takes about ten minutes and works the same way on every supported camera. The camera's
+          firmware isn't changed; everything happens on the SD card. A few details (card size, the button that
+          opens the looks) depend on the model.</p>
+        <p class="install-cam"><label for="install-cam">Your camera</label>
+          <select id="install-cam"><option value="">Choose your camera…</option></select>
+          <span class="muted small if-generic">optional, it fills in the details for your model</span></p>
         <div class="need">
           <h3>You need</h3>
           <ul>
@@ -580,21 +583,22 @@
         <ol class="install">
           <li><h3>Check the firmware</h3>
             <p>EXCCD has to know where things sit inside the camera's software, and that's different for every
-              firmware version. So it only runs on firmware <b class="cam-fw"></b> of this camera, and each version has
-              its own download. Not sure which one you have?
+              firmware version. So each download only runs on one firmware version<span class="if-cam">; the
+              <span class="cam-short"></span> needs <b class="cam-fw"></b></span>. Not sure which one you have?
               The installer can check it (<i>Check firmware…</i>), or see
               <a href="#camera-step">how to find it by hand</a>.</p></li>
           <li><h3>Download your looks</h3>
-            <p>Pick your looks on the <a href="#looks-step">looks page</a> and download the ZIP. Just leave it in
-              your Downloads folder; the installer looks for it there.</p></li>
+            <p>Choose your camera and firmware on the <a href="#looks">looks page</a>, pick your looks and download
+              the ZIP. Just leave it in your Downloads folder; the installer looks for it there.</p></li>
           <li><h3>Format the card in the camera</h3>
             <p>Use the camera's own <i>Format</i> menu, not the PC, so the card is set up the way the camera expects
               it. This erases the card, so copy your photos off first.</p></li>
           <li><h3>Run the installer</h3>
             <p><a class="button outline" href="exccd-installer.exe" download>Installer for Windows</a></p>
-            <p>Choose your camera, check that it picked your download and the right card, then click
-              <i>Install EXCCD on the card</i>. It only lists SD cards, so it can't touch your other drives. It also
-              makes the card bootable, which means the camera can start EXCCD from it.</p>
+            <p>Check that it picked your download, your camera and the right card, then click
+              <i>Install EXCCD on the card</i>. It only lists removable drives, so it can't touch your other disks.
+              It also makes the card bootable, which means the camera can start EXCCD from it. If the card doesn't
+              suit the camera (too big, wrong format), it says so before writing anything.</p>
             <p class="muted small">Windows warns about an unknown app because the installer isn't signed. Signing costs
               money every year, and this is a free hobby project; the code is open on GitHub. Click
               <i>More info → Run anyway</i>. It asks for administrator rights because it writes the card's boot sector.</p></li>
@@ -602,18 +606,25 @@
             <p>Slide the card's write-protect switch to <b>LOCK</b> and put it in the camera. It sounds odd, but on
               these cameras that's the signal to start EXCCD from the card. Photos are still saved as usual.</p></li>
           <li><h3>Switch on, pick a look</h3>
-            <p>In shooting mode press <b>Print</b>, flip through the looks with the arrow keys and confirm with
-              <b>FUNC/SET</b>. The look you're shooting with is shown at the bottom of the screen.</p></li>
+            <p>Give the camera a few seconds after switching on. Then, in shooting mode, press
+              <span class="if-cam"><b class="cam-alt"></b></span><span class="if-generic">the key that opens the
+              looks: <b>Print</b> on most models, <b>Playback</b> on many others, <b>Video</b>, <b>Help</b> or
+              <b>Shortcut</b> on a few (choose your camera above to see which)</span>,
+              flip through the looks with the arrow keys and confirm with <b>FUNC/SET</b>. The look you're shooting
+              with is shown at the bottom of the screen. <b>MENU</b> in the film selection opens the EXCCD options.</p></li>
         </ol>
         <details class="manual" id="manual"><summary>Without the installer (macOS, Linux)</summary>
           <ol>
             <li>Format the card in the camera.</li>
             <li>Unpack the ZIP to the top level of the card, so that <code>DISKBOOT.BIN</code> and the
               <code>CHDK</code> folder sit right there, not inside another folder.</li>
-            <li id="manual-firm-update">Eject the card and put it in the camera <b>unlocked</b>. Switch on in playback
-              mode and choose <i>MENU → Firm Update</i>. That starts EXCCD until you switch off. To make it start on
-              its own, run <i>Make Card Bootable</i> once from the EXCCD menu (<b>MENU</b> → <i>System</i>), then lock the card.</li>
-            <li id="manual-bootable" hidden>This camera only starts EXCCD from a bootable card, so the card has to
+            <li id="manual-firm-update"><span class="if-generic"><b>Older models</b> (up to about 2007, like
+              the IXUS 60 or A570 IS; choose your camera above to be sure): </span>Eject the
+              card and put it in the camera <b>unlocked</b>. Switch on in playback mode and choose
+              <i>MENU → Firm Update</i>. That starts EXCCD until you switch off. To make it start on its own, open the
+              film selection, press <b>MENU</b>, run <i>System → Make Card Bootable</i> once, then lock the card.</li>
+            <li id="manual-bootable"><span class="if-generic"><b>All other models:</b> </span><span class="if-cam">This
+              camera only starts</span><span class="if-generic">They only start</span> EXCCD from a bootable card, so the card has to
               be made bootable once, for example with the tools from CHDK's guide
               <a href="https://chdk.fandom.com/wiki/Prepare_your_SD_card">Prepare your SD card</a>. Then lock the card.</li>
           </ol>
@@ -629,6 +640,10 @@
               <li id="trouble-size">Is the card too big? See <i>You need</i> above.</li>
               <li>Was the card formatted in the camera and then installed with the installer (or made bootable)?</li>
               <li>Does the firmware match? Other versions simply won't start.</li>
+              <li>Is it the right button? <span class="if-cam">On the <span class="cam-short"></span> it's
+                <b class="cam-alt">Print</b>.</span><span class="if-generic">Most models use <b>Print</b>, others
+                <b>Playback</b>, <b>Video</b>, <b>Help</b> or <b>Shortcut</b>.</span> It only works in shooting mode,
+                a few seconds after switching on.</li>
             </ul></details>
           <details><summary>Windows won't run the installer</summary>
             <p>SmartScreen blocks unsigned programs at first: click <i>More info → Run anyway</i>. If your antivirus
@@ -638,7 +653,7 @@
               <i>Refresh</i>. Some built-in laptop readers report cards as fixed disks; a cheap USB reader helps.</p></details>
           <details><summary>A look doesn't match the samples</summary>
             <p>That's the beta part. Light, white balance and the camera model all change how a look turns out, and
-              I'm still tuning the looks camera by camera. Please <a href="#contribute">tell me</a>, ideally with the
+              the looks are still being tuned camera by camera. Please <a href="#contribute">report it</a>, ideally with the
               photo, the look and your camera.</p></details>
           <details><summary>How do I get the normal camera back?</summary>
             <p>Unlock the card or take it out. To remove EXCCD for good, format the card in the camera.</p></details>
@@ -658,8 +673,10 @@
               the camera behaves exactly as before. Still, it's third-party software, so use it at your own risk.</p></details>
           <details><summary>Do I lose anything compared to the normal camera?</summary>
             <p>Not much, but a few things. With a look on, the camera is busy for a few seconds after each shot,
-              so there's no quick burst. The <b>Print</b> button opens the film selection instead of printing. EXCCD
-              starts from a locked SD card, and on the IXUS 60 that card can be at most 2 GB. Pick <b>Off</b> in the
+              so there's no quick burst. <span class="if-cam">The <b class="cam-alt"></b> button</span><span
+              class="if-generic">The key that opens the looks (<b>Print</b> or <b>Playback</b> on most models)</span>
+              opens the film selection instead of doing its usual job. EXCCD starts from a locked SD card, and <span id="faq-card">on most models that card can be at most
+              2 GB</span>. Pick <b>Off</b> in the
               film selection and the camera uses its normal colours again; Canon's menus and modes stay as they
               are.</p></details>
           <details><summary>How is this different from a filter app?</summary>
@@ -675,7 +692,7 @@
           <details><summary>Will my photos look like real film?</summary>
             <p>No, and they're not meant to. A real film look only comes from real film. The looks borrow colours,
               contrast and a few quirks from films and old processes, but the photo still comes from a small CCD
-              sensor, with its own character. That character is the reason I love these cameras, so EXCCD builds on
+              sensor, with its own character. That character is what makes these cameras worth using, so EXCCD builds on
               it instead of hiding it.</p></details>
           <details><summary>Can I keep a raw file?</summary>
             <p>Yes. CHDK can save a raw file (DNG) next to each JPEG. That's the unprocessed sensor data, which you
@@ -694,7 +711,7 @@
             <p>English. German is on the card too: <b>MENU</b> → <i>System</i> → <i>Language...</i> →
               <code>german.lng</code>. The film labels stay in English.</p></details>
           <details><summary>What about other cameras?</summary>
-            <p>I'd like to bring EXCCD to more old Canon compacts: CCD models first, later maybe CMOS ones
+            <p>The plan is to bring EXCCD to more old Canon compacts: CCD models first, later maybe CMOS ones
               too. Every model has to be ported (finding where things live in its firmware) and then tested on a
               real camera, so it takes a while. If you have one, <a href="#contribute">you can help</a>.</p></details>
           <details><summary>Is it finished?</summary>
@@ -708,22 +725,34 @@
 
       <section class="step" id="contribute">
         <header class="step-head"><span class="num">04</span><h2>Help out</h2></header>
-        <p class="lead-in">I'd love for EXCCD to grow beyond my own IXUS. Every bit of feedback helps, I'm curious
-          about your recipes, and the project is open for more camera models.</p>
+        <p class="lead-in">EXCCD is meant to grow beyond a single IXUS. Every bit of feedback helps, recipes are
+          welcome, and the project is open for more camera models.</p>
         <ul class="help-grid">
-          <li><h3>Tell me what happened</h3>
+          <li><h3>Report a problem</h3>
             <p>Something broken, odd colours, an idea? Open an
               <a class="repo-link" href="https://github.com/35mmSebas/exccd/issues">issue on GitHub</a>. Camera, firmware,
-              EXCCD version and a photo (of the display, too) help me a lot to figure out what's going on.</p></li>
+              EXCCD version and a photo (of the display, too) help a lot to figure out what's going on.</p></li>
           <li><h3>Test on your camera</h3>
-            <p>Have an IXUS 132, IXUS 145 or SX110 IS, or another old Canon that CHDK supports? Real photos from real
-              cameras are what I tune the looks with. The <a href="#test">camera test</a> walks you through it,
-              no experience needed.</p></li>
+            <p>Most models have only been built, not tried on a real camera yet. The looks are tuned with
+              real photos from real cameras. The <a href="#test">camera test</a> walks you through it,
+              no experience needed, about 15 minutes.</p></li>
           <li><h3>Send a pull request</h3>
             <p>Fixes, ports and new looks are welcome. The
               <a class="repo-link" href="https://github.com/35mmSebas/exccd/blob/main/tools/filmsim/cams/README.md">porting guide</a>
               explains what a new camera needs.</p></li>
         </ul>
+        <div class="testers-list" id="testers" hidden>
+          <div class="testers-head">
+            <h3>Cameras that still need a test <span class="testers-count" id="testers-count"></span></h3>
+            <input type="search" id="testers-search" placeholder="Find your model" aria-label="Find your camera model"
+              autocomplete="off">
+          </div>
+          <p class="muted small">EXCCD is built for these, but nobody has tried it on one yet. Have one? Click it
+            to start the camera test with it.<span id="testers-done"></span></p>
+          <ul class="testers-cams" id="testers-cams"></ul>
+          <p class="muted small" id="testers-none" hidden>No match. If your camera isn't listed, it's either tested
+            already or not supported yet.</p>
+        </div>
       </section>
     </div>
   </section>
@@ -732,9 +761,10 @@
     <div class="wrap">
       <section class="step first" id="test-intro">
         <header class="step-head"><span class="num">00</span><h2>Test a camera</h2></header>
-        <p class="lead-in">EXCCD is built for a few cameras I don't own. If you have one, you can tell me whether it works.
+        <p class="lead-in">EXCCD is built for several cameras that haven't been tried on real hardware yet. If you have one,
+          you can help find out whether it works.
           You don't need to know anything about photography or code: install it, take three photos of your screen,
-          answer a few yes/no questions and send me the result. Takes about 15 minutes.</p>
+          answer a few yes/no questions and send the result. Takes about 15 minutes.</p>
         <p class="lead-in">Nothing is changed inside the camera. EXCCD runs from the SD card; take the card out and it's
           the same camera as before.</p>
       </section>
@@ -758,7 +788,8 @@
       <section class="step" id="test-install">
         <header class="step-head"><span class="num">02</span><h2>Install it</h2></header>
         <p class="lead-in">Follow the <a href="#install-steps">install steps</a> as usual, then switch the camera on.
-          When EXCCD is running you'll see its menu when you press <b>MENU</b> in shooting mode.</p>
+          When EXCCD is running, its film selection opens in shooting mode with the button named in the
+          <a href="#install-steps">last install step</a> (<b>Print</b> or <b>Playback</b> on most models).</p>
         <fieldset class="seg t-ask" data-q="starts">
           <legend>Does EXCCD start?</legend>
         </fieldset>
@@ -768,7 +799,7 @@
 
       <section class="step" id="test-photos">
         <header class="step-head"><span class="num">03</span><h2>Photograph the test chart</h2></header>
-        <p class="lead-in">The chart is a set of colour squares on your screen. Photographing it shows me whether the
+        <p class="lead-in">The chart is a set of colour squares on your screen. Photographing it shows whether the
           colours come out right on your camera.</p>
         <ol class="install t-steps">
           <li><h3>Open the chart</h3>

@@ -75,7 +75,10 @@ function initialCamera() {
   try { want ??= localStorage.getItem(CAM_KEY); } catch { /* ohne Speicher */ }
   // bis v1.10.2 hiess die Kamera "<plattform>-<sub>"
   want = want?.replace(/-\d{3}[a-z]$/, "");
-  return cams.find((c) => c.id === want) ?? cams[0];
+  const cam = cams.find((c) => c.id === want);
+  // Ohne Wahl zeigt die Installationsanleitung die Regeln fuer alle Modelle
+  state.chosen = !!cam;
+  return cam ?? cams[0];
 }
 
 const camLabel = (cam) => cam.name.replace(/^Canon /, "");
@@ -116,7 +119,10 @@ function renderCameras() {
 
 function setCamera(cam) {
   state.camera = cam;
+  state.chosen = true;
   try { localStorage.setItem(CAM_KEY, cam.id); } catch { /* ohne Speicher */ }
+  const radio = $("cams").querySelector(`input[value="${cam.id}"]`);
+  if (radio) radio.checked = true;
   // Die Auswahl gilt je Look-ID weiter; neue Looks sind angewaehlt
   const known = new Set(state.knownLooks);
   for (const l of cam.looks) if (!known.has(l.id)) { state.selected.add(l.id); state.knownLooks.add(l.id); }
@@ -169,12 +175,44 @@ function renderCamera() {
   }
 }
 
-// Installationshinweise je Kamera (Boot-Regeln wie tools/installer/core.c)
+// Kamerawahl direkt in der Installationsanleitung
+function renderInstallSelect() {
+  const sel = $("install-cam");
+  const cams = [...state.site.cameras].sort((a, b) =>
+    camLabel(a).localeCompare(camLabel(b), "en", { numeric: true }));
+  sel.append(...cams.map((c) => el("option", { value: c.id, textContent: camLabel(c) })));
+  sel.addEventListener("change", () => {
+    const cam = state.site.cameras.find((c) => c.id === sel.value);
+    if (cam) setCamera(cam);
+    else { state.chosen = false; renderInstall(); }
+  });
+}
+
+// Installationshinweise je Kamera (Boot-Regeln wie tools/installer/core.c).
+// Ohne gewaehlte Kamera: allgemeine Hinweise fuer alle Modelle.
 function renderInstall() {
   const cam = state.camera;
+  const chosen = state.chosen;
+  $("install-cam").value = chosen ? cam.id : "";
+  for (const e of document.querySelectorAll(".if-cam")) e.hidden = !chosen;
+  for (const e of document.querySelectorAll(".if-generic")) e.hidden = chosen;
   for (const e of document.querySelectorAll(".cam-short")) e.textContent = cam.short;
   for (const e of document.querySelectorAll(".cam-fw")) e.textContent = fwList(cam);
+  for (const e of document.querySelectorAll(".cam-alt")) e.textContent = cam.alt_key ?? "Print";
+  if (!chosen) {
+    $("card-need").innerHTML = "an SD card: <b>2 GB or less</b> for most models; newer ones (about 2011 on, like "
+      + "the IXUS 132 or A2400) also take cards up to 32 GB. Choose your camera above to see which.";
+    $("trouble-size").textContent = "Is the card too big? Most models only start EXCCD from cards up to 2 GB, "
+      + "newer ones from cards up to 32 GB. SDXC cards (over 32 GB) don't work on any model yet.";
+    $("faq-card").textContent = "on most models that card can be at most 2 GB (32 GB on newer ones)";
+    $("manual-firm-update").hidden = false;
+    $("manual-bootable").hidden = false;
+    return;
+  }
   const fat16 = cam.boot === "fat16";
+  $("faq-card").textContent = fat16
+    ? `on the ${cam.short} that card can be at most 2 GB`
+    : `on the ${cam.short} that card can be up to 32 GB`;
   $("card-need").textContent = fat16
     ? "an SD card of 2 GB or less (bigger cards won't start EXCCD on this camera)"
     : "an SD card of 32 GB or less (SD or SDHC; bigger SDXC cards don't work yet)";
@@ -447,11 +485,20 @@ async function main() {
   renderHero();
   renderShowroom(state.site);
   renderCameras();
+  renderInstallSelect();
   renderCamera();
   renderLooks();
   $("all").addEventListener("click", () => setAll(true));
   $("none").addEventListener("click", () => setAll(false));
-  $("download").addEventListener("click", download);
+  $("download").addEventListener("click", () => {
+    // Wer herunterlaedt, hat die Kamera bestaetigt: Anleitung zeigt ab jetzt deren Details
+    if (!state.chosen) {
+      state.chosen = true;
+      try { localStorage.setItem(CAM_KEY, state.camera.id); } catch { /* ohne Speicher */ }
+      renderInstall();
+    }
+    download();
+  });
   watchDock();
   update();
 }

@@ -270,6 +270,36 @@ def entries_digest(fw, names):
     return h.hexdigest()
 
 
+ALT_KEY_NAMES = {"KEY_PRINT": "Print", "KEY_PLAYBACK": "Playback", "KEY_VIDEO": "Video", "KEY_HELP": "Help",
+                 "KEY_SHORTCUT": "Shortcut", "KEY_DISPLAY": "Disp", "KEY_FACE": "Face"}
+
+
+def alt_key(plat):
+    """Name der Taste, die die Filmauswahl oeffnet (CHDKs ALT-Taste), wie sie
+    nach dem ersten Start eingestellt ist: conf.alt_mode_button = KEY_PRINT,
+    gui_alt_mode_button_enum faellt auf die erste Option zurueck, wenn KEY_PRINT
+    nicht in CAM_ALT_BUTTON_OPTIONS steht; ohne einstellbare Taste gilt
+    CAM_DEFAULT_ALT_BUTTON (core/conf.c, core/gui.c)."""
+    with open(os.path.join(ROOT, "platform", plat, "platform_camera.h")) as f:
+        h = f.read()
+
+    def define(name):
+        m = re.search(r"^\s*#define\s+%s\s+(.+?)\s*(?://.*)?$" % name, h, re.M)
+        return m.group(1).strip() if m else None
+
+    if define("CAM_ADJUSTABLE_ALT_BUTTON"):
+        names = re.findall(r'"([^"]+)"', define("CAM_ALT_BUTTON_NAMES") or "")
+        keys = re.findall(r"KEY_\w+", define("CAM_ALT_BUTTON_OPTIONS") or "")
+        if not names or len(names) != len(keys):
+            sys.exit("%s: CAM_ALT_BUTTON_NAMES/OPTIONS nicht lesbar" % plat)
+        name = names[keys.index("KEY_PRINT")] if "KEY_PRINT" in keys else names[0]
+        return {"Shrtcut": "Shortcut", "Disp": "Disp"}.get(name, name)
+    key = define("CAM_DEFAULT_ALT_BUTTON") or "KEY_PRINT"
+    if key not in ALT_KEY_NAMES:
+        sys.exit("%s: unbekannte ALT-Taste %s" % (plat, key))
+    return ALT_KEY_NAMES[key]
+
+
 def build_camera(cam, fw_zips, out, site_src, meta):
     """Ein Firmware-ZIP zerlegen, liefert den Eintrag fuer site.json."""
     plat = cam["platform"]
@@ -359,7 +389,7 @@ def build_camera(cam, fw_zips, out, site_src, meta):
             "firmware": built[0], "firmwares": firmwares,
             "other_firmware": [v for v in known_firmware(plat) if v not in built],
             "family": {"id": fam["id"], "name": fam["name"]} if fam else None,
-            "boot": extra["boot"], "firm_update": extra["firm_update"],
+            "boot": extra["boot"], "firm_update": extra["firm_update"], "alt_key": alt_key(plat),
             "curve": curve, "looks": looks}
 
 

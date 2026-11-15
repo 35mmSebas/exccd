@@ -81,14 +81,36 @@ function closeChart() {
   $("t-chart-open").focus();
 }
 
-// Hinweis auf der Startseite: nur solange es Beta-Kameras gibt, mit deren Kurznamen
+// Startseite: oranger Button zum "Help out"-Teil, solange es Beta-Kameras gibt.
+// Dort die Liste der noch ungetesteten Kameras, jede startet den Kameratest mit ihr.
 function renderCallout() {
-  const names = state.site.cameras.filter((c) => c.status !== "stabil")
-    .map((c) => (c.short ?? c.name).split(" / ")[0]);
-  if (!names.length) return;
-  $("test-call-cams").textContent = names.length > 1
-    ? `${names.slice(0, -1).join(", ")} or ${names.at(-1)}` : names[0];
+  const short = (c) => (c.short ?? c.name).split(" / ")[0];
+  const beta = state.site.cameras.filter((c) => c.status !== "stabil")
+    .sort((a, b) => short(a).localeCompare(short(b), "en", { numeric: true }));
+  if (!beta.length) return;
+  const tested = state.site.cameras.filter((c) => c.status === "stabil").map(short);
   $("test-call").hidden = false;
+  $("test-call-note").textContent = `${beta.length} camera models still need a first test`;
+  $("test-call-note").hidden = false;
+
+  $("testers").hidden = false;
+  $("testers-count").textContent = beta.length;
+  if (tested.length) $("testers-done").textContent = ` Tested so far: ${tested.join(", ")}.`;
+  const items = beta.map((c) => {
+    const li = el("li", {}, el("a", { href: `?camera=${encodeURIComponent(c.id)}#test`, textContent: short(c) }));
+    li.dataset.search = `${c.name} ${c.short ?? ""} ${c.id}`.toLowerCase();
+    return li;
+  });
+  $("testers-cams").append(...items);
+  $("testers-search").addEventListener("input", (e) => {
+    const words = e.target.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const li of items) {
+      li.hidden = !words.every((w) => li.dataset.search.includes(w));
+      shown += !li.hidden;
+    }
+    $("testers-none").hidden = shown > 0;
+  });
 }
 
 // --- Auswahl ----------------------------------------------------------------
@@ -115,7 +137,7 @@ function renderCameras() {
     const meta = c.status === "stabil" ? ["Tested"] : [el("span", { className: "badge", textContent: "Needs testers" })];
     box.append(opt(c.id, c.short ?? c.name.replace(/^Canon /, ""), meta, c === state.cam));
   }
-  box.append(opt(OTHER, "Another Canon", ["Not supported yet, tell me anyway"], !state.cam));
+  box.append(opt(OTHER, "Another Canon", ["Not supported yet, report it anyway"], !state.cam));
   // Suchfeld: Karten ausblenden, die nicht passen ("Another Canon" und die gewaehlte bleiben)
   for (const [k, label] of [...box.querySelectorAll(".cam-opt")].entries()) {
     const c = cams[k];

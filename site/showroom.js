@@ -78,7 +78,7 @@ export function renderShowroom(site) {
     }
     const sims = scene.shots.filter((s) => s.sim).length;
     $("sr-note").textContent = sims
-      ? `${sims === scene.shots.length - 1 ? "All looks" : `${sims} of ${scene.shots.length - 1} looks`} in this scene are still previews rendered on a PC from the Daylight 100 photo, marked “simulated”. I'll replace them with photos developed on the camera.`
+      ? `${sims === scene.shots.length - 1 ? "All looks" : `${sims} of ${scene.shots.length - 1} looks`} in this scene are still previews rendered on a PC from the Daylight 100 photo, marked “simulated”. They will be replaced with photos developed on the camera.`
       : "";
     renderLook();
     preload(scene);
