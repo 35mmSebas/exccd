@@ -51,7 +51,12 @@ export function renderShowroom(site) {
   });
   $("sr-scenes").append(...sceneButtons);
 
-  const preload = (scene) => { for (const s of scene.shots) new Image().src = s.src; };
+  // alle Looks einer Szene erst laden, wenn "compare" offen ist (sonst ~6 MB schon auf der Startseite)
+  const preload = (scene) => {
+    if ($("compare").hidden) return;
+    for (const s of scene.shots) new Image().src = s.src;
+  };
+  addEventListener("hashchange", () => setTimeout(() => preload(state.scene)));
 
   function renderScene() {
     const scene = state.scene;

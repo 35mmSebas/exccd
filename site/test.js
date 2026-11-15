@@ -22,10 +22,16 @@ const QUESTIONS = {
 
 const state = { site: null, config: { repo: "https://github.com/35mmSebas/exccd" }, cam: null, other: "", fw: "", answers: {} };
 
-async function loadJson(url) {
-  const r = await fetch(url, { cache: "no-cache" });
-  if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
-  return r.json();
+// app.js und test.js teilen sich die Antwort: site.json ist gross, nur einmal laden
+const jsonCache = (globalThis.exccdJson ??= new Map());
+function loadJson(url) {
+  if (!jsonCache.has(url)) {
+    jsonCache.set(url, fetch(url, { cache: "no-cache" }).then((r) => {
+      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+      return r.json();
+    }));
+  }
+  return jsonCache.get(url);
 }
 
 // --- Testtafel -------------------------------------------------------------
@@ -90,7 +96,7 @@ function renderCallout() {
   if (!beta.length) return;
   const tested = state.site.cameras.filter((c) => c.status === "stabil").map(short);
   $("test-call").hidden = false;
-  $("test-call-note").textContent = `${beta.length} camera models still need a first test`;
+  $("test-call-note").textContent = `${beta.length} camera models are still in beta`;
   $("test-call-note").hidden = false;
 
   $("testers").hidden = false;

@@ -21,10 +21,16 @@ const state = { site: null, config: null, camera: null, fw: null, firmwareOk: tr
 const MODES = { 0: "Canon colours", 1: "Vivid", 2: "Neutral", 3: "Black & white", 4: "Sepia", 5: "Positive film", 11: "Custom colour" };
 const SLIDERS = ["Contrast", "Sharpness", "Saturation", "Red", "Green", "Blue", "Skin tone"];
 
-async function loadJson(url) {
-  const r = await fetch(url, { cache: "no-cache" });
-  if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
-  return r.json();
+// app.js und test.js teilen sich die Antwort: site.json ist gross, nur einmal laden
+const jsonCache = (globalThis.exccdJson ??= new Map());
+function loadJson(url) {
+  if (!jsonCache.has(url)) {
+    jsonCache.set(url, fetch(url, { cache: "no-cache" }).then((r) => {
+      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+      return r.json();
+    }));
+  }
+  return jsonCache.get(url);
 }
 
 async function loadBytes(url) {
@@ -93,7 +99,7 @@ function filterCameras(query) {
     opt.hidden = !hit;
     shown += hit;
   }
-  $("cam-count").textContent = words.length ? `${shown} of ${state.site.cameras.length} cameras` : "";
+  $("cam-search-count").textContent = words.length ? `${shown} of ${state.site.cameras.length} cameras` : "";
 }
 
 function renderCameras() {

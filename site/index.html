@@ -6,6 +6,19 @@
 <title>EXCCD – film looks for old Canon digicams</title>
 <meta name="description" content="A CHDK add-on for Canon compacts from the 2000s: film looks on top of the CCD character of the camera, with your own recipes, raw develop on the camera and a few things newer cameras do. Free, open source, still in beta.">
 <meta name="theme-color" content="#000000">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- Vorschau beim Teilen (Messenger, Instagram, Foren); og:image braucht eine volle URL -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="EXCCD">
+<meta property="og:title" content="EXCCD – film looks for old Canon digicams">
+<meta property="og:description" content="A CHDK add-on for Canon compacts from the 2000s: film looks on top of the CCD character of the camera. Free, open source, still in beta.">
+<meta property="og:url" content="https://35mmsebas.github.io/exccd/">
+<meta property="og:image" content="https://35mmsebas.github.io/exccd/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="One street photo shown in four film looks, next to the title Film looks for old Canon digicams">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="app.js"></script>
 <script type="module" src="test.js"></script>
@@ -218,16 +231,18 @@
           values into colours), another firmware. So whenever real photos from a camera come in, the looks get
           re-tuned, and things will keep changing between versions.</p>
         <ul class="status-list">
-          <li><span class="dot ok" aria-hidden="true"></span><b>Tested</b> – IXUS 60 / SD600. Used day to day; the newest
-            features are still being checked.</li>
-          <li><span class="dot wip" aria-hidden="true"></span><b>In testing</b> – IXUS 132 / ELPH 115 IS and PowerShot SX110 IS.
-            Built and partly tested on real cameras.</li>
-          <li><span class="dot todo" aria-hidden="true"></span><b>Ported, not tested</b> – IXUS 145 / ELPH 135.
-            Built, but nobody has run it on a real camera yet.</li>
+          <li><span class="dot ok" aria-hidden="true"></span><span><b>Tested</b> – IXUS 60 / SD600. Used day to day; the newest
+            features are still being checked.</span></li>
+          <li><span class="dot wip" aria-hidden="true"></span><span><b>In testing</b> – IXUS 132 / ELPH 115 IS and PowerShot SX110 IS.
+            Tried on real cameras, still being checked.</span></li>
+          <li><span class="dot todo" aria-hidden="true"></span><span><b>Built, not tested</b> – all other models on the
+            <a href="#camera-step">download page</a>. EXCCD is built for them from the CHDK ports, but nobody has run
+            it on one of them yet. They can be downloaded as a beta; the <a href="#test">camera test</a> shows
+            whether it works.</span></li>
         </ul>
-        <p class="muted small">You can only download for cameras that are ready for it. Some sample photos are
-          simulated on a PC from other shots until real photos from that camera are available; those are marked
-          “simulated”.</p>
+        <p class="muted small">Cameras that aren't fully tested are marked “beta” on the download page. Some sample
+          photos are simulated on a PC from other shots until real photos from that camera are available; those
+          are marked “simulated”.</p>
       </div>
     </section>
 
@@ -497,7 +512,7 @@
           <div class="cam-find">
             <input type="search" id="cam-search" placeholder="Search your model, e.g. IXUS 132, A2400 or SD600"
               aria-label="Search your camera model" autocomplete="off">
-            <span class="muted" id="cam-count" role="status"></span>
+            <span class="muted" id="cam-search-count" role="status"></span>
           </div>
           <fieldset class="cams" id="cams">
             <legend>Which camera do you have?</legend>
@@ -747,8 +762,8 @@
             <input type="search" id="testers-search" placeholder="Find your model" aria-label="Find your camera model"
               autocomplete="off">
           </div>
-          <p class="muted small">EXCCD is built for these, but nobody has tried it on one yet. Have one? Click it
-            to start the camera test with it.<span id="testers-done"></span></p>
+          <p class="muted small">EXCCD is built for these, but they haven't been fully tested yet, most of them not
+            at all. Have one? Click it to start the camera test with it.<span id="testers-done"></span></p>
           <ul class="testers-cams" id="testers-cams"></ul>
           <p class="muted small" id="testers-none" hidden>No match. If your camera isn't listed, it's either tested
             already or not supported yet.</p>
