@@ -83,7 +83,7 @@
 
     #define CAM_ADJUSTABLE_ALT_BUTTON       1    // ALT-button can be set from menu
     #define CAM_ALT_BUTTON_NAMES            { "Help", "Playback" }     // EXCCD: Hilfe-Taste zuerst, Wiedergabe bleibt frei
-    #define CAM_ALT_BUTTON_OPTIONS          { KEY_HELP, KEY_PRINT }
+    #define CAM_ALT_BUTTON_OPTIONS          { KEY_HELP, KEY_PLAYBACK }  // EXCCD: ohne KEY_PRINT, sonst bleibt der Start-Default (KEY_PRINT = Wiedergabe) stehen
     #undef  CAM_HAS_DISP_BUTTON
 
     #define CAM_HAS_FILEWRITETASK_HOOK      1
