@@ -57,7 +57,8 @@ for (const cam of site.cameras) {
   // 3. Download-ZIP: verschobene Kurven ersetzen die aus der Look-ZIP
   const look = cam.looks.find((l) => l.curve && l.recipe);
   const files = curveFiles(p, look.curve.replace(/\.CV$/, ""), look.recipe, [2, -4]);
-  const base = readFileSync(join(siteDir, "data", cam.id, "base.zip"));
+  // seit mehreren Firmwares je Kamera: base.zip liegt im Firmware-Ordner (wie in test_zipjoin.mjs)
+  const base = readFileSync(join(siteDir, "data", cam.firmwares[0].dir, "base.zip"));
   const zip = assemble(base, [readFileSync(join(siteDir, "data", cam.id, "looks", look.id + ".zip"))],
     [{ ...look, wb: [2, -4] }], site.version, new Date(), files);
   const entries = new Map(readZip(zip).map((e) => [e.name, e]));
