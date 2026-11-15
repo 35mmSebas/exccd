@@ -398,6 +398,8 @@ async function download() {
     el("a", { href: url, download: name }).click();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
     status.textContent = `${name} – ${mb(zip.length)}.`;
+    track({ path: `download/${cam.id}-${fw.sub}`, title: `ZIP ${cam.name} ${fw.version}`, event: true });
+    for (const l of looks) track({ path: `look/${l.id}`, title: `Look ${l.id}`, event: true });
   } catch (err) {
     status.textContent = `Download failed: ${err.message}`;
   } finally {
@@ -417,8 +419,22 @@ function watchDock() {
   io.observe($("download-step"));
 }
 
+// --- Zaehlung (GoatCounter, ohne Cookies). count.js laedt async: bis dahin puffern.
+// Fehlt das Script (Blocker, offline), passiert einfach nichts.
+
+const trackQueue = [];
+function track(hit) {
+  const gc = window.goatcounter;
+  if (gc?.count) gc.count(hit);
+  else trackQueue.push(hit);
+}
+document.querySelector("script[data-goatcounter]")?.addEventListener("load", () => {
+  for (const hit of trackQueue.splice(0)) window.goatcounter?.count?.(hit);
+});
+
 // --- Menue: je Menuepunkt eine Ansicht, die Startseite zeigt nur die Kamera
 
+let trackedView = null;
 function route() {
   const target = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
   const view = target?.closest("[data-view]") ?? $("home");
@@ -429,6 +445,11 @@ function route() {
     else a.removeAttribute("aria-current");
   }
   document.body.dataset.page = view.id;
+  // Je Ansicht ein Seitenaufruf (/, /compare, /install …), Spruenge innerhalb zaehlen nicht
+  if (view.id !== trackedView) {
+    trackedView = view.id;
+    track({ path: view.id === "home" ? "/" : `/${view.id}`, title: view.id });
+  }
   // Beim Wechsel der Ansicht springen statt scrollen
   const behavior = switched || reducedMotion ? "instant" : "smooth";
   if (!target || target === view) window.scrollTo({ top: 0, behavior });
@@ -494,6 +515,9 @@ async function main() {
   renderInstallSelect();
   renderCamera();
   renderLooks();
+  for (const a of document.querySelectorAll('a[href="exccd-installer.exe"]')) {
+    a.addEventListener("click", () => track({ path: "download/installer", title: "Installer for Windows", event: true }));
+  }
   $("all").addEventListener("click", () => setAll(true));
   $("none").addEventListener("click", () => setAll(false));
   $("download").addEventListener("click", () => {
