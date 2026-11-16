@@ -934,19 +934,29 @@ static void label_free(void)
     label_buf = 0; label_len = 0; label_for = -1;
 }
 
+// Kameras mit eigener Palette (FILMSIM_LABELS): .FLM mit Farbindizes der Kamera.
+// Alle anderen: .FLC mit CHDK-Farbnummern (IDX_COLOR_*). CHDK kennt fuer jede
+// Kamera den passenden Palettenindex, so stimmen die Farben ohne Messung.
+#ifdef FILMSIM_LABELS
+#define LABEL_EXT       ".FLM"
+#define LABEL_MAGIC     "FLM1"
+#define LABEL_COLOR(c)  (c)
+#else
+#define LABEL_EXT       ".FLC"
+#define LABEL_MAGIC     "FLC1"
+#define LABEL_COLOR(c)  (chdk_colors[(c) <= IDX_COLOR_MAX ? (c) : IDX_COLOR_GREY])
+#endif
+
 static void label_load(int i)
 {
     char fn[40];
     struct stat st;
     label_free();
     label_for = i;
-#ifndef FILMSIM_LABELS
-    return;
-#endif
     if (!sims[i].label) return;
     strcpy(fn, "A/CHDK/FILMS/");
     strcat(fn, sims[i].label);
-    strcat(fn, ".FLM");
+    strcat(fn, LABEL_EXT);
     if (stat(fn, &st) != 0 || st.st_size < 8 || st.st_size > 120000) return;
     label_buf = malloc(st.st_size);
     if (!label_buf) return;
@@ -954,7 +964,7 @@ static void label_load(int i)
     if (fd < 0) { label_free(); label_for = i; return; }
     label_len = read(fd, label_buf, st.st_size);
     close(fd);
-    if (label_len < 8 || memcmp(label_buf, "FLM1", 4) != 0) { label_free(); label_for = i; }
+    if (label_len < 8 || memcmp(label_buf, LABEL_MAGIC, 4) != 0) { label_free(); label_for = i; }
 }
 
 // RLE-Lasche zeichnen; 0 = keine Datei
@@ -973,7 +983,7 @@ static int label_draw(void)
         while (n > 0 && y < h) {
             int run = w - x;
             if (run > n) run = n;
-            if (c) draw_hline(ox + x, oy + y, run, c);
+            if (c) draw_hline(ox + x, oy + y, run, LABEL_COLOR(c));
             x += run; n -= run;
             if (x >= w) { x = 0; y++; }
         }
@@ -1100,8 +1110,30 @@ static void film_gui_menu_btn(void)
 
 static gui_handler filmGuiHandler = { GUI_MODE_MODULE, film_gui_draw, film_gui_kbd, film_gui_menu_btn, 0, 0 };
 
+#ifndef FILMSIM_LABELS
+// Kameras ohne eigene Laschen: Canon-Palette einmal still auf die Karte schreiben
+// (wie Options -> System -> Save palette). Mit dieser Datei bekommt die Kamera
+// spaeter Laschen in ihren eigenen Farben; Nutzer muessen sie nur einschicken.
+static void palette_autosave(void)
+{
+    struct stat st;
+    const char *fn = "A/CHDK/PALREC.BIN";
+    if (!camera_info.state.mode_rec || stat(fn, &st) == 0) return;
+    char *pal = (char*)vid_get_bitmap_active_palette();
+    int sz = vid_get_palette_size();
+    if (!pal || sz <= 0) return;
+    int fd = open(fn, O_WRONLY|O_CREAT|O_TRUNC, 0777);
+    if (fd < 0) return;
+    write(fd, pal, sz);
+    close(fd);
+}
+#endif
+
 void filmsim_open_menu(void)
 {
+#ifndef FILMSIM_LABELS
+    palette_autosave();
+#endif
     films_load();
     sel = conf.film_sim;
     if (sel < 0 || sel >= NUM_SIMS) sel = 0;

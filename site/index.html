@@ -245,8 +245,8 @@
         </ul>
         <p class="muted small">Cameras that aren't fully tested are marked “beta” on the download page. Some sample
           photos are simulated on a PC from other shots until real photos from that camera are available; those
-          are marked “simulated”. On beta cameras the film tabs in the menu can show odd colours; the photos
-          aren't affected (<a href="#trouble">how to fix it</a>).</p>
+          are marked “simulated”. On beta cameras the film tabs in the menu are simplified; the photos
+          aren't affected (<a href="#trouble">how to help</a>).</p>
       </div>
     </section>
 
@@ -674,14 +674,14 @@
             <p>That's the beta part. Light, white balance and the camera model all change how a look turns out, and
               the looks are still being tuned camera by camera. Please <a href="#contribute">report it</a>, ideally with the
               photo, the look and your camera.</p></details>
-          <details><summary>The film tabs in the menu have odd colours</summary>
-            <p>On cameras marked beta that's expected: the film tabs use the menu colours of the IXUS 60, and
-              every model mixes its screen colours a little differently. Only the menu is affected; the looks on
-              your photos don't change.</p>
-            <p>A small file from your camera fixes it. Switch to shooting mode, open the film selection, then
-              <i>MENU → Options → System → Save palette</i>. This writes <code>CHDK/PALREC.BIN</code> to the card.
-              Attach it to an <a class="repo-link" href="https://github.com/35mmSebas/exccd/issues">issue on GitHub</a>
-              together with the camera model and firmware, and the next version gets proper tabs for that camera.</p></details>
+          <details><summary>The film tabs look simpler than in the pictures</summary>
+            <p>On cameras marked beta that's expected. Every model mixes its screen colours a little differently,
+              so beta cameras use a simplified set of tabs built from a few basic colours that work everywhere.
+              Only the menu is affected; the looks on your photos don't change.</p>
+            <p>A small file from your camera brings the full tabs. The first time the film selection opens, the
+              camera saves its screen colours as <code>CHDK/PALREC.BIN</code> on the card. Attach that file to an
+              <a class="repo-link" href="https://github.com/35mmSebas/exccd/issues">issue on GitHub</a> together with
+              the camera model and firmware, and a later version gets the full tabs for that camera.</p></details>
           <details><summary>How do I get the normal camera back?</summary>
             <p>Unlock the card or take it out. To remove EXCCD for good, format the card in the camera.</p></details>
         </div>

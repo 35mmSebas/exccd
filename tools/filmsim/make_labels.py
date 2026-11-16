@@ -74,7 +74,24 @@ def _pal_extra(cam):
     return {int(base.group(1), 0) + k: _ayuv_rgb(int(w, 0))[0]
             for k, w in enumerate(words.group(1).replace(",", " ").split())}
 
-if CAM == "ixus60_sd600":
+EXT, MAGIC = ".FLM", b"FLM1"
+if CAM == "chdk":
+    # Laschen fuer Kameras ohne gemessene Palette (.FLC): gespeichert werden
+    # CHDK-Farbnummern (IDX_COLOR_* in core/gui_draw.h), die Kamera setzt ueber
+    # chdk_colors[] ihren eigenen Index ein. Bezugsfarben: die Werte, die CHDK
+    # auf DIGIC-4-Kameras selbst in die Palette laedt (platform/a2400/lib.c),
+    # Grautoene neutral. 0 = transparent, 18 (Grau halbtransparent) nicht.
+    EXT, MAGIC = ".FLC", b"FLC1"
+    _chdk = {3: 0x33ADF62, 4: 0x326EA40, 5: 0x34CD57F, 6: 0x373BFAE, 7: 0x34BD6CA,
+             8: 0x395AB95, 9: 0x34766F0, 10: 0x31250F3, 11: 0x37F408F, 19: 0x3512D5B,
+             15: 0x3A9A917, 16: 0x3819137, 17: 0x3DED115}
+    PALETTE = {k: _ayuv_rgb(w)[0] for k, w in _chdk.items()}
+    PALETTE.update({1: (0, 0, 0), 2: (255, 255, 255),
+                    13: (64, 64, 64), 12: (128, 128, 128), 14: (190, 190, 190)})
+    # Dunkelblau ist auf Schwarz kaum lesbar (Cyano, Tungsten): dann Blau
+    CANDIDATES = set(PALETTE) - {10}
+    GREYS = None
+elif CAM == "ixus60_sd600":
     PALETTE = _load_palette(os.path.join(_cam, "palette_foto.json"))
 
     # Nur Indizes, die auf dem Display nachweislich deckend erscheinen: alle Farben
@@ -201,7 +218,7 @@ def convert(src, pal, area_h=None):
     return w, h, idx
 
 def encode(w, h, idx):
-    out = bytearray(b"FLM1" + struct.pack("<HH", w, h))
+    out = bytearray(MAGIC + struct.pack("<HH", w, h))
     flat = [v for row in idx for v in row]
     i = 0
     while i < len(flat):
@@ -237,7 +254,7 @@ if __name__ == "__main__":
         if ov:
             idx = [[ov.get(v, v) for v in row] for row in idx]
         data = encode(w, h, idx)
-        open(os.path.join(dstdir, key + ".FLM"), "wb").write(data)
+        open(os.path.join(dstdir, key + EXT), "wb").write(data)
         if prevdir:
             preview(w, h, idx, PALETTE).save(os.path.join(prevdir, key + ".png"))
-        print(f"{key}.FLM  {w}x{h}  {len(data)} Bytes")
+        print(f"{key}{EXT}  {w}x{h}  {len(data)} Bytes")
